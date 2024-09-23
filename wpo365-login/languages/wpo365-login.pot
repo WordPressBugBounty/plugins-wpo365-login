@@ -1,0 +1,694 @@
+# WPO365 Pot
+# Copyright 2020 ...
+# This file is distributed under the GNU General Public License v3 or later.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: WPO365 "
+"Pot v10.10\n"
+"Report-Msgid-Bugs-To: Marco "
+"van Wieren <support@wpo365."
+"com>\n"
+"POT-Creation-Date: "
+"2022-07-18 21:38+0200\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Marco van "
+"Wieren <support@wpo365."
+"com>\n"
+"Language-Team: Marco van "
+"Wieren <support@wpo365."
+"com>\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; "
+"charset=UTF-8\n"
+"Content-Transfer-Encoding: "
+"8bit\n"
+"Plural-Forms: nplurals=2; "
+"plural=n != 1;\n"
+"X-Textdomain-Support: yesX-"
+"Generator: Poedit 1.6.4\n"
+"X-Poedit-SourceCharset: "
+"UTF-8\n"
+"X-Poedit-KeywordsList: __;"
+"_e;esc_html_e;"
+"esc_html_x:1,2c;esc_html__;"
+"esc_attr_e;esc_attr_x:1,2c;"
+"esc_attr__;_ex:1,2c;"
+"_nx:4c,1,2;_nx_noop:4c,1,2;"
+"_x:1,2c;_n:1,2;_n_noop:1,2;"
+"__ngettext:1,2;"
+"__ngettext_noop:1,2;_c,"
+"_nc:4c,1,2\n"
+"X-Poedit-Basepath: ..\n"
+"X-Generator: Poedit 3.1.1\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-"
+"SearchPathExcluded-0: ."
+"vscode\n"
+"X-Poedit-"
+"SearchPathExcluded-1: apps\n"
+"X-Poedit-"
+"SearchPathExcluded-2: "
+"build\n"
+"X-Poedit-"
+"SearchPathExcluded-3: "
+"images\n"
+"X-Poedit-"
+"SearchPathExcluded-4: dist\n"
+"X-Poedit-"
+"SearchPathExcluded-5: "
+"languages\n"
+"X-Poedit-"
+"SearchPathExcluded-6: "
+"OneLogin\n"
+"X-Poedit-"
+"SearchPathExcluded-7: "
+"Firebase\n"
+"X-Poedit-"
+"SearchPathExcluded-8: "
+"phpseclib\n"
+"X-Poedit-"
+"SearchPathExcluded-9: ."
+"vscode\n"
+"X-Poedit-"
+"SearchPathExcluded-10: ."
+"git\n"
+"X-Poedit-"
+"SearchPathExcluded-11: "
+"_Composer\n"
+"X-Poedit-"
+"SearchPathExcluded-12: "
+"_Readme\n"
+"X-Poedit-"
+"SearchPathExcluded-13: "
+"Blocks\n"
+
+#: Core/Cron_Helpers.php:22
+msgid "Every 5 minutes"
+msgstr ""
+
+#: Core/Cron_Helpers.php:27
+msgid "WPO365 Daily"
+msgstr ""
+
+#: Core/Cron_Helpers.php:32
+msgid "WPO365 Weekly"
+msgstr ""
+
+#: Core/Permissions_Helpers.php:117
+msgid ""
+"Updating your email address "
+"is currently not allowed"
+msgstr ""
+
+#: Core/Plugin_Helpers.php:55
+msgid "Configuration"
+msgstr ""
+
+#: Core/Plugin_Updater.php:248
+#: Pages/License_Page.php:143
+#: Pages/License_Page.php:193
+#: Pages/License_Page.php:256
+msgid ""
+"An error occurred, please "
+"try again."
+msgstr ""
+
+#: Core/Plugin_Updater.php:264
+#, php-format
+msgid ""
+"Your license key for "
+"<strong>%s</strong> expired "
+"on %s. Please go to <a href="
+"\"%s\" target=\"_blank\">WP "
+"Admin > WPO365 > Licenses</"
+"a> and update your license "
+"or purchase a <a href=\"%s"
+"\" target=\"_blank\">new "
+"license online</a>. See the "
+"<a href=\"%s\" target="
+"\"_blank\">End User License "
+"Agreement</a> for details"
+msgstr ""
+
+#: Core/Plugin_Updater.php:278
+#, php-format
+msgid ""
+"Your license key for "
+"<strong>%s</strong> has "
+"been disabled. Please go to "
+"<a href=\"%s\" target="
+"\"_blank\">WP Admin > "
+"WPO365 > Licenses</a> and "
+"update your license or "
+"purchase a <a href=\"%s\" "
+"target=\"_blank\">new "
+"license online</a>. See the "
+"<a href=\"%s\" target="
+"\"_blank\">End User License "
+"Agreement</a> for details"
+msgstr ""
+
+#: Core/Plugin_Updater.php:290
+#, php-format
+msgid ""
+"Your license key for "
+"<strong>%s</strong> is "
+"missing. Please go to <a "
+"href=\"%s\" target=\"_blank"
+"\">WP Admin > WPO365 > "
+"Licenses</a> and update "
+"your license or purchase a "
+"<a href=\"%s\" target="
+"\"_blank\">new license "
+"online</a>. See the <a href="
+"\"%s\" target=\"_blank"
+"\">End User License "
+"Agreement</a> for details"
+msgstr ""
+
+#: Core/Plugin_Updater.php:303
+#, php-format
+msgid ""
+"Your license key for "
+"<strong>%s</strong> is not "
+"activated for this URL. "
+"Please go to <a href=\"%s\" "
+"target=\"_blank\">WP Admin "
+"> WPO365 > Licenses</a> and "
+"activate your license or "
+"purchase a <a href=\"%s\" "
+"target=\"_blank\">new "
+"license online</a>. See the "
+"<a href=\"%s\" target="
+"\"_blank\">End User License "
+"Agreement</a> for details"
+msgstr ""
+
+#: Core/Plugin_Updater.php:315
+#, php-format
+msgid ""
+"Your license key for "
+"<strong>%s</strong> has "
+"reached its activation "
+"limit. Please go to <a href="
+"\"%s\" target=\"_blank\">WP "
+"Admin > WPO365 > Licenses</"
+"a> and activate your "
+"license or purchase "
+"additional <a href=\"%s\" "
+"target=\"_blank\">licenses "
+"online</a>. See the <a href="
+"\"%s\" target=\"_blank"
+"\">End User License "
+"Agreement</a> for details"
+msgstr ""
+
+#: Core/Plugin_Updater.php:327
+#, php-format
+msgid ""
+"An unknown error occurred "
+"whilst checking your "
+"license key for %s. Please "
+"try again."
+msgstr ""
+
+#: Core/Plugin_Updater.php:488
+#, php-format
+msgid ""
+"There is a new version of "
+"%1$s available. %2$sView "
+"version %3$s details%4$s."
+msgstr ""
+
+#: Core/Plugin_Updater.php:496
+#, php-format
+msgid ""
+"There is a new version of "
+"%1$s available. %2$sView "
+"version %3$s details%4$s or "
+"%5$supdate now%6$s."
+msgstr ""
+
+#: Core/Plugin_Updater.php:737
+msgid ""
+"You do not have permission "
+"to install plugin updates"
+msgstr ""
+
+#: Core/Plugin_Updater.php:737
+msgid "Error"
+msgstr ""
+
+#: Core/Shortcode_Helpers.php:165
+msgid "Sign in with Microsoft"
+msgstr ""
+
+#: Pages/License_Page.php:156
+#, php-format
+msgid ""
+"Your license key expired on "
+"%s."
+msgstr ""
+
+#: Pages/License_Page.php:164
+msgid ""
+"Your license key has been "
+"disabled."
+msgstr ""
+
+#: Pages/License_Page.php:169
+msgid "Invalid license."
+msgstr ""
+
+#: Pages/License_Page.php:175
+msgid ""
+"Your license is not active "
+"for this URL."
+msgstr ""
+
+#: Pages/License_Page.php:180
+#, php-format
+msgid ""
+"This appears to be an "
+"invalid license key for %s."
+msgstr ""
+
+#: Pages/License_Page.php:185
+msgid ""
+"Your license key has "
+"reached its activation "
+"limit."
+msgstr ""
+
+#: Pages/License_Page.php:334
+msgid "WPO365 | Licenses"
+msgstr ""
+
+#: Pages/License_Page.php:353
+msgid "Deactivate License"
+msgstr ""
+
+#: Pages/License_Page.php:355
+msgid "Activate License"
+msgstr ""
+
+#: SCIM/SCIM_Controller.php:39
+msgid ""
+"e.g /Users?filter=userName "
+"eq "
+"\"Test_User_dfeef4c5-5681-4387-"
+"b016-bdf221e82081\""
+msgstr ""
+
+#: Services/Audiences_Service.php:423
+msgid "Invalid post ID."
+msgstr ""
+
+#: Services/BuddyPress_Service.php:39
+msgid "Directory Info"
+msgstr ""
+
+#: Services/Error_Service.php:94
+msgid ""
+"Could not create or "
+"retrieve your login. Most "
+"likely the authentication "
+"response received from "
+"Microsoft does not contain "
+"an email address. Consult "
+"the <a target=\"_blank\" "
+"href=\"https://www.wpo365."
+"com/troubleshooting-the-"
+"wpo365-login-plugin/"
+"#PARSING_ERROR\">online "
+"documentation</a> for "
+"details."
+msgstr ""
+
+#: Services/Error_Service.php:95
+msgid ""
+"The BASIC edition of the "
+"WordPress + Office 365 "
+"plugin does not "
+"automatically create new "
+"users. See the following <a "
+"href=\"https://www.wpo365."
+"com/basic-edition/\">online "
+"documentation</a> for more "
+"info."
+msgstr ""
+
+#: Services/Error_Service.php:96
+msgid ""
+"Please contact your System "
+"Administrator and check log "
+"file."
+msgstr ""
+
+#: Services/Error_Service.php:97
+msgid "Account deactivated."
+msgstr ""
+
+#: Services/Error_Service.php:98
+msgid ""
+"Alternatively, you can "
+"click the following link to "
+"sign into this website with "
+"your corporate <a href="
+"\"__##OAUTH_URL##__"
+"\">network login (Office "
+"365)</a>"
+msgstr ""
+
+#: Services/Error_Service.php:99
+msgid ""
+"Alternatively, you can "
+"click the following link to "
+"sign into this website with "
+"your corporate <span class="
+"\"wpo365-dual-login-notice"
+"\" style=\"cursor: pointer; "
+"text-decoration: underline; "
+"color: #000CD\" onclick="
+"\"window.wpo365."
+"pintraRedirect."
+"toMsOnline()\">network "
+"login (Office 365)</span>"
+msgstr ""
+
+#: Services/Error_Service.php:100
+msgid ""
+"Your ID token could not be "
+"processed. Please contact "
+"your System Administrator."
+msgstr ""
+
+#: Services/Error_Service.php:101
+msgid ""
+"You are now logged out."
+msgstr ""
+
+#: Services/Error_Service.php:102
+msgid ""
+"Wordpress + Office 365 "
+"login not configured yet. "
+"Please contact your System "
+"Administrator."
+msgstr ""
+
+#: Services/Error_Service.php:103
+#: Services/Error_Service.php:104
+msgid ""
+"Access Denied. Please "
+"contact your System "
+"Administrator."
+msgstr ""
+
+#: Services/Error_Service.php:105
+msgid ""
+"SAML authentication error."
+msgstr ""
+
+#: Services/Error_Service.php:106
+msgid ""
+"Your login might be "
+"tampered with. Please "
+"contact your System "
+"Administrator."
+msgstr ""
+
+#: Services/Error_Service.php:107
+msgid ""
+"Could not create or "
+"retrieve your login. Please "
+"contact your System "
+"Administrator."
+msgstr ""
+
+#: Services/Mail_Notifications_Service.php:46
+#, php-format
+msgid ""
+"New user registration on "
+"your site %s:"
+msgstr ""
+
+#: Services/Mail_Notifications_Service.php:48
+#: Services/Mail_Notifications_Service.php:112
+#, php-format
+msgid "Username: %s"
+msgstr ""
+
+#: Services/Mail_Notifications_Service.php:50
+#, php-format
+msgid "Email: %s"
+msgstr ""
+
+#: Services/Mail_Notifications_Service.php:55
+#, php-format
+msgid ""
+"[%s] New User Registration"
+msgstr ""
+
+#: Services/Mail_Notifications_Service.php:113
+msgid ""
+"To set your password, visit "
+"the following address:"
+msgstr ""
+
+#: Services/Mail_Notifications_Service.php:121
+#, php-format
+msgid ""
+"[%s] Your username and "
+"password info"
+msgstr ""
+
+#: Services/Notifications_Service.php:41
+msgid "WPO365 health status"
+msgstr ""
+
+#: Services/Notifications_Service.php:44
+msgid "Dismiss"
+msgstr ""
+
+#: Services/Notifications_Service.php:58
+#, php-format
+msgid ""
+"The %s plugin detected the "
+"following three errors that "
+"you should address:%s%s%s%s"
+"%s"
+msgstr ""
+
+#: Services/Notifications_Service.php:61
+msgid ""
+"Please take the time to "
+"review those errors. Once "
+"errors have been addressed "
+"you can safely dismiss this "
+"notice for now or hide this "
+"notification on the "
+"plugin's Debug "
+"configuration page to hide "
+"this notice permanently."
+msgstr ""
+
+#: Services/Notifications_Service.php:65
+#, php-format
+msgid ""
+"Please check the %s for "
+"help or alternatively %s "
+"whenever you are unable to "
+"resolve the error reported."
+msgstr ""
+
+#: Services/Notifications_Service.php:68
+msgid "online documentation"
+msgstr ""
+
+#: Services/Notifications_Service.php:72
+msgid "contact WPO365 support"
+msgstr ""
+
+#: Services/Notifications_Service.php:78
+#, php-format
+msgid ""
+"The %s plugin detected "
+"errors that you should "
+"address. Please %s to "
+"review and address these "
+"errors."
+msgstr ""
+
+#: Services/Notifications_Service.php:82
+msgid "click here"
+msgstr ""
+
+#: Services/Notifications_Service.php:98
+#: Services/Notifications_Service.php:103
+msgid "Getting started"
+msgstr ""
+
+#: Services/Notifications_Service.php:100
+#, php-format
+msgid ""
+"Check out our %s "
+"documentation to start "
+"integrating your WordPress "
+"website with %s. For "
+"example:%s"
+msgstr ""
+
+#: Services/Notifications_Service.php:109
+msgid ""
+"OpenID based Single Sign-on"
+msgstr ""
+
+#: Services/Notifications_Service.php:110
+msgid ""
+"SAML 2.0 based Single Sign-"
+"on"
+msgstr ""
+
+#: Services/Notifications_Service.php:111
+msgid ""
+"Sending WordPress mail "
+"using Microsoft Graph"
+msgstr ""
+
+#: Services/Notifications_Service.php:135
+#: Services/Notifications_Service.php:167
+msgid "Sharing is caring"
+msgstr ""
+
+#: Services/Notifications_Service.php:138
+#: Services/Notifications_Service.php:170
+msgid "Yes, here we go!"
+msgstr ""
+
+#: Services/Notifications_Service.php:139
+#: Services/Notifications_Service.php:171
+msgid "Remind me later"
+msgstr ""
+
+#: Services/Notifications_Service.php:140
+#: Services/Notifications_Service.php:172
+msgid "No thanks"
+msgstr ""
+
+#: Services/Notifications_Service.php:143
+#, php-format
+msgid ""
+"Many thanks for using the "
+"%s plugin! Could you please "
+"spare a minute and give it "
+"a review over at WordPress."
+"org?%s%s"
+msgstr ""
+
+#: Services/Notifications_Service.php:175
+#, php-format
+msgid ""
+"The %s plugin just created "
+"a new WordPress user for "
+"you! Could you please spare "
+"a minute and give it a "
+"review over at WordPress."
+"org?%s%s"
+msgstr ""
+
+#: Services/User_Custom_Fields_Service.php:160
+msgid ""
+"Office 365 Profile "
+"Information"
+msgstr ""
+
+#: Sync/Sync_Manager.php:605
+#, php-format
+msgid ""
+"User Sync completed on your "
+"site %s."
+msgstr ""
+
+#: Sync/Sync_Manager.php:609
+#, php-format
+msgid ""
+"[%s] User Sync completed"
+msgstr ""
+
+#: _Wpo/wpo365-apps.php:56
+#: _Wpo/wpo365-apps.php:83
+#: _Wpo/wpo365-avatar.php:56
+#: _Wpo/wpo365-avatar.php:83
+#: _Wpo/wpo365-custom-fields.php:56
+#: _Wpo/wpo365-custom-fields.php:83
+#: _Wpo/wpo365-documents.php:56
+#: _Wpo/wpo365-documents.php:83
+#: _Wpo/wpo365-groups.php:56
+#: _Wpo/wpo365-groups.php:83
+#: _Wpo/wpo365-intranet.php:59
+#: _Wpo/wpo365-intranet.php:86
+#: _Wpo/wpo365-mail.php:66
+#: _Wpo/wpo365-mail.php:93
+#: _Wpo/wpo365-plus.php:56
+#: _Wpo/wpo365-plus.php:83
+#: _Wpo/wpo365-premium.php:59
+#: _Wpo/wpo365-premium.php:86
+#: _Wpo/wpo365-professional.php:56
+#: _Wpo/wpo365-professional.php:83
+#: _Wpo/wpo365-roles-access.php:59
+#: _Wpo/wpo365-roles-access.php:86
+#: _Wpo/wpo365-scim.php:56
+#: _Wpo/wpo365-scim.php:83
+#, php-format
+msgid ""
+"The %s plugin requires the "
+"latest version of %s to be "
+"installed and activated."
+msgstr ""
+
+#: _Wpo/wpo365-apps.php:58
+#: _Wpo/wpo365-avatar.php:58
+#: _Wpo/wpo365-custom-fields.php:58
+#: _Wpo/wpo365-documents.php:58
+#: _Wpo/wpo365-groups.php:58
+#: _Wpo/wpo365-intranet.php:61
+#: _Wpo/wpo365-mail.php:68
+#: _Wpo/wpo365-plus.php:58
+#: _Wpo/wpo365-premium.php:61
+#: _Wpo/wpo365-professional.php:58
+#: _Wpo/wpo365-roles-access.php:61
+#: _Wpo/wpo365-scim.php:58
+msgid "Install plugin"
+msgstr ""
+
+#: _Wpo/wpo365-apps.php:85
+#: _Wpo/wpo365-avatar.php:85
+#: _Wpo/wpo365-custom-fields.php:85
+#: _Wpo/wpo365-documents.php:85
+#: _Wpo/wpo365-groups.php:85
+#: _Wpo/wpo365-intranet.php:88
+#: _Wpo/wpo365-mail.php:95
+#: _Wpo/wpo365-plus.php:85
+#: _Wpo/wpo365-premium.php:88
+#: _Wpo/wpo365-professional.php:85
+#: _Wpo/wpo365-roles-access.php:88
+#: _Wpo/wpo365-scim.php:85
+msgid "Activate plugin"
+msgstr ""
+
+#: _Wpo/wpo365-apps.php:86
+#: _Wpo/wpo365-avatar.php:86
+#: _Wpo/wpo365-custom-fields.php:86
+#: _Wpo/wpo365-documents.php:86
+#: _Wpo/wpo365-groups.php:86
+#: _Wpo/wpo365-intranet.php:89
+#: _Wpo/wpo365-mail.php:96
+#: _Wpo/wpo365-plus.php:86
+#: _Wpo/wpo365-premium.php:89
+#: _Wpo/wpo365-professional.php:86
+#: _Wpo/wpo365-roles-access.php:89
+#: _Wpo/wpo365-scim.php:86
+msgid "Update plugin"
+msgstr ""
