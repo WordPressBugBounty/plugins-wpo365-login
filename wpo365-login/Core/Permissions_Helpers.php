@@ -20,12 +20,7 @@ if (!class_exists('\Wpo\Core\Permissions_Helpers')) {
          */
         public static function user_is_admin($user)
         {
-
-            if ($user instanceof \WP_User) {
-                return \in_array('administrator', $user->roles) || is_super_admin($user->ID);
-            }
-
-            return false;
+            return user_can($user->ID, 'administrator');
         }
 
         /**
@@ -75,11 +70,15 @@ if (!class_exists('\Wpo\Core\Permissions_Helpers')) {
                 return false;
             }
 
+            if (current_user_can('administrator')) {
+                Log_Service::write_log('DEBUG', __METHOD__ . ' -> Not hiding Account Management section for admins on user-edit form');
+                return false;
+            }
+
             $use_customers_tenants = Options_Service::get_global_boolean_var('use_b2c') || Options_Service::get_global_boolean_var('use_ciam');
-            $wp_usr = get_user_by('ID', intval($user_id));
 
             // Limit the blocking of password update only for O365 users
-            return ($use_customers_tenants || User_Service::user_is_o365_user($user_id) === User_Service::IS_O365_USER) && !self::user_is_admin($wp_usr) ? true : false;
+            return ($use_customers_tenants || User_Service::user_is_o365_user($user_id) === User_Service::IS_O365_USER) ? true : false;
         }
 
         /**
@@ -102,6 +101,11 @@ if (!class_exists('\Wpo\Core\Permissions_Helpers')) {
             $use_customers_tenants = Options_Service::get_global_boolean_var('use_b2c') || Options_Service::get_global_boolean_var('use_ciam');
 
             if (!$use_customers_tenants && User_Service::user_is_o365_user($user_id) !== User_Service::IS_O365_USER) {
+                return;
+            }
+
+            if (current_user_can('administrator')) {
+                Log_Service::write_log('DEBUG', __METHOD__ . ' -> Not preventing an administrator from updating an email address');
                 return;
             }
 

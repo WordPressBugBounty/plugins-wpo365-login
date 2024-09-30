@@ -2,7 +2,6 @@
 
 namespace Wpo\Core;
 
-use \Wpo\Core\Plugin_Updater;
 use \Wpo\Core\WordPress_Helpers;
 use \Wpo\Services\Request_Service;
 
@@ -68,7 +67,7 @@ if (!class_exists('\Wpo\Core\Extensions_Helpers')) {
         public static function plugin_activated($plugin, $network_wide)
         {
             self::get_active_extensions($plugin);
-            Plugin_Updater::check_licenses();
+            Plugin_Helpers::check_licenses();
         }
 
         /**
@@ -80,7 +79,7 @@ if (!class_exists('\Wpo\Core\Extensions_Helpers')) {
         public static function plugin_deactivated($plugin, $network_wide)
         {
             self::get_active_extensions($plugin, true);
-            Plugin_Updater::check_licenses();
+            Plugin_Helpers::check_licenses();
         }
 
         /**
@@ -105,6 +104,11 @@ if (!class_exists('\Wpo\Core\Extensions_Helpers')) {
 
             if (false === function_exists('get_plugins')) {
                 require_once ABSPATH . 'wp-admin/includes/plugin.php';
+            }
+
+            if (1 !== $request->get_item('cleaned_plugins_cache')) {
+                wp_clean_plugins_cache(false);
+                $request->set_item('cleaned_plugins_cache', 1);
             }
 
             $plugins = \get_plugins();

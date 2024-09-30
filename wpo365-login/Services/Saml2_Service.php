@@ -28,6 +28,12 @@ if (!class_exists('\Wpo\Services\Saml2_Service')) {
             Log_Service::write_log('DEBUG', '##### -> ' . __METHOD__);
 
             /**
+             * @since 32.0  Replace a possible "#" because add_query_arg and parse_url cannot handle it
+             */
+
+            $redirect_to = str_replace('#', '_____', $redirect_to);
+
+            /**
              * @since   16.0    Filters the redirect_to url
              */
 

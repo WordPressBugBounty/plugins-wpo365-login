@@ -14,10 +14,7 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
     {
         public static function add_wp_hooks()
         {
-            // Plugin updater and license checker
-            if (class_exists('\Wpo\Core\Plugin_Updater')) {
-                \Wpo\Core\Plugin_Updater::add_hooks();
-            }
+            add_filter('pre_set_site_transient_update_plugins', '\Wpo\Core\Plugin_Helpers::check_for_updates', 10, 1);
 
             // Do super admin stuff
             if ((is_admin() || is_network_admin()) && Permissions_Helpers::user_is_admin(\wp_get_current_user())) {
@@ -33,7 +30,7 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
                 add_action('admin_init', '\Wpo\Services\Notifications_Service::dismiss_admin_notices', 10, 0);
 
                 // Add license related messages to WP Admin
-                \Wpo\Core\Plugin_Updater::show_license_notices();
+                \Wpo\Core\Plugin_Helpers::show_license_notices();
 
                 // Show settings link
                 add_filter((is_network_admin() ? 'network_admin_' : '') . 'plugin_action_links_' . $GLOBALS['WPO_CONFIG']['plugin'], '\Wpo\Core\Plugin_Helpers::get_configuration_action_link', 10, 1);
@@ -138,6 +135,11 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
                 if (Options_Service::get_global_boolean_var('enable_scim') &&  method_exists('\Wpo\SCIM\SCIM_Service', 'generate_scim_secret_token')) {
                     add_action('wp_ajax_wpo365_generate_scim_secret_token', '\Wpo\SCIM\SCIM_Service::generate_scim_secret_token');
                 }
+
+                // To force WordPress to check for plugin updates if requested by an administrator
+                add_action('admin_post_wpo365_force_check_for_plugin_updates', '\Wpo\Core\Plugin_Helpers::force_check_for_plugin_updates');
+                add_filter('plugin_row_meta', '\Wpo\Core\Plugin_Helpers::show_old_version_warning', 10, 2);
+                add_filter('plugins_api', '\Wpo\Core\Plugin_Helpers::plugin_info', 20, 3);
             } // End admin stuff
 
             //  WP Cron job triggered action to check for each registered application whether its secret will epxire soon.
@@ -269,7 +271,7 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
             }
 
             // Clean up on shutdown
-            add_action('shutdown', '\Wpo\Services\Request_Service::shutdown');
+            add_action('shutdown', '\Wpo\Services\Request_Service::shutdown', PHP_INT_MAX);
 
             // Add pintraredirectjs
             add_action('wp_enqueue_scripts', '\Wpo\Core\Script_Helpers::enqueue_pintra_redirect', 10, 0);
@@ -489,6 +491,11 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
             // To add users to a new subsite (WPMU)
             if (is_multisite() && Options_Service::get_global_boolean_var('mu_add_user_to_all_sites', false) && method_exists('\Wpo\Services\User_Create_Update_Service', 'wpmu_add_users_to_blog')) {
                 add_action('wp_initialize_site', '\Wpo\Services\User_Create_Update_Service::wpmu_add_users_to_blog', 10, 2);
+            }
+
+            // Apply updates to the internal WPO365 representation of a User (see Wpo\Core\User)
+            if (method_exists('\Wpo\Services\User_Details_Service', 'set_user_display_name')) {
+                add_filter('wpo365/user', '\Wpo\Services\User_Details_Service::set_user_display_name', 10, 2);
             }
         }
 

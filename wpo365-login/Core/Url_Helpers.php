@@ -345,6 +345,13 @@ if (!class_exists('\Wpo\Core\Url_Helpers')) {
             }
 
             /**
+             * @since 32.0  Add support for login_redirect filter
+             */
+
+            $wp_usr = wp_get_current_user();
+            $redirect_url = apply_filters('login_redirect', $redirect_url, $redirect_url, $wp_usr);
+
+            /**
              * @since 24.0 Filters the necessity of conducting the URL check below.
              */
 

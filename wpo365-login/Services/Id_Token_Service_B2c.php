@@ -260,7 +260,8 @@ if (!class_exists('\Wpo\Services\Id_Token_Service_B2c')) {
             }
 
             if (property_exists($body, 'error')) {
-                Log_Service::write_log('ERROR', sprintf('%s -> Error occured whilst fetching from %s: %s', __METHOD__, $token_url, $body->error));
+                $message = property_exists($body, 'error_description') ? $body->error_description : $body->error;
+                Log_Service::write_log('ERROR', sprintf('%s -> Error occured whilst fetching from %s: %s', __METHOD__, $token_url, $message));
                 return;
             }
 

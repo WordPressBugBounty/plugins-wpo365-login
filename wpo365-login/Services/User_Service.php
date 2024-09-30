@@ -161,8 +161,12 @@ if (!class_exists('\Wpo\Services\User_Service')) {
                 \Wpo\Services\User_Details_Service::try_improve_core_fields($wpo_usr);
             }
 
-            $request->set_item('wpo_usr', $wpo_usr);
+            /**
+             * @since   31.2    Filters the internal WPO365 representation of a user (see Wpo\Core\User)
+             */
+            $wpo_usr = apply_filters('wpo365/user', $wpo_usr, 'oidc');
 
+            $request->set_item('wpo_usr', $wpo_usr);
             return $wpo_usr;
         }
 
@@ -295,8 +299,12 @@ if (!class_exists('\Wpo\Services\User_Service')) {
                 \Wpo\Services\User_Details_Service::try_improve_core_fields($wpo_usr);
             }
 
-            $request->set_item('wpo_usr', $wpo_usr);
+            /**
+             * @since   31.2    Filters the internal WPO365 representation of a user (see Wpo\Core\User)
+             */
+            $wpo_usr = apply_filters('wpo365/user', $wpo_usr, 'oidc');
 
+            $request->set_item('wpo_usr', $wpo_usr);
             return $wpo_usr;
         }
 
@@ -367,6 +375,11 @@ if (!class_exists('\Wpo\Services\User_Service')) {
             if (\class_exists('\Wpo\Services\User_Aad_Groups_Service') && \method_exists('\Wpo\Services\User_Aad_Groups_Service', 'get_aad_groups')) {
                 \Wpo\Services\User_Aad_Groups_Service::get_aad_groups($wpo_usr);
             }
+
+            /**
+             * @since   31.2    Filters the internal WPO365 representation of a user (see Wpo\Core\User)
+             */
+            $wpo_usr = apply_filters('wpo365/user', $wpo_usr, 'graph');
 
             // Store for later e.g. custom (BuddyPress) fields
             $request_service = Request_Service::get_instance();
@@ -476,8 +489,12 @@ if (!class_exists('\Wpo\Services\User_Service')) {
                 \Wpo\Services\User_Details_Service::try_improve_core_fields($wpo_usr);
             }
 
-            $request->set_item('wpo_usr', $wpo_usr);
+            /**
+             * @since   31.2    Filters the internal WPO365 representation of a user (see Wpo\Core\User)
+             */
+            $wpo_usr = apply_filters('wpo365/user', $wpo_usr, 'saml');
 
+            $request->set_item('wpo_usr', $wpo_usr);
             return $wpo_usr;
         }
 
@@ -736,11 +753,19 @@ if (!class_exists('\Wpo\Services\User_Service')) {
          * @return  int One of the following User Service class constants 
          *              USER_NOT_LOGGED_IN, IS_O365_USER or IS_NOT_O365_USER
          */
-        public static function user_is_o365_user($user_id, $email = '')
+        public static function user_is_o365_user($wp_usr_id, $email = '')
         {
             Log_Service::write_log('DEBUG', '##### -> ' . __METHOD__);
 
-            $wp_usr = get_user_by('ID', intval($user_id));
+            /**
+             * @since 32.0  Bail out early if user is tagged with aadObjectId
+             */
+
+            if (null !== User_Service::try_get_user_object_id($wp_usr_id)) {
+                self::IS_O365_USER;
+            }
+
+            $wp_usr = get_user_by('ID', intval($wp_usr_id));
 
             if (!empty($email) && false === $wp_usr) {
                 $wp_usr = get_user_by('email', $email);

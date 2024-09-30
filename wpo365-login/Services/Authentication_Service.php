@@ -706,9 +706,20 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
                 $skip_wp_admin = Options_Service::get_global_boolean_var('skip_wp_admin');
                 $bypass_key = Options_Service::get_aad_option('redirect_on_login_secret');
                 $error_page = Options_Service::get_global_string_var('error_page_url');
+                $secure = ('https' === parse_url(wp_login_url(), PHP_URL_SCHEME));
+                $cookie_name = defined('WPO_SSO_BYPASS_COOKIE') ? constant('WPO_SSO_BYPASS_COOKIE') : 'wordpress_wpo365_sso_bypass';
 
                 // Admin has configured to enable SSO for the login page but pre-requisites are not fulfulled.
-                if ($dual_login_enabled) {
+                if (isset($_COOKIE[$cookie_name])) {
+                    Log_Service::write_log('DEBUG', __METHOD__ . ' -> A request for the login page will be allowed pass-thru [cookie will be deleted]');
+                    $cookie = $_COOKIE[$cookie_name];
+                    setcookie($cookie_name, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, $secure);
+                    unset($_COOKIE[$cookie_name]);
+
+                    if ($cookie == $bypass_key) {
+                        return true;
+                    }
+                } elseif ($dual_login_enabled) {
                     Log_Service::write_log('ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has also enabled the contradicting Dual Login feature');
                 } elseif ($skip_wp_admin) {
                     Log_Service::write_log('ERROR', __METHOD__ . ' -> Administrator enabled SSO for the login page but has also disabled SSO for WP Admin');
@@ -718,12 +729,13 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
                     Log_Service::write_log('ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but the length of the mandatory secret key to bypass SSO is less than 32 characters');
                 } elseif (empty($error_page)) {
                     Log_Service::write_log('ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has not configured a mandatory error page');
-                } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
-                    Log_Service::write_log('DEBUG', __METHOD__ . ' -> A POST request for the login page has been detected and will be allowed pass-thru');
+                } elseif (isset($_GET[$bypass_key])) {
+                    Log_Service::write_log('DEBUG', __METHOD__ . ' -> A request for the login page will be allowed pass-thru [cookie will be set]');
+                    setcookie($cookie_name, $bypass_key, 0, COOKIEPATH, COOKIE_DOMAIN, $secure);
                     return true;
                 }
                 // Admin has configured to enable SSO for the login page but no secret key has been detected.
-                elseif (!isset($_GET[$bypass_key])) {
+                else {
                     return false;
                 }
             }

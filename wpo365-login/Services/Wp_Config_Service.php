@@ -117,8 +117,8 @@ if (!class_exists('\Wpo\Services\Wp_Config_Service')) {
                     if (sizeof($filtered_idps) == 1) {
                         return $filtered_idps[0];
                     } else {
-                        return array();
                         Log_Service::write_log('ERROR', sprintf('%s -> Could not find a default IdP', __METHOD__));
+                        return array();
                     }
                 };
 

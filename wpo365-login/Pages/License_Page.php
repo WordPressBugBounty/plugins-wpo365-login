@@ -239,7 +239,10 @@ if (!class_exists('\Wpo\Pages\License_Page')) {
                     $redirect = add_query_arg(array('sl_activation' => 'true', 'message' => urlencode('License for ' . $extension['store_item'] . ' has been successfully activated.')), $base_url);
                 }
 
-                \Wpo\Core\Plugin_Updater::check_licenses();
+                // Clean the plugins cache because the package URL must be recalculated
+                wp_clean_plugins_cache(true);
+
+                \Wpo\Core\Plugin_Helpers::check_licenses();
 
                 wp_redirect($redirect);
                 exit();
@@ -307,7 +310,10 @@ if (!class_exists('\Wpo\Pages\License_Page')) {
                     }
                 }
 
-                \Wpo\Core\Plugin_Updater::check_licenses();
+                // Clean the plugins cache because the package URL must be recalculated
+                wp_clean_plugins_cache(true);
+
+                \Wpo\Core\Plugin_Helpers::check_licenses();
 
                 wp_redirect($redirect);
                 exit();
@@ -411,7 +417,27 @@ if (!class_exists('\Wpo\Pages\License_Page')) {
                         </tbody>
                     </table>
                 </form>
-    <?php
+            </div>
+            <hr style="width: 60%; margin: 25px 0px 35px 5px;" />
+            <div class="wrap">
+                <table style="width: 60%">
+                    <tr>
+                        <td>
+                            <div style="margin-bottom: 25px;">Click the button below to prompt WordPress to check for plugin updates and refresh the cached data for premium WPO365 plugins.</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <form method="POST" action="<?php echo admin_url('admin-post.php') ?>" enctype="multipart/form-data">
+                                <input type="hidden" name="action" value="wpo365_force_check_for_plugin_updates">
+                                <?php wp_nonce_field('wpo365_force_check_for_plugin_updates', 'wpo365_force_check_for_plugin_updates_nonce'); ?>
+                                <input type="submit" class="button-secondary" value="<?php _e('Check for plugin updates'); ?>" />
+                            </form>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+<?php
         }
     }
 }

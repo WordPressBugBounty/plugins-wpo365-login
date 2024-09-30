@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.6
-Stable tag: 31.1
+Stable tag: 32.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -206,6 +206,17 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v32.0 =
+* Breaking Change: This version of WPO365 adds support for WordPress' built-in "login_redirect" filter. This means that the URL where users are redirected after they successfully sign in to your WordPress website, can be set by a third-party plugin e.g. "LoginWP". Please note that rules defined in WPO365 to redirect a user (e.g. "Welcome page for first-time users", "Always send user to default / custom landing page" and "Azure AD group-based redirect after successful login") will be applied after the "login_redirect" has been applied and therefore overrule the filtered result. [LOGIN]
+* Breaking Change: If an administrator activated the option to "Force SSO for the default / custom login page", WPO365 will now redirect all requests to Microsoft for authentication, unless a unique cookie is presented. This cookie will be set by WPO365 when a user requests the default / custom landing page with the correct "Secret key to bypass SSO" added to the URL. Brute-force password-guessing bots should now be blocked from submitting login attempts to your website’s login endpoint. [ESSENTIALS, PROFESSIONAL, INTEGRATE (LOGIN+, SYNC, INTRANET)]
+* Improvement: The built-in license and update manager has been greatly simplified and algined with WordPress' plugin managent. [ALL PREMIUM]
+* Fix: WPO365's shutdown routine will now run at the very last possible moment to ensure that the built-in Microsoft Graph Mailer can still access its configuration and send emails, e.g. third-party plugins such as "WP Job Manager" sending out alerts. [MAIL, PROFESSIONAL, INTEGRATE (SYNC, INTRANET)]
+* Fix: Administrators can now still change a user's local WordPress password, even if the option "User cannot change password" (on the plugin's "User Registration" configuration page) has been activated. [ESSENTIALS, PROFESSIONAL, INTEGRATE (LOGIN+, SYNC INTRANET)]
+* Fix: The "Plugin self-test" no longer fails when an administrator has configured multiple SAML 2.0 Identity Providers. [ALL PREMIUM]
+* Fix: WPO365 has restored the ability to save user attributes from a user's manager e.g. the manager's email address as WordPress metadata for the user in question. [PROFESSIONAL, INTEGRATE (SYNC, INTRANET)]
+* Fix: The ability to define a default sorting of a column (ascending or descending) of an embedded SharePoint Library or List has been restored. [DOCUMENTS, APPS, INTEGRATE (INTRANET)]
+* Fix: Direct reports of users listed in the Employee Directory app are filtered to ensure that disabled users are not selected. [APPS, INTEGRATE (INTRANET)]
 
 = v31.1 =
 
