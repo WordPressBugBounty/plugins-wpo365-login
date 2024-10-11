@@ -368,76 +368,50 @@ if (!class_exists('\Wpo\Core\Url_Helpers')) {
              * @since 24.0 Filters the AAD Redirect URI e.g. to set it dynamically to the current host.
              */
 
-            $aad_redirect_uri = apply_filters('wpo365/aad/redirect_uri', $aad_redirect_uri);
-
-            if (WordPress_Helpers::stripos($aad_redirect_url, 'https://') !== false && WordPress_Helpers::stripos($redirect_url, 'http://') === 0) {
-                Log_Service::write_log('WARN', __METHOD__ . ' -> Please update your htaccess or similar and ensure that users can only access your website via https:// (URL requested by the user: ' . $redirect_url . ').');
-                $redirect_url = str_replace('http://', 'https://', $redirect_url);
-            }
-
-            $state_url_host = \parse_url($redirect_url, PHP_URL_HOST);
-            $wp_site_url_host = \parse_url($GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'], PHP_URL_HOST);
-            $aad_redirect_url_host = \parse_url($aad_redirect_url, PHP_URL_HOST);
-            $cookie_domain_host = defined('COOKIE_DOMAIN') && false !== COOKIE_DOMAIN ? WordPress_Helpers::ltrim(COOKIE_DOMAIN, '.') : '';
-
-            $multisite_error_message = \is_multisite() ? ' If you see this error when trying to access a (WordPress Multisite) mapped domain then please configure WPO365 to use subsite options instead. See <a href=\"https://docs.wpo365.com/article/29-support-for-wordpress-multisite-wpmu\" target=\"_blank\">https://docs.wpo365.com/article/29-support-for-wordpress-multisite-wpmu</a>.' : '';
-            $cookie_domain_error = empty($cookie_domain_host) ? 'and the COOKIE_DOMAIN constant has not been defined' : "and the COOKIE_DOMAIN (host -> $cookie_domain_host) cannot be used across multiple subdomains";
-
-            $hosts = array(
-                'redirect_url' => $redirect_url,
-                'state_url_host' => $state_url_host,
-                'wp_site_url_host' => $wp_site_url_host,
-                'aad_redirect_url_host' => $aad_redirect_url_host,
-                'cookie_domain_host' => $cookie_domain_host,
-            );
-
-            Log_Service::write_log('DEBUG', __METHOD__ . ' -> ' . print_r($hosts, true));
-
-            $log_level = WordPress_Helpers::stripos($state_url_host, 'teams.microsoft.com') === 0 ? 'WARN' : 'ERROR';
+            $aad_redirect_url = apply_filters('wpo365/aad/redirect_uri', $aad_redirect_url);
 
             /**
-             * if aad redirect host is not equal to wp site host then an infinite loop cannot be prevented. Therefore the user cannot sign in.
+             * @since 33.0 Use WordPress' builtin API to validate the Redirect URL.
              */
-            if (
-                $aad_redirect_url_host != $wp_site_url_host &&
-                false === (!empty($cookie_domain_host) && false !== WordPress_Helpers::stripos($aad_redirect_url_host, $cookie_domain_host) && false !== WordPress_Helpers::stripos($wp_site_url_host, $cookie_domain_host))
-            ) {
-                Log_Service::write_log('ERROR', __METHOD__ . " -> AAD redirect URL (host -> $aad_redirect_url_host) and WordPress Site URL (host -> $wp_site_url_host) belong to different hosts $cookie_domain_error. The user will be redirected to the default WordPress login form instead to prevent an infinite loop. See <a href=\"https://docs.wpo365.com/article/5-infinite-loop\" target=\"_blank\">https://docs.wpo365.com/article/5-infinite-loop</a>.$multisite_error_message");
-                Authentication_Service::goodbye(Error_Service::CHECK_LOG);
-                exit();
-            }
-            /**
-             * aad and site url belong to the same host but the cookie that will be set will be for a different host. Therefore the user cannot sign in.
-             */
-            elseif (!empty($cookie_domain_host) && false === WordPress_Helpers::stripos($wp_site_url_host, $cookie_domain_host)) {
-                Log_Service::write_log('ERROR', __METHOD__ . " -> COOKIE_DOMAIN (-> host $cookie_domain_host) and WordPress Site URL (host -> $wp_site_url_host) belong to different hosts. The user will be redirected to the default WordPress login form instead to prevent an infinite loop. See <a href=\"https://docs.wpo365.com/article/5-infinite-loop\" target=\"_blank\">https://docs.wpo365.com/article/5-infinite-loop</a>.$multisite_error_message");
-                Authentication_Service::goodbye(Error_Service::CHECK_LOG);
-                exit();
-            }
-            /**
-             * if state url host is not equal aad redirect url host then send user to aad redirect url 
-             * instead and generate error -> URL requested by user and AAD redirect URL belong to different hosts.
-             */
-            elseif (
-                $state_url_host != $aad_redirect_url_host &&
-                false === (!empty($cookie_domain_host) && false !== WordPress_Helpers::stripos($state_url_host, $cookie_domain_host) && false !== WordPress_Helpers::stripos($aad_redirect_url_host, $cookie_domain_host))
-            ) {
-                Log_Service::write_log($log_level, __METHOD__ . " -> URL requested by user (host -> $state_url_host) and AAD redirect URL (host -> $aad_redirect_url_host) belong to different hosts $cookie_domain_error. The user will still be logged in but then redirected to the Azure AD redirect URL instead to prevent an infinite loop. See <a href=\"https://docs.wpo365.com/article/5-infinite-loop\" target=\"_blank\">https://docs.wpo365.com/article/5-infinite-loop</a>.$multisite_error_message");
-                $redirect_url = $aad_redirect_url;
-            }
-            /**
-             * if wp site host is not equal to host requested by user then send user to aad redirect url 
-             * instead and generate error -> WP Site URL and URL requested by user belong to different hosts.
-             */
-            elseif (
-                $wp_site_url_host != $state_url_host &&
-                false === (!empty($cookie_domain_host) && false !== WordPress_Helpers::stripos($wp_site_url_host, $cookie_domain_host) && false !== WordPress_Helpers::stripos($state_url_host, $cookie_domain_host))
-            ) {
-                Log_Service::write_log($log_level, __METHOD__ . " -> URL requested by user (-> host $state_url_host) and WordPress Site URL (host -> $wp_site_url_host) belong to different hosts $cookie_domain_error. The user will still be logged in but then redirected to the WordPress Site URL instead to prevent an infinite loop. See <a href=\"https://docs.wpo365.com/article/5-infinite-loop\" target=\"_blank\">https://docs.wpo365.com/article/5-infinite-loop</a>.$multisite_error_message");
-                $redirect_url = $aad_redirect_url;
+
+            $cookie_domain_host = defined('COOKIE_DOMAIN') && false !== COOKIE_DOMAIN ? WordPress_Helpers::ltrim(COOKIE_DOMAIN, '.') : null;
+
+            if (!empty($cookie_domain_host)) {
+                add_filter('allowed_redirect_hosts', function ($hosts, $host) use ($cookie_domain_host) {
+                    $hosts[] = $cookie_domain_host;
+                    return $hosts;
+                }, 10, 2);
             }
 
-            self::force_redirect($redirect_url);
+            $goto_after = wp_validate_redirect($redirect_url, $aad_redirect_url);
+
+            // Check whether WordPress is installed in subdirectory
+
+            if (!empty($GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'])) {
+
+                if (false === WordPress_Helpers::stripos($goto_after, $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'])) {
+                    $goto_after = $aad_redirect_url;
+                }
+            }
+
+            if (!0 === strcasecmp(rtrim($goto_after, '/'), rtrim($redirect_url, '/'))) {
+                Log_Service::write_log('ERROR', sprintf(
+                    '%s -> WPO365 has prevented to redirect a user (that just successfully signed in with Microsoft) to an invalid URL [%s]. The user will instead remain at the Entra Redirect URI [%s].',
+                    __METHOD__,
+                    $redirect_url,
+                    $aad_redirect_url
+                ));
+            }
+
+            /**
+             * @since 33.0 Bail out early if AAD Redirect URL is equal to target.
+             */
+
+            if (0 === strcasecmp(rtrim($goto_after, '/'), rtrim($aad_redirect_url, '/'))) {
+                return;
+            }
+
+            Url_Helpers::force_redirect($goto_after);
         }
 
         /**

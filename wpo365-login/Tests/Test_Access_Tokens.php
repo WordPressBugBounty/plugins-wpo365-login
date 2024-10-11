@@ -149,18 +149,14 @@ if (!class_exists('\Wpo\Tests\Test_Access_Tokens')) {
                 return;
             }
 
-            if (sizeof($this->extensions) === 0) {
-                return;
-            }
-
             return $this->check_static_permission(
                 $this->delegated_access_token,
                 'user.read',
                 'delegated',
                 $this->delegated_static_permissions,
                 Test_Result::SEVERITY_BLOCKING,
-                Test_Result::CAPABILITY_ACCESS_TOKENS,
-                'and as a result the plugin will not be able to retrieve user attributes from Microsoft Graph to improve a WordPress user profile. Please add the following API Permission (for the (Azure AD) <em>registered application</em> in Azure Portal): Microsoft Graph > Delegated > User.Read.',
+                Test_Result::CAPABILITY_OIC_SSO,
+                'and as a result the plugin will not be able to sign in as a user. Please add the following API Permission (for the (Azure AD) <em>registered application</em> in Azure Portal): Microsoft Graph > Delegated > User.Read.',
                 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow'
             );
         }
@@ -172,10 +168,6 @@ if (!class_exists('\Wpo\Tests\Test_Access_Tokens')) {
         {
 
             if ($this->no_sso || $this->use_saml || $this->use_b2c || !$this->delegated_access_token_test_result->passed) {
-                return;
-            }
-
-            if (sizeof($this->extensions) === 0) {
                 return;
             }
 
@@ -197,11 +189,6 @@ if (!class_exists('\Wpo\Tests\Test_Access_Tokens')) {
          */
         public function test_graph_version()
         {
-
-            if (sizeof($this->extensions) === 0) {
-                return;
-            }
-
             $test_result = new Test_Result('<em>Beta</em> version of Microsoft Graph selected.', Test_Result::CAPABILITY_CONFIG, Test_Result::SEVERITY_LOW);
             $test_result->passed = true;
 
@@ -1703,11 +1690,7 @@ if (!class_exists('\Wpo\Tests\Test_Access_Tokens')) {
                 return;
             }
 
-            if (sizeof($this->extensions) === 0) {
-                $this->delegated_access_token = Access_Token_Service::get_access_token('openid profile');
-            } else {
-                $this->delegated_access_token = Access_Token_Service::get_access_token('openid profile offline_access user.read');
-            }
+            $this->delegated_access_token = Access_Token_Service::get_access_token('openid profile offline_access user.read');
 
             if (is_wp_error($this->delegated_access_token) || !property_exists($this->delegated_access_token, 'access_token')) {
                 $test_result->passed = false;

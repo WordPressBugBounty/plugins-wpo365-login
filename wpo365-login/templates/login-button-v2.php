@@ -1,6 +1,9 @@
 <?php
 
 // Prevent public access to this script
+
+use Wpo\Services\Options_Service;
+
 defined('ABSPATH') or die();
 
 ?>
@@ -42,11 +45,20 @@ defined('ABSPATH') or die();
             width: 100%;
             padding: 12px 12px 24px 12px;
             text-align: center;
+            transition: transform 0.2s;
+            align-items: center;
+        }
+
+        .wpo365-mssignin-wrapper:hover {
+            <?php if (!$button_dont_zoom) {
+                echo 'transform: scale(1.05);';
+            } ?>
         }
 
         .wpo365-mssignin-spacearound {
             display: block;
             width: 100%;
+            max-width: 400px;
             margin-bottom: 10px;
         }
 
@@ -60,8 +72,8 @@ defined('ABSPATH') or die();
         }
 
         .wpo365-mssignin-button {
-            border: 1px solid #8c8c8c;
-            background: #ffffff;
+            background: <?php echo $button_background_color ?>;
+            border: <?php echo sprintf('%s %s', $button_border_width, $button_border_color); ?>;
             display: flex;
             display: -webkit-box;
             display: -moz-box;
@@ -110,7 +122,7 @@ defined('ABSPATH') or die();
             padding-left: 6px;
             padding-right: 12px;
             font-weight: 600;
-            color: #5e5e5e;
+            color: <?php echo $button_foreground_color ?>;
             font-family: "Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;
             font-size: 15px;
             -webkit-flex-shrink: 1;
@@ -135,15 +147,17 @@ defined('ABSPATH') or die();
             <?php endif ?>
             <div class="wpo365-mssignin-spacearound">
                 <button class="wpo365-mssignin-button" type="button" onclick="window.wpo365.pintraRedirect.toMsOnline('', location.href, '', '', false, document.getElementById('selectedTenant') ? document.getElementById('selectedTenant').value : null)" aria-label="<?php echo esc_html($sign_in_with_microsoft) ?>">
-                    <div class="wpo365-mssignin-logo">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21">
-                            <title>MS-SymbolLockup</title>
-                            <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-                            <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-                            <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-                            <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-                        </svg>
-                    </div>
+                    <?php if (empty($button_hide_logo)) : ?>
+                        <div class="wpo365-mssignin-logo">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21">
+                                <title>MS-SymbolLockup</title>
+                                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                            </svg>
+                        </div>
+                    <?php endif ?>
                     <div class="wpo365-mssignin-label"><?php echo esc_html($sign_in_with_microsoft) ?></div>
                 </button>
             </div>

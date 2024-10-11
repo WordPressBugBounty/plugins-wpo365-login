@@ -224,18 +224,32 @@ if (!class_exists('\Wpo\Core\Wpmu_Helpers')) {
                     $add_member_to_main_site = Options_Service::get_global_boolean_var('create_and_add_users');
                     $add_member_to_subsite = !Options_Service::get_global_boolean_var('skip_add_user_to_subsite');
 
-                    // Settings don't allow adding member to main site [wpmu shared mode]
-                    if (!$use_subsite_options && $is_main_site && !$add_member_to_main_site) {
-                        Log_Service::write_log('ERROR', __METHOD__ . ' -> [WPMU shared / main site] User not a member of blog with id ' . $blog_id . ' and settings prevented adding user ' . $wp_usr_id);
-                        Authentication_Service::goodbye(Error_Service::USER_NOT_FOUND, false);
-                        exit();
-                    }
+                    // Shared mode
+                    if (!$use_subsite_options) {
 
-                    // Settings don't allow adding member to sub site [wpmu shared mode]
-                    if (!$use_subsite_options && !$is_main_site && !$add_member_to_subsite) {
-                        Log_Service::write_log('ERROR', __METHOD__ . ' -> [WPMU shared / subsite] User not a member of blog with id ' . $blog_id . ' and settings prevented adding user ' . $wp_usr_id);
-                        Authentication_Service::goodbye(Error_Service::USER_NOT_FOUND, false);
-                        exit();
+                        // Main site / Sub site when settings prevented adding user > Send to dashboard URL
+                        if (
+                            ($is_main_site && !$add_member_to_main_site)
+                            || (!$is_main_site && !$add_member_to_subsite)
+                        ) {
+                            $goto_after = get_dashboard_url($wp_usr_id);
+                        }
+
+                        // Settings prevented user from being added to site
+                        if (!empty($goto_after)) {
+                            Log_Service::write_log('DEBUG', sprintf(
+                                '%s -> Settings prevented the user from being added to blog with id %s and therefore sending user to dashboard-URL %s instead',
+                                __METHOD__,
+                                $blog_id,
+                                $goto_after
+                            ));
+
+                            add_filter('login_redirect', function ($redirect_to, $requested_redirect_to, $wp_usr) use ($goto_after) {
+                                return $goto_after;
+                            }, 99, 3);
+
+                            return;
+                        }
                     }
 
                     // Settings don't allow adding member to dedicated site [wpmu dedicated mode]

@@ -2,12 +2,13 @@
 
 namespace Wpo\Core;
 
-use \Wpo\Core\Extensions_Helpers;
-use \Wpo\Core\WordPress_Helpers;
-use \Wpo\Services\Options_Service;
-use \Wpo\Services\Error_Service;
-use \Wpo\Services\Log_Service;
-use \Wpo\Services\Wp_Config_Service;
+use Wpo\Core\Extensions_Helpers;
+use Wpo\Core\WordPress_Helpers;
+use Wpo\Core\Script_Helpers;
+use Wpo\Services\Options_Service;
+use Wpo\Services\Error_Service;
+use Wpo\Services\Log_Service;
+use Wpo\Services\Wp_Config_Service;
 
 // Prevent public access to this script
 defined('ABSPATH') or die();
@@ -112,6 +113,9 @@ if (!class_exists('\Wpo\Core\Shortcode_Helpers')) {
                 return $content;
             }
 
+            // Ensure pintra-redirect is enqueued
+            Script_Helpers::enqueue_pintra_redirect();
+
             $site_url = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
 
             // Load the js dependency
@@ -157,7 +161,7 @@ if (!class_exists('\Wpo\Core\Shortcode_Helpers')) {
          * 
          * @return void
          */
-        public static function login_button()
+        public static function login_button($return = false)
         {
             // Don't render a login button when sso is disabled
             if (Options_Service::get_global_boolean_var('no_sso')) {
@@ -194,9 +198,28 @@ if (!class_exists('\Wpo\Core\Shortcode_Helpers')) {
                 (Options_Service::get_global_boolean_var('use_login_button_v1') ? '' : '-v2')
             );
 
+            $_login_button_config = Options_Service::get_global_list_var('button_config');
+            $login_button_config = array();
+
+            for ($i = 0; $i < sizeof($_login_button_config); $i++) {
+                $login_button_config[$_login_button_config[$i]['key']] = $_login_button_config[$i]['value'];
+            }
+
+            $button_dont_zoom = !empty($login_button_config['buttonDontZoom']);
+            $button_hide_logo = !empty($login_button_config['buttonHideLogo']);
+            $button_border_color = !empty($login_button_config['buttonBorderColor']) ? $login_button_config['buttonBorderColor'] : '#8C8C8C';
+            $button_border_width = !empty($login_button_config['buttonHideBorder']) ? '0px solid' : '1px solid';
+            $button_foreground_color = !empty($login_button_config['buttonForegroundColor']) ? $login_button_config['buttonForegroundColor'] : '#5E5E5E';
+            $button_background_color = !empty($login_button_config['buttonBackgroundColor']) ? $login_button_config['buttonBackgroundColor'] : '#FFFFFF';
+
             ob_start();
             include($login_button_template);
             $content = ob_get_clean();
+
+            if ($return) {
+                return wp_kses($content, WordPress_Helpers::get_allowed_html());
+            }
+
             echo wp_kses($content, WordPress_Helpers::get_allowed_html());
         }
 
@@ -241,6 +264,69 @@ if (!class_exists('\Wpo\Core\Shortcode_Helpers')) {
             include(Extensions_Helpers::get_active_extension_dir(array('wpo365-login-professional/wpo365-login.php', 'wpo365-customers/wpo365-customers.php', 'wpo365-login-premium/wpo365-login.php', 'wpo365-sync-5y/wpo365-sync-5y.php', 'wpo365-login-intranet/wpo365-login.php', 'wpo365-intranet-5y/wpo365-intranet-5y.php', 'wpo365-customers/wpo365-customers.php', 'wpo365-integrate/wpo365-integrate.php', 'wpo365-pro/wpo365-pro.php')) . '/templates/error-message.php');
             $content = ob_get_clean();
             return wp_kses($content, WordPress_Helpers::get_allowed_html());
+        }
+
+        /**
+         * Helper method to ensure that short codes are initialized
+         * 
+         * @since 7.0
+         * 
+         * @return void
+         */
+        public static function ensure_wpo365_redirect_script_sc()
+        {
+            if (!shortcode_exists('wpo365-redirect-script')) {
+                add_shortcode('wpo365-redirect-script', '\Wpo\Core\Shortcode_Helpers::add_wpo365_redirect_script_sc');
+            }
+        }
+
+        /**
+         * Adds a javascript file that WPO365 requires to trigger the "Sign in with Microsoft" flow client-side.
+         * 
+         * @since 33.0
+         * 
+         * @param array short code parameters according to Wordpress codex
+         * @param string content found in between the short code start and end tag
+         * @param string text domain
+         */
+        public static function add_wpo365_redirect_script_sc($atts = array(), $content = null, $tag = '')
+        {
+            // Ensure pintra-redirect is enqueued (which would already be enqueued if support for Teams is enabled)
+            if (!Options_Service::get_global_boolean_var('use_teams')) {
+                Script_Helpers::enqueue_pintra_redirect();
+            }
+        }
+
+        /**
+         * Helper method to ensure that short codes are initialized
+         * 
+         * @since 8.0
+         * 
+         * @return void
+         */
+        public static function ensure_sso_button_sc()
+        {
+            if (!shortcode_exists('wpo365-sso-button')) {
+                add_shortcode('wpo365-sso-button', '\Wpo\Core\Shortcode_Helpers::add_sso_button_sc');
+            }
+        }
+
+        /**
+         * Adds the default SSO button with customizations applied
+         * 
+         * @since 33.0
+         * 
+         * @param array short code parameters according to Wordpress codex
+         * @param string content found in between the short code start and end tag
+         * @param string text domain
+         */
+        public static function add_sso_button_sc($params = array(), $content = null, $tag = '')
+        {
+            // Ensure pintra-redirect is enqueued
+            Script_Helpers::enqueue_pintra_redirect();
+
+            // Output the SSO button
+            return self::login_button(true);
         }
 
         /**

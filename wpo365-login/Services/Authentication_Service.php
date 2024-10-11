@@ -78,7 +78,6 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
                     ? \sanitize_text_field($_REQUEST['login_hint'])
                     : null;
                 self::redirect_to_microsoft($login_hint);
-                return;
             }
 
             // Check if user has expired 
@@ -108,8 +107,6 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
                     Log_Service::write_log('DEBUG', __METHOD__ . ' -> User logged out because current login not valid anymore (' . $auth_expired . ')');
 
                     self::redirect_to_microsoft($login_hint);
-
-                    exit();
                 }
             } else {
                 Log_Service::write_log('DEBUG', __METHOD__ . ' -> Session expiration ignored because the administrator configured a duration of 0');
@@ -142,6 +139,7 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
              */
             $state = $request->get_item('state');
             $id_token = $request->get_item('id_token');
+            $auth_code = $request->get_item('code');
 
             Wpmu_Helpers::switch_blog($state);
 
@@ -200,6 +198,7 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
             $wpo_auth->ouid = $obfuscated_user_id;
             $wpo_auth->upn = $wpo_usr->upn;
             $wpo_auth->url = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
+            $wpo_auth->auth_code = md5($auth_code);
 
             update_user_meta(
                 $wp_usr->ID,
@@ -379,18 +378,57 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
         {
             Log_Service::write_log('DEBUG', '##### -> ' . __METHOD__);
 
+            if (!Options_Service::is_wpo365_configured()) {
+                Log_Service::write_log('WARN', sprintf('%s -> Attempt to initiate SSO failed because WPO365 is not configured', __METHOD__));
+                return;
+            }
+
             if (class_exists('\Wpo\Services\Dual_Login_Service')) {
                 \Wpo\Services\Dual_Login_Service::redirect();
             }
 
             Log_Service::write_log('DEBUG', __METHOD__ . ' -> Forwarding the user to Microsoft to get fresh ID and access token(s)');
 
-            // Default redirection -> the names are legacy and it used for SAML2.0 redirection
-            ob_start();
-            include($GLOBALS['WPO_CONFIG']['plugin_dir'] . '/templates/openid-redirect.php');
-            $content = ob_get_clean();
-            echo $content;
-            exit();
+            /**
+             * @since 33.0  The loading template has become optional and instead the redirect to Microsoft 
+             *              is performed server-side.
+             */
+
+            if (Options_Service::get_global_boolean_var('use_teams')) {
+                ob_start();
+                include($GLOBALS['WPO_CONFIG']['plugin_dir'] . '/templates/openid-redirect.php');
+                $content = ob_get_clean();
+                echo $content;
+                exit();
+            }
+
+            $redirect_url = Options_Service::get_aad_option('redirect_url');
+            $redirect_url = Options_Service::get_global_boolean_var('use_saml')
+                ? Options_Service::get_aad_option('saml_sp_acs_url')
+                : $redirect_url;
+            $redirect_url = apply_filters('wpo365/aad/redirect_uri', $redirect_url);
+            $referer = (WordPress_Helpers::stripos($redirect_url, 'https') !== false ? 'https' : 'http') . '://' . $GLOBALS['WPO_CONFIG']['url_info']['host'] . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'];
+
+            if (Options_Service::get_global_boolean_var('use_saml')) {
+                $params = array();
+
+                if (!empty($domain_hint = Options_Service::get_global_string_var('domain_hint'))) {
+                    $params['whr'] = sanitize_text_field(\strtolower(\trim($domain_hint)));
+                }
+
+                \Wpo\Services\Saml2_Service::initiate_request($referer, $params);
+                exit();
+            } else {
+                if (Options_Service::get_global_boolean_var('use_b2c') &&  \class_exists('\Wpo\Services\Id_Token_Service_B2c')) {
+                    $authUrl = \Wpo\Services\Id_Token_Service_B2c::get_openidconnect_url($login_hint, $referer);
+                } else if (Options_Service::get_global_boolean_var('use_ciam')) {
+                    $authUrl = \Wpo\Services\Id_Token_Service_Ciam::get_openidconnect_url($login_hint, $referer);
+                } else {
+                    $authUrl = Id_Token_Service::get_openidconnect_url($login_hint, $referer);
+                }
+
+                Url_Helpers::force_redirect($authUrl);
+            }
         }
 
         /**
@@ -622,7 +660,6 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
 
                 $redirect_to = add_query_arg('login_errors', Error_Service::DEACTIVATED, $redirect_to);
                 Url_Helpers::force_redirect($redirect_to);
-                exit();
             }
         }
 
@@ -708,9 +745,14 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
                 $error_page = Options_Service::get_global_string_var('error_page_url');
                 $secure = ('https' === parse_url(wp_login_url(), PHP_URL_SCHEME));
                 $cookie_name = defined('WPO_SSO_BYPASS_COOKIE') ? constant('WPO_SSO_BYPASS_COOKIE') : 'wordpress_wpo365_sso_bypass';
+                $is_post_password = isset($_REQUEST['action']) && $_REQUEST['action'] == 'postpass' && isset($_POST['post_password']) && is_string($_POST['post_password']);
 
+                // Bypass when user enters a password to view a password-protected post
+                if ($is_post_password) {
+                    return true;
+                }
                 // Admin has configured to enable SSO for the login page but pre-requisites are not fulfulled.
-                if (isset($_COOKIE[$cookie_name])) {
+                elseif (isset($_COOKIE[$cookie_name])) {
                     Log_Service::write_log('DEBUG', __METHOD__ . ' -> A request for the login page will be allowed pass-thru [cookie will be deleted]');
                     $cookie = $_COOKIE[$cookie_name];
                     setcookie($cookie_name, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, $secure);

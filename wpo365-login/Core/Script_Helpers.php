@@ -57,6 +57,9 @@ if (!class_exists('\Wpo\Core\Script_Helpers')) {
                 return;
             }
 
+            // Ensure WPO365 redirect script is loaded
+            self::enqueue_pintra_redirect();
+
             global $wp_roles;
 
             $extensions = array();

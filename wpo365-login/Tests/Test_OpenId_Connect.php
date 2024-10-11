@@ -40,8 +40,12 @@ if (!class_exists('\Wpo\Tests\Test_OpenId_Connect')) {
 
         public function test_oidc_flow()
         {
-            $oidc_flow = Options_Service::get_aad_option('oidc_flow');
+            // Do not perform this test if support for multi-tenancy has been enabled
+            if (Options_Service::get_global_boolean_var('multi_tenanted')) {
+                return;
+            }
 
+            $oidc_flow = Options_Service::get_aad_option('oidc_flow');
             $test_result = new Test_Result('The OpenID Connect <strong>Authorization Code User Flow</strong> has been configured', Test_Result::CAPABILITY_OIC_SSO, Test_Result::SEVERITY_CRITICAL);
             $test_result->passed = true;
 
@@ -54,6 +58,35 @@ if (!class_exists('\Wpo\Tests\Test_OpenId_Connect')) {
                         'op' => 'replace',
                         'value' => array(
                             'oidcFlow' => 'code',
+                        ),
+                    ),
+                );
+                return $test_result;
+            }
+
+            return $test_result;
+        }
+
+        public function test_hybrid_flow()
+        {
+            // Do not perform this test if support for multi-tenancy has nnot been enabled
+            if (!Options_Service::get_global_boolean_var('multi_tenanted')) {
+                return;
+            }
+
+            $oidc_flow = Options_Service::get_aad_option('oidc_flow');
+            $test_result = new Test_Result('The OpenID Connect <strong>Hybrid User Flow</strong> has been configured', Test_Result::CAPABILITY_OIC_SSO, Test_Result::SEVERITY_CRITICAL);
+            $test_result->passed = true;
+
+            if ($oidc_flow == 'code') {
+                $test_result->passed = false;
+                $test_result->message = "It appears that you have configured support for <strong>multi-tenancy</strong> and hence you must configure the <strong>OpenID Connect Hybrid User Flow</strong> to enable users from other tenants to sign into your website. Currently you have selected the <strong>Authorization Code User Flow</strong>. Please click the <em>Read more</em> link and consult the online documentation.";
+                $test_result->more_info = 'https://docs.wpo365.com/article/47-support-for-multitenant-apps';
+                $test_result->fix = array(
+                    array(
+                        'op' => 'replace',
+                        'value' => array(
+                            'oidcFlow' => 'hybrid',
                         ),
                     ),
                 );

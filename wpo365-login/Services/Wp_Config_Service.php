@@ -597,7 +597,6 @@ if (!class_exists('\Wpo\Services\Wp_Config_Service')) {
             }
 
             Url_Helpers::force_redirect($authUrl);
-            exit();
         }
 
         /**

@@ -92,7 +92,7 @@ if (!class_exists('\Wpo\Services\Error_Service')) {
                 self::SAML2_ERROR       => 'SAML authentication error',
                 self::TAMPERED_WITH     => 'Your login might be tampered with. Please contact your System Administrator.',
                 self::USER_NOT_FOUND    => 'Could not create or retrieve your login. Please contact your System Administrator.',
-                self::NO_IDP_SELECTED   => 'Please select and Identity Provider from the list below to sign in to the website.',
+                self::NO_IDP_SELECTED   => 'Please select an Identity Provider from the list below to sign in to the website.',
             );
 
             $error_messages = array(
@@ -112,7 +112,7 @@ if (!class_exists('\Wpo\Services\Error_Service')) {
                 self::SAML2_ERROR       => __('SAML authentication error.', 'wpo365-login'),
                 self::TAMPERED_WITH     => __('Your login might be tampered with. Please contact your System Administrator.', 'wpo365-login'),
                 self::USER_NOT_FOUND    => __('Could not create or retrieve your login. Please contact your System Administrator.', 'wpo365-login'),
-                self::NO_IDP_SELECTED   => __('Please select and Identity Provider from the list below to sign in to the website.', 'wpo365-login'),
+                self::NO_IDP_SELECTED   => __('Please select an Identity Provider from the list below to sign in to the website.', 'wpo365-login'),
             );
 
             if (class_exists('\Wpo\Services\Options_Service')) {

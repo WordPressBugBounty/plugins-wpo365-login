@@ -3,7 +3,6 @@
 namespace Wpo\Services;
 
 use \Wpo\Core\Compatibility_Helpers;
-use Wpo\Core\Extensions_Helpers;
 use \Wpo\Core\WordPress_Helpers;
 use \Wpo\Core\Wpmu_Helpers;
 use \Wpo\Services\Log_Service;
@@ -654,19 +653,6 @@ if (!class_exists('\Wpo\Services\Options_Service')) {
                 && !empty($GLOBALS['WPO_CONFIG']['options'][$name])
             ) {
                 $value = $GLOBALS['WPO_CONFIG']['options'][$name];
-                $value_for_log = in_array($name, self::get_secret_options()) && is_string($value)
-                    ? substr($value, 0, intval(strlen($value) / 3)) . '[...]'
-                    : (
-                        (is_array($value) || is_object($value)
-                            ? print_r($value, true)
-                            : $value)
-                    );
-            } else {
-                $value_for_log = "Global variable with name $name not configured.";
-            }
-
-            if (true === $log) {
-                Log_Service::write_log('DEBUG', __METHOD__ . " -> Option: $name -> $value_for_log");
             }
 
             return empty($value)

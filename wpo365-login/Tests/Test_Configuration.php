@@ -209,5 +209,27 @@ if (!class_exists('\Wpo\Tests\Test_Configuration')) {
                 return $test_result;
             }
         }
+
+        public function test_user_server_side_redirect()
+        {
+            $test_result = new Test_Result('Redirecting users to Microsoft faster using server-side redirect', Test_Result::CAPABILITY_CONFIG, Test_Result::SEVERITY_CRITICAL);
+            $test_result->passed = true;
+
+            if (Options_Service::get_global_boolean_var('use_teams')) {
+                $test_result->passed = false;
+                $test_result->message = 'Starting with WPO365 | LOGIN version 33.0 you can configure WPO365 to redirect users to Microsoft faster (using a server-side redirect). This is generally recommended to avoid issues with server-side / external caching services. Uncheck the option "Use client-side redirect" on the plugin\'s "Login / Logout" configuration page, unless your WordPress site is integrated in Microsoft Teams, uses a custom "Sign in with Microsoft" login button or you wish to briefly display a "loading" icon when the user is redirected. Please click the <em>Read more</em> link and consult the online documentation.';
+                $test_result->more_info = 'https://docs.wpo365.com/article/223-use-client-side-redirect';
+                $test_result->fix = array(
+                    array(
+                        'op' => 'replace',
+                        'value' => array(
+                            'useTeams' => false,
+                        ),
+                    ),
+                );
+            }
+
+            return $test_result;
+        }
     }
 }

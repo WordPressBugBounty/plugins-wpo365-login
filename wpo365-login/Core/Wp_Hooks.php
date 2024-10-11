@@ -209,6 +209,8 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
             add_action('init', 'Wpo\Core\Shortcode_Helpers::ensure_display_error_message_short_code');
             add_action('init', 'Wpo\Core\Shortcode_Helpers::ensure_login_button_short_code');
             add_action('init', 'Wpo\Core\Shortcode_Helpers::ensure_login_button_short_code_V2');
+            add_action('init', 'Wpo\Core\Shortcode_Helpers::ensure_wpo365_redirect_script_sc');
+            add_action('init', 'Wpo\Core\Shortcode_Helpers::ensure_sso_button_sc');
 
             // Wire up AJAX backend services
             add_action('wp_ajax_get_tokencache', '\Wpo\Services\Ajax_Service::get_tokencache');
@@ -273,10 +275,12 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
             // Clean up on shutdown
             add_action('shutdown', '\Wpo\Services\Request_Service::shutdown', PHP_INT_MAX);
 
-            // Add pintraredirectjs
-            add_action('wp_enqueue_scripts', '\Wpo\Core\Script_Helpers::enqueue_pintra_redirect', 10, 0);
+            // Add pintraredirectjs if use for Teams (or "loading" template / client-side redirect) has been enabled
+            if (Options_Service::get_global_boolean_var('use_teams', false)) {
+                add_action('wp_enqueue_scripts', '\Wpo\Core\Script_Helpers::enqueue_pintra_redirect', 10, 0);
+            }
+
             add_action('login_enqueue_scripts', '\Wpo\Core\Script_Helpers::enqueue_pintra_redirect', 10, 0);
-            add_action('admin_enqueue_scripts', '\Wpo\Core\Script_Helpers::enqueue_pintra_redirect', 10, 0);
             add_action('admin_enqueue_scripts', '\Wpo\Core\Script_Helpers::enqueue_wizard', 10, 0);
             add_filter('script_loader_tag', '\Wpo\Core\Script_Helpers::enqueue_script_asynchronously', 10, 3);
 

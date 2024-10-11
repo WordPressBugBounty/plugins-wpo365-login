@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.6
-Stable tag: 32.0
+Stable tag: 33.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -206,6 +206,13 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v33.0 =
+* Breaking Change: Previously users (of a WordPress Multisite / WPO365 "Shared" WPMU Mode) attempting to access a (sub) site that they are not a member of, would be denied access. Starting with this version, those users will either be sent to their "primary" site instead, or - if a primary site cannot be determined - to their global user dashboard URL. [LOGIN]
+* Breaking Change: Starting with version 33.0, WPO365 | LOGIN can redirect users to Microsoft faster (using a server-side redirect). This is generally recommended to avoid issues with server-side / external caching services. The JavaScript file "pintra-redirect.js" will therefore no longer be automatically enqueued on every page request. To mitigate the impact of this change on existing configurations, administators must manually update the WPO365 configuration and uncheck the option "Use client-side redirect" on the plugin's "Login / Logout" configuration page, unless the WordPress site is integrated in Microsoft Teams, uses a custom "Sign in with Microsoft" login button or the administrator wishes to briefly display a "loading" icon when the user is redirected. See the [online documentation](https://docs.wpo365.com/article/223-use-client-side-redirect) for details. [LOGIN]
+* New Feature: The "Sign in with Microsoft" button that is displayed on the (default) WordPress login page can now be customized on the plugin's "Login / Logout" configuration page. That same button can also be placed on any WordPress post or page using the new shortcode "wpo365-sso-button". See the [online documentation](https://docs.wpo365.com/article/224-add-single-sign-on-button-anywhere-shortcode) for instructions. [LOGIN, ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Improvement: WPO365 now uses built-in WordPress logic to help ensure that the URL where users are being redirected to - after they successfully signed in with Microsoft - is safe. [LOGIN]
+* Fix: Fixed an issue whereby WPO365 would require a user to sign in with Microsoft when that user attempted to access a password-protected page when the administrator enforced SSO for the default / custom login page. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
 
 = v32.0 =
 * Breaking Change: This version of WPO365 adds support for WordPress' built-in "login_redirect" filter. This means that the URL where users are redirected after they successfully sign in to your WordPress website, can be set by a third-party plugin e.g. "LoginWP". Please note that rules defined in WPO365 to redirect a user (e.g. "Welcome page for first-time users", "Always send user to default / custom landing page" and "Azure AD group-based redirect after successful login") will be applied after the "login_redirect" has been applied and therefore overrule the filtered result. [LOGIN]

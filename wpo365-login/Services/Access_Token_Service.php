@@ -870,7 +870,6 @@ if (!class_exists('\Wpo\Services\Access_Token_Service')) {
             $authorization_code = $request->get_item('code');
 
             if (!empty($authorization_code)) {
-                $request->remove_item('code');
                 return $authorization_code;
             }
 

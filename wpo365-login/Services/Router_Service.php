@@ -201,7 +201,6 @@ if (!class_exists('\Wpo\Services\Router_Service')) {
                 }
 
                 Url_Helpers::force_redirect($authUrl);
-                exit();
             }
 
             Log_Service::write_log('WARN', sprintf('%s -> Attempt to initiate SSO failed because WPO365 is not configured', __METHOD__));
@@ -298,6 +297,32 @@ if (!class_exists('\Wpo\Services\Router_Service')) {
             Log_Service::write_log('DEBUG', '##### -> ' . __METHOD__);
 
             if (strcasecmp(Options_Service::get_aad_option('oidc_flow'), 'code') === 0) {
+
+                /**
+                 * @since 33.0 Perform a quick check if the code has already been redeemed (page refresh)
+                 */
+
+                $request_service = Request_Service::get_instance();
+                $request = $request_service->get_request($GLOBALS['WPO_CONFIG']['request_id']);
+
+                if (($wp_usr_id = get_current_user_id()) > 0 && !empty($code = $request->get_item('code'))) {
+                    $hash = md5($code);
+                    $wpo_auth_value = get_user_meta(
+                        $wp_usr_id,
+                        Authentication_Service::USR_META_WPO365_AUTH,
+                        true
+                    );
+
+                    if (!empty($wpo_auth_value)) {
+                        $wpo_auth_value = json_decode($wpo_auth_value);
+
+                        if (property_exists($wpo_auth_value, 'auth_code') && $wpo_auth_value->auth_code == $hash) {
+                            Log_Service::write_log('WARN', __METHOD__ . ' -> Not processing an already redeemed authorization code. Most likely the user refreshed the page.');
+                            return;
+                        }
+                    }
+                }
+
                 if (Options_Service::get_global_boolean_var('use_b2c')) {
                     \Wpo\Services\Id_Token_Service_B2c::process_openidconnect_code();
                 } else if (Options_Service::get_global_boolean_var('use_ciam')) {
