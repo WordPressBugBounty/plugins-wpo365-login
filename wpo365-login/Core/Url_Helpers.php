@@ -370,6 +370,11 @@ if (!class_exists('\Wpo\Core\Url_Helpers')) {
 
             $aad_redirect_url = apply_filters('wpo365/aad/redirect_uri', $aad_redirect_url);
 
+            if (WordPress_Helpers::stripos($aad_redirect_url, 'https://') !== false && WordPress_Helpers::stripos($redirect_url, 'http://') === 0) {
+                Log_Service::write_log('WARN', __METHOD__ . ' -> Please update your htaccess or similar and ensure that users can only access your website via https:// (URL requested by the user: ' . $redirect_url . ').');
+                $redirect_url = str_replace('http://', 'https://', $redirect_url);
+            }
+
             /**
              * @since 33.0 Use WordPress' builtin API to validate the Redirect URL.
              */
@@ -401,14 +406,6 @@ if (!class_exists('\Wpo\Core\Url_Helpers')) {
                     $redirect_url,
                     $aad_redirect_url
                 ));
-            }
-
-            /**
-             * @since 33.0 Bail out early if AAD Redirect URL is equal to target.
-             */
-
-            if (0 === strcasecmp(rtrim($goto_after, '/'), rtrim($aad_redirect_url, '/'))) {
-                return;
             }
 
             Url_Helpers::force_redirect($goto_after);

@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.6
-Stable tag: 33.0
+Stable tag: 33.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -206,6 +206,10 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v33.1 =
+* Fix: WPO365 will now consistently redirect users (again) to their final destination URL, preventing them from being sent back to the login page. [LOGIN]
+* Fix: WPO365 now checks (again) whether the user's final destination URL matches the scheme of the registered application's Redirect URI in Entra and if needed corrects this. [LOGIN]
 
 = v33.0 =
 * Breaking Change: Previously users (of a WordPress Multisite / WPO365 "Shared" WPMU Mode) attempting to access a (sub) site that they are not a member of, would be denied access. Starting with this version, those users will either be sent to their "primary" site instead, or - if a primary site cannot be determined - to their global user dashboard URL. [LOGIN]
