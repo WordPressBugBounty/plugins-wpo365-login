@@ -435,9 +435,14 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
                 add_filter('wp_new_user_notification_email', '\Wpo\Services\Mail_Notifications_Service::new_user_notification_email', 99, 3);
             }
 
+            // Suppress new user notifications when the user is created through WPO365 and the notification is not explicitely enabled
             if (!Options_Service::get_global_boolean_var('new_usr_send_mail', false)) {
-                add_filter('wp_send_new_user_notification_to_user', '__return_false');
-                add_filter('wp_send_new_user_notification_to_admin', '__return_false');
+                add_filter('wp_send_new_user_notification_to_user', function () {
+                    return empty(\Wpo\Services\User_Service::get_wpo_user_from_context()) ? true : false;
+                });
+                add_filter('wp_send_new_user_notification_to_admin', function () {
+                    return empty(\Wpo\Services\User_Service::get_wpo_user_from_context()) ? true : false;
+                });
             }
 
             if (Options_Service::get_global_boolean_var('new_usr_send_mail_admin_only', false)) {

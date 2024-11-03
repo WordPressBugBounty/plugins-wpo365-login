@@ -70,6 +70,12 @@ if (!class_exists('\Wpo\Services\User_Create_Service')) {
 
             $password = Permissions_Helpers::generate_password($password_length);
 
+            /**
+             * @since 33.2  Allow developers to filter the user_login.
+             */
+
+            $user_login = apply_filters('wpo365/user/user_login', $user_login);
+
             $userdata = array(
                 'user_login'    => $user_login,
                 'user_pass'     => $password,

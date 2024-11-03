@@ -815,6 +815,21 @@ if (!class_exists('\Wpo\Services\User_Service')) {
         }
 
         /**
+         * Simple helper to the User from current request context.
+         * 
+         * @since 33.2
+         * 
+         * @return User|false 
+         */
+        public static function get_wpo_user_from_context()
+        {
+            $request_service = Request_Service::get_instance();
+            $request = $request_service->get_request($GLOBALS['WPO_CONFIG']['request_id']);
+
+            return $request->get_item('wpo_usr');
+        }
+
+        /**
          * Helper to get a property value of an object or otherwise return a default value.
          * 
          * @param   $resource       object  Object that is the parent of the property

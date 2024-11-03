@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.6
-Stable tag: 33.1
+Stable tag: 33.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -206,6 +206,18 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v33.2 =
+* Improvement: A new filter "wpo365/user/user_login" to customize a user's WP username has been added to allow developers to apply their custom logic. Consult the updated [online documentation](https://docs.wpo365.com/article/82-developer-hooks). [LOGIN]
+* Fix: Token expiration in Power BI has been improved and - among other things - in the instance of an "TokenExpired" client error, WPO365 will reload the window. [LOGIN]
+* Fix: WPO365 is now better able to handle a situation where multiple apps to embed various Microsoft 365 services - e.g. a SharePoint Library, a Viva Engage Feed and an Exchnage Calendar - have been placed on the same page. [APPS, INTEGRATE (INTRANET)]
+* Fix: When the calendar does not detect the start date column it will render an error message. [APPS, INTEGRATE (INTRANET)]
+* Fix: For new installations, WPO365 will audiences will automatically enable the use of metaboxes (as opposed to using a Gutenberg Block). [ROLES + ACCESS, PROFESSIONAL, INTEGRATE, CUSTOMERS (SYNC, INTRANET)]
+* Fix: The version number of the SCIM addon (plugin) has been fixed. [SCIM]
+* Fix: When a new user is created by any other solution than WPO365, the default WordPress email(s) to the user and the administrator will not be blocked. [LOGIN]
+* Fix: When a WPO365 User Synchronization Job has fisnished, it will show a green "stopped" badge to indicate success. [INTEGRATE (SYNC)]
+* Fix: Copying a shortcode to embed "Power BI" content in the free version WPO365 | LOGIN has been fixed. [LOGIN]
+* Fix: The WPO365 | DOCUMENTS Gutenberg block is now backward compatible with older configurations that do not specify the "Name" column as sortable. [DOCUMENTS, APPS, INTEGRATE (INTRANET)]
 
 = v33.1 =
 * Fix: WPO365 will now consistently redirect users (again) to their final destination URL, preventing them from being sent back to the login page. [LOGIN]
