@@ -490,6 +490,7 @@ if (!class_exists('\Wpo\Mail\Mail_Authorization_Helpers')) {
             }
 
             $redirect_url = Options_Service::get_mail_option('mail_redirect_url');
+            $application_id = Options_Service::get_mail_option('mail_application_id');
 
             /**
              * Some older configuration may have relied on using the redirect_url.
@@ -537,6 +538,11 @@ if (!class_exists('\Wpo\Mail\Mail_Authorization_Helpers')) {
                 $directory_id
             );
             $skip_ssl_verify = !Options_Service::get_global_boolean_var('skip_host_verification');
+
+            /**
+             * @since 33.x  Filters the params e.g. to support SNI based authentication.
+             */
+            $params = apply_filters('wpo365/aad/params', $params, $application_id, $authorize_url);
 
             $response = wp_remote_post(
                 $authorize_url,

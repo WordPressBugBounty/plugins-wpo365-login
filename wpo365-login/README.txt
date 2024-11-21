@@ -2,8 +2,8 @@
 Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
-Tested up to: 6.6
-Stable tag: 33.2
+Tested up to: 6.7
+Stable tag: 33.3
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -206,6 +206,11 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v33.3 =
+* Fix: After updating to WordPress 6.7 an error "Notice: Function _load_textdomain_just_in_time was called incorrectly" would be thrown. [LOGIN, MICROSOFT GRAPH MAILER]
+* Fix: A CSS "button" selector affected the global styling of button elements. [LOGIN, APPS, INTEGRATE (INTRANET)]
+* Improvement: Developers can now filter the parameters used to build the authorization URL / token URL. [LOGIN, MICROSOFT GRAPH MAILER]
 
 = v33.2 =
 * Improvement: A new filter "wpo365/user/user_login" to customize a user's WP username has been added to allow developers to apply their custom logic. Consult the updated [online documentation](https://docs.wpo365.com/article/82-developer-hooks). [LOGIN]

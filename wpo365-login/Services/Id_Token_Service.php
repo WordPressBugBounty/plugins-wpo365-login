@@ -298,6 +298,11 @@ if (!class_exists('\Wpo\Services\Id_Token_Service')) {
                 $directory_id
             );
 
+            /**
+             * @since 33.x  Filters the params e.g. to support SNI based authentication.
+             */
+            $params = apply_filters('wpo365/aad/params', $params, $application_id, $token_url);
+
             $response = wp_remote_post($token_url, array(
                 'sslverify' => $skip_ssl_verify,
                 'body' => $params,

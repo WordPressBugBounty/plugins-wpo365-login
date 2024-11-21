@@ -22,7 +22,7 @@ if (!class_exists('\Wpo\Core\Globals')) {
                 require_once ABSPATH . 'wp-admin/includes/plugin.php';
             }
 
-            $plugin_data = \get_plugin_data($plugin_file);
+            $plugin_data = \get_plugin_data($plugin_file, false, false);
 
             $base_name = plugin_basename($plugin_file);
 

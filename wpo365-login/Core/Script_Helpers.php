@@ -58,7 +58,9 @@ if (!class_exists('\Wpo\Core\Script_Helpers')) {
             }
 
             // Ensure WPO365 redirect script is loaded
-            self::enqueue_pintra_redirect();
+            if (class_exists('\Wpo\Login')) {
+                self::enqueue_pintra_redirect();
+            }
 
             global $wp_roles;
 

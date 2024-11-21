@@ -44,6 +44,7 @@ if (!class_exists('\Wpo\Services\Access_Token_Service')) {
             $scope = urldecode($scope);
             $scope = str_replace('.com', $tld, $scope);
             $client_secret = Options_Service::get_aad_option('application_secret');
+            $application_id = Options_Service::get_aad_option('application_id');
             $current_user_id = \get_current_user_id();
 
             $user_is_logging_in = !empty($request->get_item('id_token')) || !empty($request->get_item('encoded_id_token'));
@@ -103,7 +104,7 @@ if (!class_exists('\Wpo\Services\Access_Token_Service')) {
 
             if (WordPress_Helpers::stripos($scope, 'https://analysis.windows.net/powerbi/api/.default') === 0) {
                 $params = array(
-                    'client_id' => Options_Service::get_aad_option('application_id'),
+                    'client_id' => $application_id,
                     'client_secret' => Options_Service::get_aad_option('application_secret'),
                     'client_info' => 1,
                     'scope' =>  $scope,
@@ -111,7 +112,7 @@ if (!class_exists('\Wpo\Services\Access_Token_Service')) {
                 );
             } else {
                 $params = array(
-                    'client_id' => Options_Service::get_aad_option('application_id'),
+                    'client_id' => $application_id,
                     'client_secret' => Options_Service::get_aad_option('application_secret'),
                     'redirect_uri' => $redirect_uri,
                     'scope' =>  'offline_access ' . $scope,
@@ -199,6 +200,11 @@ if (!class_exists('\Wpo\Services\Access_Token_Service')) {
                 $directory_id
             );
             $skip_ssl_verify = !Options_Service::get_global_boolean_var('skip_host_verification');
+
+            /**
+             * @since 33.x  Filters the params e.g. to support SNI based authentication.
+             */
+            $params = apply_filters('wpo365/aad/params', $params, $application_id, $authorize_url);
 
             $response = wp_remote_post(
                 $authorize_url,
@@ -536,6 +542,11 @@ if (!class_exists('\Wpo\Services\Access_Token_Service')) {
                 $directory_id
             );
             $skip_ssl_verify = !Options_Service::get_global_boolean_var('skip_host_verification');
+
+            /**
+             * @since 33.x  Filters the params e.g. to support SNI based authentication.
+             */
+            $params = apply_filters('wpo365/aad/params', $params, $application_id, $authorize_url);
 
             $response = wp_remote_post(
                 $authorize_url,
