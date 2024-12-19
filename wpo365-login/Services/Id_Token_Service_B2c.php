@@ -111,6 +111,11 @@ if (!class_exists('\Wpo\Services\Id_Token_Service_B2c')) {
                 $params['login_hint'] = $login_hint;
             }
 
+            /**
+             * @since 34.x  Filters the authorization params.
+             */
+            $params = apply_filters('wpo365/oidc/params', $params);
+
             $auth_url = $b2c_domain
                 . $directory_id
                 . '/oauth2'

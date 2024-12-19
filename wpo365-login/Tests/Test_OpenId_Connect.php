@@ -194,7 +194,7 @@ if (!class_exists('\Wpo\Tests\Test_OpenId_Connect')) {
                 $test_result->more_info = '';
             } elseif (empty($this->id_token->email)) {
                 $test_result->passed = false;
-                $test_result->message = "ID token does not contain email address. Please ensure that the user has a valid email address. If this is the case then please consult the online documentation and update the (Azure AD) App registration's manifest to include the optional 'email' claim.";
+                $test_result->message = "ID token does not contain email address. Please ensure that the user has a valid email address. If this is the case then please consult the online documentation and update the (Azure AD) App registration's 'Token Configuration' to include the optional 'email' claim.";
                 $test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
             }
 
@@ -212,7 +212,7 @@ if (!class_exists('\Wpo\Tests\Test_OpenId_Connect')) {
                 $test_result->more_info = '';
             } elseif (empty($this->id_token->upn)) {
                 $test_result->passed = false;
-                $test_result->message = "ID token does not contain user principal name (upn). Please consult the online documentation and update the (Azure AD) App registration's manifest to include the optional 'upn' claim.";
+                $test_result->message = "ID token does not contain user principal name (upn). Please consult the online documentation and update the (Azure AD) App registration's 'Token Configuration' to include the optional 'upn' claim.";
                 $test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
             }
 
@@ -230,7 +230,7 @@ if (!class_exists('\Wpo\Tests\Test_OpenId_Connect')) {
                 $test_result->more_info = '';
             } elseif (empty($this->id_token->given_name)) {
                 $test_result->passed = false;
-                $test_result->message = "ID token does not contain first name (given_name). Please consult the online documentation and update the (Azure AD) App registration's manifest to include the optional 'given_name' claim. Please note that the latest version of the plugin will try to retrieve a user's profile from Microsoft Graph to update the corresponding WordPress user instead.";
+                $test_result->message = "ID token does not contain first name (given_name). Please consult the online documentation and update the (Azure AD) App registration's 'Token Configuration' to include the optional 'given_name' claim. Please note that the latest version of the plugin will try to retrieve a user's profile from Microsoft Graph to update the corresponding WordPress user instead.";
                 $test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
             }
 
@@ -248,7 +248,25 @@ if (!class_exists('\Wpo\Tests\Test_OpenId_Connect')) {
                 $test_result->more_info = '';
             } elseif (empty($this->id_token->family_name)) {
                 $test_result->passed = false;
-                $test_result->message = "ID token does not contain last name (family_name). Please consult the online documentation and update the (Azure AD) App registration's manifest to include the optional 'family_name' claim. Please note that the latest version of the plugin will try to retrieve a user's profile from Microsoft Graph to update the corresponding WordPress user instead.";
+                $test_result->message = "ID token does not contain last name (family_name). Please consult the online documentation and update the (Azure AD) App registration's 'Token Configuration' to include the optional 'family_name' claim. Please note that the latest version of the plugin will try to retrieve a user's profile from Microsoft Graph to update the corresponding WordPress user instead.";
+                $test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
+            }
+
+            return $test_result;
+        }
+
+        public function test_id_token_contains_groups_claim()
+        {
+            $test_result = new Test_Result("ID token contains 'groups' claim", Test_Result::CAPABILITY_OIC_SSO, Test_Result::SEVERITY_LOW);
+            $test_result->passed = true;
+
+            if (empty($this->id_token)) {
+                $test_result->passed = false;
+                $test_result->message = 'ID token missing -> test skipped';
+                $test_result->more_info = '';
+            } elseif (empty($this->id_token->groups)) {
+                $test_result->passed = false;
+                $test_result->message = "ID token does not contain 'groups' claim. Please check whether you need this information and if yes, update the (Azure AD) App registration's 'Token Configuration' to include the 'groups' claim.";
                 $test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
             }
 

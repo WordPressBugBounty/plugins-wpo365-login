@@ -148,6 +148,11 @@ if (!class_exists('\Wpo\Services\Id_Token_Service')) {
                 }
             }
 
+            /**
+             * @since 34.x  Filters the authorization params.
+             */
+            $params = apply_filters('wpo365/oidc/params', $params);
+
             $tld = !empty($tld = Options_Service::get_global_string_var('tld')) ? $tld : '.com';
             $auth_url = sprintf(
                 'https://login.microsoftonline%s/%s/oauth2/v2.0/authorize?%s',

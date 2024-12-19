@@ -14,7 +14,8 @@
     }
   ],
   "require": {
-    "php": ">=5.6.40"
+    "php": ">=7.4",
+    "phpseclib/phpseclib": "3.0.43"
   },
   "autoload": {
     "psr-4": {
@@ -27,8 +28,7 @@
       "Wpo\\Pages\\": "Pages",
       "Wpo\\Services\\": "Services",
       "Wpo\\Sync\\": "Sync",
-      "Wpo\\Tests\\": "Tests",
-      "phpseclib3\\": "phpseclib3"
+      "Wpo\\Tests\\": "Tests"
     }
   }
 }

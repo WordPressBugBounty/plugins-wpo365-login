@@ -6,7 +6,7 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'phpseclib3\\' => array($baseDir . '/phpseclib3'),
+    'phpseclib3\\' => array($vendorDir . '/phpseclib/phpseclib/phpseclib'),
     'Wpo\\Tests\\' => array($baseDir . '/Tests'),
     'Wpo\\Sync\\' => array($baseDir . '/Sync'),
     'Wpo\\Services\\' => array($baseDir . '/Services'),
@@ -17,4 +17,5 @@ return array(
     'Wpo\\Core\\' => array($baseDir . '/Core'),
     'Wpo\\Blocks\\' => array($baseDir . '/Blocks'),
     'Wpo\\' => array($baseDir . '/'),
+    'ParagonIE\\ConstantTime\\' => array($vendorDir . '/paragonie/constant_time_encoding/src'),
 );

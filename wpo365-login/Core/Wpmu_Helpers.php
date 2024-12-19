@@ -275,5 +275,30 @@ if (!class_exists('\Wpo\Core\Wpmu_Helpers')) {
                 Log_Service::write_log('WARN', __METHOD__ . ' -> Could not add user with ID ' . $wp_usr_id . ' to current blog with ID ' . $blog_id . ' because the default role for the subsite is not valid');
             }
         }
+
+        /**
+         * Will set a user's primary blog when WPO365 creates a new user.
+         * 
+         * @since 33.x
+         * 
+         * @param mixed $wp_usr_id 
+         * @return void 
+         */
+        public static function set_user_primary_blog($wp_usr_id)
+        {
+            if (!is_multisite()) {
+                return;
+            }
+
+            $blog_id = get_current_blog_id();
+
+            if (is_user_member_of_blog($wp_usr_id, $blog_id)) {
+                $primary_blog = get_user_meta($wp_usr_id, 'primary_blog', true);
+
+                if (empty($primary_blog)) {
+                    update_user_meta($wp_usr_id, 'primary_blog', $blog_id);
+                }
+            }
+        }
     }
 }

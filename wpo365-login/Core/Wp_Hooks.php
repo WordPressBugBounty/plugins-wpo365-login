@@ -4,6 +4,7 @@ namespace Wpo\Core;
 
 use \Wpo\Core\Permissions_Helpers;
 use \Wpo\Services\Options_Service;
+use Wpo\Services\Request_Service;
 
 // Prevent public access to this script
 defined('ABSPATH') or die();
@@ -241,7 +242,6 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
 
                 // Actions
                 add_action('init', '\Wpo\Services\Audiences_Service::aud_register_post_meta', 10);
-                add_action('post_updated', '\Wpo\Services\Audiences_Service::post_updated', 10, 3);
 
                 if (\method_exists('\Wpo\Services\Audiences_Service', 'audiences_add_meta_box')) {
                     add_action('add_meta_boxes', '\Wpo\Services\Audiences_Service::audiences_add_meta_box', 10, 2);
@@ -438,10 +438,19 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
             // Suppress new user notifications when the user is created through WPO365 and the notification is not explicitely enabled
             if (!Options_Service::get_global_boolean_var('new_usr_send_mail', false)) {
                 add_filter('wp_send_new_user_notification_to_user', function () {
-                    return empty(\Wpo\Services\User_Service::get_wpo_user_from_context()) ? true : false;
+                    $request_service = Request_Service::get_instance();
+                    $request = $request_service->get_request($GLOBALS['WPO_CONFIG']['request_id']);
+                    $is_scim = $request->get_item('scim');
+
+                    return $is_scim || !empty(\Wpo\Services\User_Service::get_wpo_user_from_context()) ? false : true;
                 });
+
                 add_filter('wp_send_new_user_notification_to_admin', function () {
-                    return empty(\Wpo\Services\User_Service::get_wpo_user_from_context()) ? true : false;
+                    $request_service = Request_Service::get_instance();
+                    $request = $request_service->get_request($GLOBALS['WPO_CONFIG']['request_id']);
+                    $is_scim = $request->get_item('scim');
+
+                    return $is_scim || !empty(\Wpo\Services\User_Service::get_wpo_user_from_context()) ? false : true;
                 });
             }
 
@@ -506,6 +515,9 @@ if (!class_exists('\Wpo\Core\Wp_Hooks')) {
             if (method_exists('\Wpo\Services\User_Details_Service', 'set_user_display_name')) {
                 add_filter('wpo365/user', '\Wpo\Services\User_Details_Service::set_user_display_name', 10, 2);
             }
+
+            // Set a user's primary blog if a new user is added to a blog
+            add_action('wpo365/user/created', '\Wpo\Core\Wpmu_Helpers::set_user_primary_blog', 10, 1);
         }
 
         public static function add_wp_cli_commands()

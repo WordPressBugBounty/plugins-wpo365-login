@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 33.3
+Stable tag: 34.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -207,10 +207,25 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 
 Also available [online](https://www.wpo365.com/change-log/).
 
+= v34.0 =
+* Breaking Change: Excluding a WP role from "WPO365 Audiences" (e.g. to ensure that the role in question sees all content without "WPO365 Audiences"-based restrictions) now takes the post type as an extra configuration parameter (so that - for example - a user with custom WP role "Wiki-Editor" can see all posts of custom post type "Wiki" but for all other post types configured restrictions will apply). The setting can only be changed if the version of the premium plugin providing the "WPO365 Audiences" logic is equal or higher than 34.0. Without updating the configuration, WPO365 will assume that the role-exclusion applies to all post types. Refer to the [new tutorial](https://tutorials.wpo365.com/courses/ra-use-wpo365-audiences-to-restrict-gate-access-to-content/) for further details. [ROLES + ACCESS, PRO, INTEGRATE (SYNC, INTRANET)]
+* Change: The PHPSECLIB v3 library has been updated to the latest version 3.0.43 and any customizations have been abandonned. [LOGIN, MICROSOFT GRAPH MAILER]
+* Change: The "WPO365 Audiences" Block Editor has been withdrawn and the only option to configure "WPO365 Audiences" at page-level is the Metabox, which is now always enabled. See [updated documentation](https://tutorials.wpo365.com/courses/ra-use-wpo365-audiences-to-restrict-gate-access-to-content/lessons/removed-wpo365-audiences-gutenberg-block/) for guidance. [ROLES + ACCESS, PRO, INTEGRATE (SYNC, INTRANET)]
+* Improvement: You can now define a splash screen image URL as part of your Power BI Embed configuration and if defined, the app will show the image when Power BI is loading, effectively providing a white label experience. See the [updated documentation](https://docs.wpo365.com/article/84-microsoft-power-bi-for-wordpress) for details. [M365 APPS, INTEGRATE (INTRANET)]
+* Improvement: A user's primary blog is set (to the contextual subsite) when WPO365 creates a new user when WordPress Multisite is enabled. [LOGIN]
+* Improvement: Developers can now use the hook 'wpo365/oidc/params' to filter the parameters used to build the authorization URL. See the [updated documentation](https://docs.wpo365.com/article/82-developer-hooks) for details. [LOGIN, MICROSOFT GRAPH MAILER]
+* Fix: The auto-retry functionality has been reworked to prevent emails from being sent twice. [MAIL, PRO, INTEGRATE (SYNC, INTEGRATE)]
+* Fix: WPO365 will no longer send an out-of-the-box "new user email notification" if a new user is created by WPO365 during WPO365 User Synchronization. [INTEGRATE (SYNC, INTRANET)]
+* Fix: Sending a test email from the "Mail" configuration page will no longer delete all cached (user) access tokens. [LOGIN, MICROSOFT GRAPH MAILER]
+* Fix: The "Default role" setting is now also unlocked when the WPO365 | MAIL premium plugin is detected. [MAIL]
+* Fix: Various issues when using SharePoint Online Search to search for employees have been fixed. [M365 APPS, INTEGRATE (INTRANET)]
+* Fix: WPO365 now requires Microsoft Graph > Delegated Permissions > Calendar.Read permissions to test the configuration to embed an Exchange / Outlook calendar in WordPress (instead of Users.Read.All). [LOGIN, M365 APPS, INTEGRATE (INTRANET)]
+* Fix: When using a complex query to retrieve - for example - a user's manager's Display Name from Microsoft Graph as follows "::graph:manager.displayName", WPO365 no longer incorrectly populates it with the current user's display name if the current user does not have a manager defined. [INTEGRATE (SYNC, INTRANET)]
+
 = v33.3 =
 * Fix: After updating to WordPress 6.7 an error "Notice: Function _load_textdomain_just_in_time was called incorrectly" would be thrown. [LOGIN, MICROSOFT GRAPH MAILER]
 * Fix: A CSS "button" selector affected the global styling of button elements. [LOGIN, APPS, INTEGRATE (INTRANET)]
-* Improvement: Developers can now filter the parameters used to build the authorization URL / token URL. [LOGIN, MICROSOFT GRAPH MAILER]
+* Improvement: Developers can now use the hook 'wpo365/aad/params' to filter the parameters used to build the token request URL. See the [updated documentation](https://docs.wpo365.com/article/82-developer-hooks) for details. [LOGIN, MICROSOFT GRAPH MAILER]
 
 = v33.2 =
 * Improvement: A new filter "wpo365/user/user_login" to customize a user's WP username has been added to allow developers to apply their custom logic. Consult the updated [online documentation](https://docs.wpo365.com/article/82-developer-hooks). [LOGIN]

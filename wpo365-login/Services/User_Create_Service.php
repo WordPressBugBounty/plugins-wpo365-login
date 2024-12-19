@@ -126,16 +126,16 @@ if (!class_exists('\Wpo\Services\User_Create_Service')) {
                 User_Service::save_user_object_id($wpo_usr->oid, $wp_usr_id);
             }
 
+            $wpo_usr->created = true;
+            Log_Service::write_log('DEBUG', __METHOD__ . ' -> Created new user with ID ' . $wp_usr_id);
+
+            Wpmu_Helpers::wpmu_add_user_to_blog($wp_usr_id);
+
             /**
              * @since 15.0
              */
 
             do_action('wpo365/user/created', $wp_usr_id);
-
-            $wpo_usr->created = true;
-            Log_Service::write_log('DEBUG', __METHOD__ . ' -> Created new user with ID ' . $wp_usr_id);
-
-            Wpmu_Helpers::wpmu_add_user_to_blog($wp_usr_id);
 
             add_filter('allow_password_reset', '\Wpo\Services\User_Create_Service::temporarily_allow_password_reset', PHP_INT_MAX, 1);
             wp_new_user_notification($wp_usr_id, null, 'both');

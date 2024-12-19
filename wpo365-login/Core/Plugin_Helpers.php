@@ -435,7 +435,7 @@ if (!class_exists('\Wpo\Core\Plugin_Helpers')) {
                 }
 
                 $url_subdomain = implode('.', $url_host_segments);
-                $skip_list = array('dev', 'test', 'staging', 'stage', 'preprod', 'pre-prod,', 'uat');
+                $skip_list = array('dev', 'test', 'staging', 'stage', 'preprod', 'pre-prod,', 'uat', 'quality');
 
                 foreach ($skip_list as $skip) {
 

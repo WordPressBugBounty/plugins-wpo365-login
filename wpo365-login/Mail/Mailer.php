@@ -327,7 +327,7 @@ if (!class_exists('\Wpo\Mail\Mailer')) {
 
                 if (is_wp_error($continue)) {
                     $log_level = Options_Service::get_global_boolean_var('mail_auto_retry') ? 'WARN' : 'ERROR';
-                    self::update_mail_log($continue->get_error_message(), false, $log_level, false);
+                    self::update_mail_log($continue->get_error_message(), false, $log_level, true);
                     return false;
                 }
 
@@ -608,10 +608,13 @@ if (!class_exists('\Wpo\Mail\Mailer')) {
             $request_service = Request_Service::get_instance();
             $request = $request_service->get_request($GLOBALS['WPO_CONFIG']['request_id']);
 
-            if (!$success && $log_level == 'ERROR') {
-                do_action('wpo365/mail/sent/fail', $log_message);
-            } else if ($success) {
-                do_action('wpo365/mail/sent', $log_message);
+            if ($count_attempt) {
+
+                if (!$success) {
+                    do_action('wpo365/mail/sent/fail', $log_message);
+                } else {
+                    do_action('wpo365/mail/sent', $log_message);
+                }
             }
 
             if (class_exists('\Wpo\Mail\Mail_Db')) {

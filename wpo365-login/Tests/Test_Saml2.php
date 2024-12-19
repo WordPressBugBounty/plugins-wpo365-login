@@ -183,6 +183,24 @@ if (!class_exists('\Wpo\Tests\Test_Saml2')) {
             return $test_result;
         }
 
+        public function test_saml_response_contains_groups()
+        {
+            $test_result = new Test_Result("SAML response contains 'groups' claim", Test_Result::CAPABILITY_SAML_SSO, Test_Result::SEVERITY_LOW);
+            $test_result->passed = true;
+
+            if (empty($this->wpo_usr)) {
+                $test_result->passed = false;
+                $test_result->message = 'SAML response could not be processed -> test skipped';
+                $test_result->more_info = '';
+            } elseif (empty($this->wpo_usr->groups)) {
+                $test_result->passed = false;
+                $test_result->message = "SAML response does not contain a 'groups' claim";
+                $test_result->more_info = 'https://docs.wpo365.com/article/100-configure-single-sign-on-with-saml-2-0';
+            }
+
+            return $test_result;
+        }
+
         public function test_end()
         {
             $request_service = Request_Service::get_instance();
