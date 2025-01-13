@@ -182,8 +182,8 @@ if (!class_exists('\Wpo\Services\Router_Service')) {
                 ? $_REQUEST['login_hint']
                 : null;
 
-            $redirect_to = !empty($_POST['redirect_to'])
-                ? esc_url_raw($_POST['redirect_to'])
+            $redirect_to = !empty($_REQUEST['redirect_to'])
+                ? esc_url_raw($_REQUEST['redirect_to'])
                 : null;
 
             $b2c_policy = !empty($_POST['b2c_policy'])
@@ -220,8 +220,8 @@ if (!class_exists('\Wpo\Services\Router_Service')) {
         {
             Log_Service::write_log('DEBUG', '##### -> ' . __METHOD__);
 
-            $redirect_to = !empty($_POST['redirect_to'])
-                ? esc_url_raw($_POST['redirect_to'])
+            $redirect_to = !empty($_REQUEST['redirect_to'])
+                ? esc_url_raw($_REQUEST['redirect_to'])
                 : null;
 
             $params = array();
@@ -479,15 +479,6 @@ if (!class_exists('\Wpo\Services\Router_Service')) {
                 $pkce_code_challenge_id = $result['pkce_code_challenge_id'];
                 $request->set_item('pkce_code_challenge_id', $pkce_code_challenge_id);
                 $url = remove_query_arg('pkce_code_challenge_id', $url);
-            }
-
-            // If state is a relative URL then try to fix it.
-            if (WordPress_Helpers::strpos($url, '/') === 0) {
-                $url = sprintf(
-                    '%s%s',
-                    WordPress_Helpers::rtrim($GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'], '/'),
-                    $url
-                );
             }
 
             $url = str_replace('_____', '#', $url);

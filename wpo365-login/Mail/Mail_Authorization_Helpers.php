@@ -41,7 +41,7 @@ if (!class_exists('\Wpo\Mail\Mail_Authorization_Helpers')) {
             $redirect_url = Options_Service::get_mail_option('mail_redirect_url');
             $redirect_to = sprintf('%s/admin.php?mode=mailAuthorize&page=wpo365-wizard#mail', WordPress_Helpers::rtrim($admin_url, '/'));
             $redirect_to = urlencode($redirect_to);
-            $scope = Options_Service::get_global_boolean_var('mail_send_shared') ? 'Mail.Send.Shared' : 'Mail.Send';
+            $scope = sprintf('offline_access %s' , Options_Service::get_global_boolean_var('mail_send_shared') ? 'Mail.Send.Shared' : 'Mail.Send');
 
             $params = array(
                 'client_id'             => $application_id,
@@ -65,6 +65,15 @@ if (!class_exists('\Wpo\Mail\Mail_Authorization_Helpers')) {
             }
 
             $tld = !empty($tld = Options_Service::get_global_string_var('tld')) ? $tld : '.com';
+
+            /**
+             * @since 35.x Added support for personal Microsoft accounts e.g. Hotmail.com and Outlook.com
+             */
+
+            if (Options_Service::get_global_boolean_var('mail_multi_tenanted')) {
+                $directory_id = 'common';
+            }
+
             $auth_url = sprintf(
                 'https://login.microsoftonline%s/%s/oauth2/v2.0/authorize?%s',
                 $tld,
@@ -531,6 +540,15 @@ if (!class_exists('\Wpo\Mail\Mail_Authorization_Helpers')) {
             }
 
             $directory_id = Options_Service::get_mail_option('mail_tenant_id');
+
+            /**
+             * @since 35.x Added support for personal Microsoft accounts e.g. Hotmail.com and Outlook.com
+             */
+
+             if (Options_Service::get_global_boolean_var('mail_multi_tenanted')) {
+                $directory_id = 'common';
+            }
+            
             $tld = !empty($tld = Options_Service::get_global_string_var('tld')) ? $tld : '.com';
             $authorize_url = sprintf(
                 'https://login.microsoftonline%s/%s/oauth2/v2.0/token',

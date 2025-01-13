@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 34.0
+Stable tag: 34.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -37,6 +37,7 @@ Enable users to sign in with their corporate or school account (Azure AD (B2C) /
 = MAIL =
 
 - **Send emails using Microsoft Graph** instead of SMTP from your WordPress website [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
+- Choose between a Microsoft 365 account or a personal Microsoft account, like Hotmail.com or Outlook.com, to send WordPress emails
 - Send as **HTML**
 - Save to the **Sent Items** folder
 - Support for **file attachments**
@@ -206,6 +207,14 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v34.1 =
+* Improvement: You can now choose between a Microsoft 365 account or a personal Microsoft account, like Hotmail.com or Outlook.com, to send WordPress emails. See the [updated tutorial](https://tutorials.wpo365.com/courses/email-configure-microsoft-graph-mailer/lessons/send-email-from-a-personal-microsoft-account-e-g-hotmail-com/) for details. [LOGIN, MICROSOFT GRAPH MAILER]
+* Fix: Plugin no longer (falsely) reports an error when enabling the auto-retry mail-send functionality fails. Instead, it generates a warning with a more verbose description. [MAIL, PROFESSIONAL, INTEGRATE (SYNC, INTRANET)]
+* Fix: Allowlisting domains does now correctly denies access to domains not in the list. [ROLES + ACCESS, PROFESSIONAL, INTEGRATE (SYNC, INTRANET)]
+* Fix: Detection of the redirect_to parameter - for example added to the (default) login URL by other solutions - has been improved. [LOGIN]
+* Fix: The plugin now properly URL encodes a user's UPN when checking for existing users in AAD B2C / Entra Ext. ID. [CUSTOMERS]
+* Fix: The plugin now properly URL encodes a user's UPN when trying to submit email messages to Microsoft Graph. [LOGIN, MICROSOFT GRAPH MAILER]
 
 = v34.0 =
 * Breaking Change: Excluding a WP role from "WPO365 Audiences" (e.g. to ensure that the role in question sees all content without "WPO365 Audiences"-based restrictions) now takes the post type as an extra configuration parameter (so that - for example - a user with custom WP role "Wiki-Editor" can see all posts of custom post type "Wiki" but for all other post types configured restrictions will apply). The setting can only be changed if the version of the premium plugin providing the "WPO365 Audiences" logic is equal or higher than 34.0. Without updating the configuration, WPO365 will assume that the role-exclusion applies to all post types. Refer to the [new tutorial](https://tutorials.wpo365.com/courses/ra-use-wpo365-audiences-to-restrict-gate-access-to-content/) for further details. [ROLES + ACCESS, PRO, INTEGRATE (SYNC, INTRANET)]

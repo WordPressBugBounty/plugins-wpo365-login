@@ -317,7 +317,9 @@ if (!class_exists('\Wpo\Mail\Mailer')) {
 
             $save_sent = Options_Service::get_global_boolean_var('mail_save_to_sent_items');
             $message_as_json = self::email_message_encode($this->phpmailer_data->Subject, $to, $this->phpmailer_data->Body, $cc, $bcc, $reply_to, $content_type, $save_sent, $attachments, !empty($large_attachments), $send_from, $internet_message_headers);
-            $query = empty($large_attachments) ? "/users/$sender/sendMail" : "/users/$sender/messages";
+            $query = empty($large_attachments) 
+                ? sprintf('/users/%s/sendMail', rawurlencode($sender)) 
+                : sprintf('/users/%s/messages', rawurlencode($sender));
             $access_token = Mail_Authorization_Helpers::get_mail_access_token($scope);
 
             if (is_wp_error($access_token)) {

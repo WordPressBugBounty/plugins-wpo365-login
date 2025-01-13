@@ -579,8 +579,8 @@ if (!class_exists('\Wpo\Services\Wp_Config_Service')) {
             Wp_Config_Service::ensure_aad_options($GLOBALS['WPO_CONFIG']['options']);
 
             if (Options_Service::get_global_boolean_var('use_saml')) {
-                $redirect_to = !empty($_POST['redirect_to'])
-                    ? esc_url_raw($_POST['redirect_to'])
+                $redirect_to = !empty($_REQUEST['redirect_to'])
+                    ? esc_url_raw($_REQUEST['redirect_to'])
                     : null;
 
                 $params = array('login_hint' => $user_login);

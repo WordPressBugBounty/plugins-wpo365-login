@@ -227,26 +227,29 @@ if (!class_exists('\Wpo\Services\Id_Token_Service')) {
         {
             Log_Service::write_log('DEBUG', '##### -> ' . __METHOD__);
 
-            $tld = !empty($tld = Options_Service::get_global_string_var('tld')) ? $tld : '.com';
-            $scope = str_replace('.com', $tld, $scope);
-
             $request_service = Request_Service::get_instance();
             $request = $request_service->get_request($GLOBALS['WPO_CONFIG']['request_id']);
 
             $code = Access_Token_Service::get_authorization_code();
             $mode = $request->get_item('mode');
+            $use_mail_config = $mode == 'mailAuthorize';
 
             if (empty($code)) {
                 Log_Service::write_log('ERROR', sprintf('%s -> Authorization code not found', __METHOD__));
                 return;
             }
 
-            $use_mail_config = $mode == 'mailAuthorize';
-
+            $multi_tenanted = Options_Service::get_global_boolean_var('multi_tenanted') && !$use_mail_config && !Options_Service::get_global_boolean_var('use_b2c');
+            $mail_multi_tenanted = Options_Service::get_global_boolean_var('mail_multi_tenanted');
+            $tld = !empty($tld = Options_Service::get_global_string_var('tld')) ? $tld : '.com';
+            $scope = str_replace('.com', $tld, $scope);
+            $scope = $mode == 'mailAuthorize' && $mail_multi_tenanted 
+                ? sprintf('offline_access%s', empty($scope) ? '' : ' ' . $scope) 
+                : sprintf('openid email profile offline_access%s', empty($scope) ? '' : ' ' . $scope);
             $directory_id = $use_mail_config ? Options_Service::get_mail_option('mail_tenant_id') : Options_Service::get_aad_option('tenant_id');
+            $directory_id = $multi_tenanted || ($mode == 'mailAuthorize' && $mail_multi_tenanted) ? 'common' : $directory_id;
             $application_id = $use_mail_config ? Options_Service::get_mail_option('mail_application_id') : Options_Service::get_aad_option('application_id');
             $application_secret = $use_mail_config ? Options_Service::get_mail_option('mail_application_secret') : Options_Service::get_aad_option('application_secret');
-            $multi_tenanted = Options_Service::get_global_boolean_var('multi_tenanted') && !$use_mail_config && !Options_Service::get_global_boolean_var('use_b2c');
 
             /**
              * @since 24.0 Filters the AAD Redirect URI e.g. to set it dynamically to the current host.
@@ -259,17 +262,13 @@ if (!class_exists('\Wpo\Services\Id_Token_Service')) {
                 $redirect_uri = apply_filters('wpo365/aad/redirect_uri', $redirect_uri);
             }
 
-            if (true === $multi_tenanted) {
-                $directory_id = 'common';
-            }
-
             $params = array(
                 'client_id'     => $application_id,
                 'response_type' => 'token',
                 'redirect_uri'  => $redirect_uri,
                 'response_mode' => 'form_post',
                 'grant_type'    => 'authorization_code',
-                'scope'         => 'openid email profile offline_access' . (empty($scope) ? '' : (' ' . $scope)),
+                'scope'         => $scope,
                 'code'          => $code,
                 'client_secret' => $application_secret,
             );

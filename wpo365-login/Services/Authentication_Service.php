@@ -409,6 +409,20 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
             $redirect_url = apply_filters('wpo365/aad/redirect_uri', $redirect_url);
             $referer = (WordPress_Helpers::stripos($redirect_url, 'https') !== false ? 'https' : 'http') . '://' . $GLOBALS['WPO_CONFIG']['url_info']['host'] . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'];
 
+            // Referer may be the login URL with a redirect_to parameter
+
+            $query = parse_url($referer, PHP_URL_QUERY);
+
+            if (empty($query)) {
+                $result = array();
+            } else {
+                parse_str($query, $result);
+            }
+
+            if (!empty($result['redirect_to'])) {
+                $referer = esc_url_raw($result['redirect_to']);
+            }
+
             if (Options_Service::get_global_boolean_var('use_saml')) {
                 $params = array();
 
@@ -504,8 +518,9 @@ if (!class_exists('\Wpo\Services\Authentication_Service')) {
                             // Wildcard at the beginning -> stripos must be greater than 0
                             else if (substr($domain, 0, 2) == '*.') {
                                 $test_with = str_replace('*.', '', $domain);
+                                $strpos = WordPress_Helpers::stripos($test_domain, $test_with);
 
-                                if (WordPress_Helpers::stripos($test_domain, $test_with) >= 0) {
+                                if (false !== $strpos && $strpos >= 0) {
                                     return true;
                                 }
                             } else {
