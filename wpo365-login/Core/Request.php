@@ -1,70 +1,70 @@
 <?php
 
-    namespace Wpo\Core;
-    
-    // Prevent public access to this script
-    defined( 'ABSPATH' ) or die();
+	namespace Wpo\Core;
 
-    if ( !class_exists( '\Wpo\Core\Request' ) ) {
+	// Prevent public access to this script
+	defined( 'ABSPATH' ) || die();
 
-        class Request {
+if ( ! class_exists( '\Wpo\Core\Request' ) ) {
 
-            private $id;
+	class Request {
 
-            private $storage = array();
+		private $id;
 
-            public function __construct( $id ) {
-                $this->id = $id;
-            }
+		private $storage = array();
 
-            public function current_request_id() {
-                return $this->id;
-            }
+		public function __construct( $id ) {
+			$this->id = $id;
+		}
 
-            public function set_item( $key, $value ) {
+		public function current_request_id() {
+			return $this->id;
+		}
 
-                if ( !is_string( $key ) ) {
-                    return false;
-                }
+		public function set_item( $key, $value ) {
 
-                if ( empty( $key ) ) {
-                    return false;
-                }
+			if ( ! is_string( $key ) ) {
+				return false;
+			}
 
-                $this->storage[ $key ] = $value;
+			if ( empty( $key ) ) {
+				return false;
+			}
 
-                return true;
-            }
+			$this->storage[ $key ] = $value;
 
-            public function get_item( $key ) {
+			return true;
+		}
 
-                if ( !is_string( $key ) || empty( $key ) ) {
-                    return false;
-                }
+		public function get_item( $key ) {
 
-                if ( array_key_exists( $key, $this->storage ) ) {
-                    return $this->storage[ $key ];
-                }
+			if ( ! is_string( $key ) || empty( $key ) ) {
+				return false;
+			}
 
-                return false;
-            }
+			if ( array_key_exists( $key, $this->storage ) ) {
+				return $this->storage[ $key ];
+			}
 
-            public function remove_item( $key ) {
+			return false;
+		}
 
-                if ( !is_string( $key ) || empty( $key ) ) {
-                    return false;
-                }
+		public function remove_item( $key ) {
 
-                if ( array_key_exists( $key, $this->storage ) ) {
-                    unset( $this->storage[ $key ] );
-                    return true;
-                }
+			if ( ! is_string( $key ) || empty( $key ) ) {
+				return false;
+			}
 
-                return false;
-            }
+			if ( array_key_exists( $key, $this->storage ) ) {
+				unset( $this->storage[ $key ] );
+				return true;
+			}
 
-            public function clear() {
-                $this->storage = array();
-            }
-        }
-    } 
+			return false;
+		}
+
+		public function clear() {
+			$this->storage = array();
+		}
+	}
+}

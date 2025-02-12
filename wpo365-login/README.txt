@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 34.2
+Stable tag: 35.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -207,6 +207,21 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v35.0 =
+* Feature: Create a new (WordPress Network / Multisite) blog for a user when they sign in with Microsoft for the first time. Consult the [online documentation](https://docs.wpo365.com/article/226-create-a-new-wpmu-blog-upon-first-login) for details. [ESSENTIALS, PRO, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Improvement: A WordPress Network Multisite super admin can now switch between "shared" and "dedicated" mode when they go to My Sites > Network Admin > WPO365 > User Registration. The entry in wp-config.php will also still be honoured. See the [updated documentation](https://docs.wpo365.com/article/29-support-for-wordpress-multisite-wpmu) [LOGIN]
+* Improvement: All source-code is now constantly reviewed for violations of coding standards (using phpcs) and if possible corrected to adhere to the WordPress Coding Standards.
+* Improvment: An administrator of a blog that is a subsite of a WordPress Network / Multisite can now also administer the WPO365 configuration. [LOGIN]
+* Improvement: Support for the (Entra ID) App Roles SAML 2.0 claim "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" has been added. [ROLES + ACCESS, PRO, INTEGRATE (SYNC, INTRANET)] 
+* Fix: Functionality to save the state before the user is sent to Microsoft to authenticate and to read that state when the user returns has been refactored, to ensure redirection back to the "intended" location before WPO365 sent the user to Microsoft is working as expected. [LOGIN]
+* Fix: Improved matching algorithm so that WPO365 correctly identifies Entra ID users with an apostrophe in their username. [LOGIN]
+* Fix: Show a warning on the "Login / Logout" configuration pages, when the "Custom login URL" and the "Logged out / Error page" are the same. [ESSENTIALS, PRO, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: Recycle SAML certificate cache when WPO365 | LOGIN plugin is deactivated. [LOGIN]
+* Fix: WPO365 will no longer show a "doing_it_wrong" warning when installed for the very first time. [LOGIN]
+* Fix: License keys (for premium plugins) as now included in the JSON export (when you navigate to WP Admin > WPO365 > ... > Import / Export). [ESSENTIALS, PRO, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: WPO365 tries to prevent updating an email address when the only difference is in capitalization. [ESSENTIALS, PRO, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: During the previous release, premium plugins were not zipped correctly, causing issues with folder-naming when installing. [ALL PREMIUM]
 
 = v34.2 =
 * Fix: (Composer) Dependencies have been updated to remove the requirement for PHP >= 8.0.0.

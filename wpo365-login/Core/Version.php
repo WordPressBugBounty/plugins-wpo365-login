@@ -3,12 +3,12 @@
 namespace Wpo\Core;
 
 // prevent public access to this script
-defined('ABSPATH') or die();
+defined( 'ABSPATH' ) || die();
 
-if (!class_exists('\Wpo\Core\Version')) {
+if ( ! class_exists( '\Wpo\Core\Version' ) ) {
 
-    class Version
-    {
-        public static $current = '34.2';
-    }
+	class Version {
+
+		public static $current = '35.0';
+	}
 }

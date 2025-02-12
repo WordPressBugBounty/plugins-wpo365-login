@@ -5,67 +5,65 @@ namespace Wpo\Services;
 use Wpo\Core\Wpmu_Helpers;
 
 // Prevent public access to this script
-defined('ABSPATH') or die();
+defined( 'ABSPATH' ) || die();
 
-if (!class_exists('\Wpo\Services\Nonce_Service')) {
+if ( ! class_exists( '\Wpo\Services\Nonce_Service' ) ) {
 
-    class Nonce_Service
-    {
-        /**
-         * Creates a nonce to ensure the request for an Azure AD token 
-         * originates from the current server.
-         * 
-         * @since   21.6
-         * 
-         * @return string 
-         */
-        public static function create_nonce()
-        {
-            $nonce_stack = Wpmu_Helpers::mu_get_transient('wpo365_nonces');
+	class Nonce_Service {
 
-            if (empty($nonce_stack)) {
-                $nonce_stack = array();
-            }
+		/**
+		 * Creates a nonce to ensure the request for an Azure AD token
+		 * originates from the current server.
+		 *
+		 * @since   21.6
+		 *
+		 * @return string
+		 */
+		public static function create_nonce() {
+			$nonce_stack = Wpmu_Helpers::mu_get_transient( 'wpo365_nonces' );
 
-            $nonce = uniqid();
-            $nonce_stack[] = $nonce;
+			if ( empty( $nonce_stack ) ) {
+				$nonce_stack = array();
+			}
 
-            // When the stack grows to 200 it's downsized to 150
-            if (sizeof($nonce_stack) > 200) {
-                array_splice($nonce_stack, 0, 50);
-            }
+			$nonce         = uniqid();
+			$nonce_stack[] = $nonce;
 
-            Wpmu_Helpers::mu_set_transient('wpo365_nonces', $nonce_stack, 300);
+			// When the stack grows to 200 it's downsized to 150
+			if ( count( $nonce_stack ) > 200 ) {
+				array_splice( $nonce_stack, 0, 50 );
+			}
 
-            return $nonce;
-        }
+			Wpmu_Helpers::mu_set_transient( 'wpo365_nonces', $nonce_stack, 300 );
 
-        /**
-         * Verifies the nonce that Microsoft returns together with the requested token.
-         * 
-         * @param mixed $nonce 
-         * @return bool 
-         */
-        public static function verify_nonce($nonce)
-        {
-            $nonce_stack = Wpmu_Helpers::mu_get_transient('wpo365_nonces');
+			return $nonce;
+		}
 
-            if (empty($nonce_stack)) {
-                Log_Service::write_log('WARN', sprintf('%s -> Empty nonce stack', __METHOD__));
-                return false;
-            }
+		/**
+		 * Verifies the nonce that Microsoft returns together with the requested token.
+		 *
+		 * @param mixed $nonce
+		 * @return bool
+		 */
+		public static function verify_nonce( $nonce ) {
+			$nonce_stack = Wpmu_Helpers::mu_get_transient( 'wpo365_nonces' );
 
-            $index = array_search($nonce, $nonce_stack);
+			if ( empty( $nonce_stack ) ) {
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Empty nonce stack', __METHOD__ ) );
+				return false;
+			}
 
-            if (false === $index) {
-                Log_Service::write_log('WARN', sprintf('%s -> Nonce %s not found %s', __METHOD__, $nonce, json_encode($nonce_stack)));
-                return false;
-            }
+			$index = array_search( $nonce, $nonce_stack, true );
 
-            array_splice($nonce_stack, $index, 1);
-            Wpmu_Helpers::mu_set_transient('wpo365_nonces', $nonce_stack, 300);
+			if ( $index === false ) {
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Nonce %s not found %s', __METHOD__, $nonce, wp_json_encode( $nonce_stack ) ) );
+				return false;
+			}
 
-            return true;
-        }
-    }
+			array_splice( $nonce_stack, $index, 1 );
+			Wpmu_Helpers::mu_set_transient( 'wpo365_nonces', $nonce_stack, 300 );
+
+			return true;
+		}
+	}
 }

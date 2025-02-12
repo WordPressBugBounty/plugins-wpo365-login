@@ -1,7 +1,6 @@
 <?php
 
-// Prevent public access to this script
-defined('ABSPATH') or die();
+defined( 'ABSPATH' ) || die();
 
 ?>
 

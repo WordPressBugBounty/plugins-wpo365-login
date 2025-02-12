@@ -1,9 +1,9 @@
-<?php defined('ABSPATH') or die(); ?>
+<?php defined( 'ABSPATH' ) || die(); ?>
 Hi there
 
 Thank you for choosing WPO365 | LOGIN and its extension to
 seamlessly connect your WordPress website with the powerful
-world of Microsoft Office 365 and Azure AD.
+world of Microsoft Entra | Azure | 365.
 
 This email is a test and is sent to you on your own request
 upon saving updated settings for the Graph Mailer feature.
@@ -14,7 +14,7 @@ blue help beacon that you find when you go to your WordPress
 Admin Dashboard > WPO365.
 
 Marco van Wieren, Downloads by van Wieren
-WPO365 - Connecting WordPress and Microsoft Office 365 / Azure AD
+WPO365 - Connecting WordPress and Microsoft Entra | Azure | 365
 Zurich, Switzerland
 l https://www.linkedin.com/company/downloads-by-van-wieren
 w https://www.wpo365.com
