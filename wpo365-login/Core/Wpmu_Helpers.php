@@ -195,7 +195,7 @@ if ( ! class_exists( '\Wpo\Core\Wpmu_Helpers' ) ) {
 		public static function wpmu_add_user_to_blog( $wp_usr_id, $blog_id = null, $site_id = null ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
-			if ( ! is_multisite() ) {
+			if ( ! is_multisite() || is_super_admin( $wp_usr_id ) ) {
 				return;
 			}
 
@@ -219,6 +219,7 @@ if ( ! class_exists( '\Wpo\Core\Wpmu_Helpers' ) ) {
 				$add_member_to_main_site = Options_Service::get_global_boolean_var( 'create_and_add_users' );
 				$add_member_to_subsite   = ! Options_Service::get_global_boolean_var( 'skip_add_user_to_subsite' );
 				$add_member_to_all_sites = Options_Service::get_global_boolean_var( 'mu_add_user_to_all_sites' );
+				$blog_name               = get_bloginfo( 'name' );
 
 				// Shared mode
 				if ( ! $use_subsite_options ) {
@@ -228,41 +229,29 @@ if ( ! class_exists( '\Wpo\Core\Wpmu_Helpers' ) ) {
 						( $is_main_site && ! $add_member_to_all_sites && ! $add_member_to_main_site )
 						|| ( ! $is_main_site && ! $add_member_to_all_sites && ! $add_member_to_subsite )
 					) {
-						$goto_after = get_dashboard_url( $wp_usr_id );
-					}
-
-					// Settings prevented user from being added to site
-					if ( ! empty( $goto_after ) ) {
-						Log_Service::write_log(
-							'DEBUG',
-							sprintf(
-								'%s -> Settings prevented the user from being added to blog with id %s and therefore sending user to dashboard-URL %s instead',
-								__METHOD__,
-								$blog_id,
-								$goto_after
-							)
-						);
-
-						add_filter(
-							'login_redirect',
-							function ( $redirect_to, $requested_redirect_to, $wp_usr ) use ( $goto_after ) { // phpcs:ignore
-								return $goto_after;
-							},
-							99,
-							3
-						);
-
-						return;
+						Log_Service::write_log( 'WARN', sprintf( '%s -> User %d does not have privileges for site "%s" and is therefore denied access.', __METHOD__, $wp_usr_id, $blog_name ) );
+						do_action( 'wpo365/wpmu/access_denied', $wp_usr_id );
+						wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
 					}
 				}
 
 				// Settings don't allow adding member to dedicated site [wpmu dedicated mode]
 				if ( $use_subsite_options && ! $add_member_to_main_site ) {
-					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> [WPMU dedicated] User not a member of blog with id ' . $blog_id . ' and settings prevented adding user ' . $wp_usr_id );
-					Authentication_Service::goodbye( Error_Service::USER_NOT_FOUND, false );
+					Log_Service::write_log( 'WARN', sprintf( '%s -> User %d does not have privileges for site "%s" and is therefore denied access.', __METHOD__, $wp_usr_id, $blog_name ) );
+					do_action( 'wpo365/wpmu/access_denied', $wp_usr_id );
+					wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
 				}
 
 				add_user_to_blog( $blog_id, $wp_usr_id, $usr_default_role );
+
+				// Refresh the user's role etc. to avoid "You are not allowed access to this page".
+				$set_current_user_hooks = $GLOBALS['wp_filter']['set_current_user'];
+				unset( $GLOBALS['wp_filter']['set_current_user'] );
+
+				wp_set_current_user( 0 );
+				wp_set_current_user( $wp_usr_id );
+
+				$GLOBALS['wp_filter']['set_current_user'] = $set_current_user_hooks; // phpcs:ignore
 
 				/**
 				 * @since 15.0
@@ -274,6 +263,65 @@ if ( ! class_exists( '\Wpo\Core\Wpmu_Helpers' ) ) {
 			} else {
 				Log_Service::write_log( 'DEBUG', __METHOD__ . " -> Skipped adding user with ID $wp_usr_id to blog with ID $blog_id because user already added" );
 			}
+		}
+
+		/**
+		 * Displays an access denied message when a user tries to view a site's dashboard they
+		 * do not have access to.
+		 *
+		 * @since 35.1
+		 *
+		 * @param int $wp_usr_id
+		 *
+		 * @return void
+		 */
+		public static function wpmu_access_denied_splash( $wp_usr_id ) {
+
+			if ( $wp_usr_id === 0 ) {
+				return;
+			}
+
+			$blogs = get_blogs_of_user( $wp_usr_id );
+
+			if ( wp_list_filter( $blogs, array( 'userblog_id' => get_current_blog_id() ) ) ) {
+				return;
+			}
+
+			$blog_name = get_bloginfo( 'name' );
+			$output    = sprintf(
+					/* translators: 1: Site title. */
+				__( 'You attempted to access "%1$s", but you do not currently have privileges on this site. If you believe you should be able to access "%1$s", please contact your network administrator.' ),
+				$blog_name
+			);
+
+			if ( empty( $blogs ) ) {
+				wp_die(
+					wp_kses( $output, WordPress_Helpers::get_allowed_html() ),
+					403
+				);
+			}
+
+			$output = '<p>' . sprintf(
+			/* translators: 1: Site title. */
+				__( 'You attempted to access "%1$s", but you do not currently have privileges on this site. If you believe you should be able to access "%1$s", please contact your network administrator.' ),
+				$blog_name
+			) . '</p>';
+			$output .= '<p>' . __( 'If you reached this screen by accident and meant to visit one of your own sites, here are some shortcuts to help you find your way.' ) . '</p>';
+
+			$output .= '<h3>' . __( 'Your Sites' ) . '</h3>';
+			$output .= '<table>';
+
+			foreach ( $blogs as $blog ) {
+				$output .= '<tr>';
+				$output .= "<td>{$blog->blogname}</td>";
+				$output .= '<td><a href="' . esc_url( get_admin_url( $blog->userblog_id ) ) . '">' . __( 'Visit Dashboard' ) . '</a> | ' .
+				'<a href="' . esc_url( get_home_url( $blog->userblog_id ) ) . '">' . __( 'View Site' ) . '</a></td>';
+				$output .= '</tr>';
+			}
+
+			$output .= '</table>';
+
+			wp_die( wp_kses( $output, WordPress_Helpers::get_allowed_html() ), 403 );
 		}
 
 		/**
@@ -299,6 +347,50 @@ if ( ! class_exists( '\Wpo\Core\Wpmu_Helpers' ) ) {
 					update_user_meta( $wp_usr_id, 'primary_blog', $blog_id );
 				}
 			}
+		}
+
+		/**
+		 * Filters the name (and thus the domain) of a user's personal blog, setting it to the user's email username.
+		 *
+		 * @since 35.x
+		 *
+		 * @param string $wp_usr_id_str
+		 *
+		 * @return string
+		 */
+		public static function user_site_name( $wp_usr_id_str ) {
+
+			if ( ! Options_Service::get_global_boolean_var( 'mu_new_user_site_use_username' ) ) {
+				return $wp_usr_id_str;
+			}
+
+			$wp_usr_id = intval( $wp_usr_id_str );
+
+			if ( $wp_usr_id === 0 ) {
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Cannot update the user site name [Error: WP User ID is 0]' ) );
+				return $wp_usr_id_str;
+			}
+
+			$wp_usr = get_user_by( 'ID', $wp_usr_id );
+
+			if ( $wp_usr === false ) {
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Cannot update the user site name [Error: WP User not found]' ) );
+				return $wp_usr_id_str;
+			}
+
+			if ( filter_var( $wp_usr->user_email, FILTER_VALIDATE_EMAIL ) === false ) {
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Cannot update the user site name [Error: Invalid email]' ) );
+				return $wp_usr_id_str;
+			}
+
+			$user_name = explode( '@', $wp_usr->user_email )[0];
+
+			if ( empty( $user_name ) ) {
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Cannot update the user site name [Error: Invalid email username]' ) );
+				return $wp_usr_id_str;
+			}
+
+			return strtolower( $user_name );
 		}
 	}
 }

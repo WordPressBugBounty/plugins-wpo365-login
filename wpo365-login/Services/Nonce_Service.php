@@ -20,7 +20,13 @@ if ( ! class_exists( '\Wpo\Services\Nonce_Service' ) ) {
 		 * @return string
 		 */
 		public static function create_nonce() {
-			$nonce_stack = Wpmu_Helpers::mu_get_transient( 'wpo365_nonces' );
+
+			if ( Wpmu_Helpers::mu_get_transient( 'wpo365_nonces' ) !== false ) {
+				Wpmu_Helpers::mu_delete_transient( 'wpo365_nonces' );
+			}
+
+			$is_mu_shared = ! Options_Service::mu_use_subsite_options();
+			$nonce_stack  = $is_mu_shared ? get_site_option( 'wpo365_nonces' ) : get_option( 'wpo365_nonces' );
 
 			if ( empty( $nonce_stack ) ) {
 				$nonce_stack = array();
@@ -31,10 +37,14 @@ if ( ! class_exists( '\Wpo\Services\Nonce_Service' ) ) {
 
 			// When the stack grows to 200 it's downsized to 150
 			if ( count( $nonce_stack ) > 200 ) {
-				array_splice( $nonce_stack, 0, 50 );
+				array_splice( $nonce_stack, 0, 100 );
 			}
 
-			Wpmu_Helpers::mu_set_transient( 'wpo365_nonces', $nonce_stack, 300 );
+			if ( $is_mu_shared ) {
+				update_site_option( 'wpo365_nonces', $nonce_stack );
+			} else {
+				update_option( 'wpo365_nonces', $nonce_stack );
+			}
 
 			return $nonce;
 		}
@@ -46,7 +56,8 @@ if ( ! class_exists( '\Wpo\Services\Nonce_Service' ) ) {
 		 * @return bool
 		 */
 		public static function verify_nonce( $nonce ) {
-			$nonce_stack = Wpmu_Helpers::mu_get_transient( 'wpo365_nonces' );
+			$is_mu_shared = ! Options_Service::mu_use_subsite_options();
+			$nonce_stack  = $is_mu_shared ? get_site_option( 'wpo365_nonces' ) : get_option( 'wpo365_nonces' );
 
 			if ( empty( $nonce_stack ) ) {
 				Log_Service::write_log( 'WARN', sprintf( '%s -> Empty nonce stack', __METHOD__ ) );
@@ -56,12 +67,17 @@ if ( ! class_exists( '\Wpo\Services\Nonce_Service' ) ) {
 			$index = array_search( $nonce, $nonce_stack, true );
 
 			if ( $index === false ) {
-				Log_Service::write_log( 'WARN', sprintf( '%s -> Nonce %s not found %s', __METHOD__, $nonce, wp_json_encode( $nonce_stack ) ) );
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Nonce %s not found', __METHOD__, $nonce ) );
 				return false;
 			}
 
 			array_splice( $nonce_stack, $index, 1 );
-			Wpmu_Helpers::mu_set_transient( 'wpo365_nonces', $nonce_stack, 300 );
+
+			if ( $is_mu_shared ) {
+				update_site_option( 'wpo365_nonces', $nonce_stack );
+			} else {
+				update_option( 'wpo365_nonces', $nonce_stack );
+			}
 
 			return true;
 		}

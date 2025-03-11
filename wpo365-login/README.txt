@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 35.0
+Stable tag: 36.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -208,6 +208,22 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 
 Also available [online](https://www.wpo365.com/change-log/).
 
+= v36.0 =
+* Breaking Change: A previous update that redirected users without privileges for the site they requested to their dashboard URL or primary site in a WordPress Multisite Network has been rolled back. Now, WPO365 will display an access-denied splash screen instead, notifying the user of the denied access. If the user has already authenticated successfully, the screen will also show a list of sites where they have do privileges. [LOGIN]
+* Breaking Change: WPO365 will no longer redirect a user back to the login page of the site they requested in a WordPress Multisite Network when they do not have privileges to access that site. Instead WPO365 will display an access-denied splash screen, notifying the user of the denied access. If the user has already authenticated successfully, the screen will also show a list of sites where they have do privileges. [LOGIN]
+* Improvement: The Calendar app (to embed an Exchange / Outlook Calendar in WordPress) can now be configured to show the personal calendar of the logged-in user. The [tutorial](https://tutorials.wpo365.com/courses/embed-an-exchange-calendar-in-wordpress/) has been updated accordingly. [APPS, INTEGRATE (INTRANET)]
+* Improvement: The plugin can now also secure the WordPress REST API using App Roles / application-level access tokens (obtained using the client-credentials flow). The [documentation](https://docs.wpo365.com/article/147-azure-ad-based-protection-for-the-wordpress-rest-api) has been updated support for this scenario. [ESSENTIALS, PROFESSIONAL, INTEGRATE (LOGIN+, SYNC, INTRANET)]
+* Improvement: Users that are able to bypass SSO for the login page - by adding the secret key to the URL - are now also able to request a password-reset link and reset their password accordingly. [ESSENTIALS, PROFESSIONAL, CUSTOMERS, INTEGRATE (LOGIN+, SYNC, INTRANET)]
+* Improvement: Administrators can now configure WPO365 to use a user's email username as the domain for a new (WordPress Multisite) network subsite (instead of the user's stringified WP User ID). [ESSENTIALS, PROFESSIONAL, CUSTOMERS, INTEGRATE (LOGIN+, SYNC, INTEGRATE)]
+* Fix: The favicon.ico file will now automatically be added to the list of pages freed from authentication, since - on WordPress Multisite - a user may request this file from the main site where the user does not have any privileges. [LOGIN]
+* Fix: The plugin will now also redirect users attempting to access the login page when the administrator has enabled SSO for the login page and the user is already logged in. [ESSENTIALS, PROFESSIONAL, CUSTOMERS, INTEGRATE (LOGIN+, SYNC, INTRANET)]
+* Fix: WPO365 now will remove any duplicate slashes from the current request URI, to prevent attackers to bypass - for example - SSO when it's forced for the login page. [LOGIN]
+* Fix: The powerbi-client package has been updated to its latest version. [LOGIN, APPS, INTEGRATE (INTRANET)]
+* Fix: Fixed a string-format error that caused a critical error when the option to "Create new users in WordPress" would have been unchecked. [ALL PREMIUM]
+* Fix: The TLD "lan" has been added to the license-checker list of exceptions. [LOGIN, MSGRAPHMAILER]
+* Fix: "WPO365 Audiences" checkboxes on the Users, Posts and Pages screens in WP Admin now again are being displayed correctly. [ROLES + ACCESS, PROFESSIONAL, INTEGRATE (SYNC , INTRANET)]
+* Fix: An issue causing - under specific circumstances - an "array-to-string conversion" warning in the Url_Helpers class has been resolved. [LOGIN, MSGRAPHMAILER]
+
 = v35.0 =
 * Feature: Create a new (WordPress Network / Multisite) blog for a user when they sign in with Microsoft for the first time. Consult the [online documentation](https://docs.wpo365.com/article/226-create-a-new-wpmu-blog-upon-first-login) for details. [ESSENTIALS, PRO, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
 * Improvement: A WordPress Network Multisite super admin can now switch between "shared" and "dedicated" mode when they go to My Sites > Network Admin > WPO365 > User Registration. The entry in wp-config.php will also still be honoured. See the [updated documentation](https://docs.wpo365.com/article/29-support-for-wordpress-multisite-wpmu) [LOGIN]
@@ -334,97 +350,6 @@ Also available [online](https://www.wpo365.com/change-log/).
 * Fix: Changed the log level of a number of avatar related issues e.g. when a profile picture for a user was not found from warning to debug. [PROFESSIONAL, INTEGRATE (SYNC, INTRANET)]
 * Fix: The login-message shortcode and the login-button shortcode are now correctly initialized for the new PROFESSIONAL and INTEGRATE bundles. [PROFESSIONAL, INTEGRATE]
 * Fix: If the administrator has configured a custom error / logged-out page then WPO365 will also ensure user is redirected to that page when they sign out of WordPress using the default sign-out option(s). [PROFESSIONAL, INTEGRATE (LOGIN+, SYNC, INTRANET)]
-
-= v29.0 =
-* Support for new [WPO365 feature bundles](https://www.wpo365.com/news/its-not-just-a-change-its-a-leap-forward).
-
-= v28.2 =
-* Fix: WPO365 will now correctly "ignore" a SAML response when the Relay State is not a properly formatted URL. [LOGIN]
-
-= v28.1 =
-* Improvement: The Mail Audit Log Viewer has been updated to show nr. of attempts and time of last attempt for a better general understanding of the send-status of the email in question. [MAIL, CUSTOMERS, SYNC, INTRANET]
-* Improvement: The Debug Log entries now display timestamps in the WordPress timezone (see WP Admin > Settings > General > Timezone). [LOGIN, MICROSOFT GRAPH MAILER]
-* Improvement: The Mail Audit Log entries now display timestamps in the WordPress timezone (see WP Admin > Settings > General > Timezone). [LOGIN, MICROSOFT GRAPH MAILER]
-* Improvement: The WPO365 Insights entries now display timestamps in the WordPress timezone (see WP Admin > Settings > General > Timezone). [LOGIN, MICROSOFT GRAPH MAILER]
-* Improvement: A small icon on the plugin's Mail configuration page will show the status of the "Resending failed emails automatically" feature. [MAIL, CUSTOMERS, SYNC, INTRANET]
-* Improvement: The default WP role update scenario has been updated from "Add" to "Skip" and the plugin's "User Registration" configuration has been update accordingly. [LOGIN]
-* Improvement: The Microsoft Graph Mailer for WordPress will not be instantiated if no authorization information can be found. [LOGIN, MICROSOFT GRAPH MAILER]
-* Improvement: The Mail Authorization Status Popup will now appear only after 4 seconds and will no longer show if authorization is under way. [LOGIN, MICROSOFT GRAPH MAILER]
-* Improvement: Administrators can now also auto-enroll users into LearnDash courses and auto-assign users to LearnDash Groups based on (login) domains. [ROLES + ACCESS, SYNC, INTRANET]
-* Improvement: Administrators can now disable SSO for WP Admin. A warning will show if this new option conflicts with other options such as "Dual Login" and "Force SSO for the login page". [LOGIN+, CUSTOMERS, SYNC, INTRANET]
-* Fix: WordPress no longer shows that an update for a premium addon or bundle is available when the latest version is already installed. [ALL PREMIUM]
-* Fix: WPO365 now correctly replaces the WP Avatar with the user's Entra / Microsoft 365 Profile Picture when BuddyBoss has been installed / enabled. [AVATAR, SYNC, INTRANET]
-* Fix: The self-test would fail if the administrator had enabled the Proof Key for Code Exchange. [LOGIN+, CUSTOMERS, SYNC, INTRANET]
-* Fix: The recently added Mail Audit Log Retention Policy (to clean up entries older than 90 days) no longer fails if an older version of WPO365 | MICROSOFT GRAPH MAILER or WPO365 | LOGIN would be installed in combination with the latest version of the WPO365 | MAIL addon. [MAIL, CUSTOMERS, SYNC, INTRANET]
-* Fix: WPO365 no longer tries to process an OpenID Connect response if SAML 2.0 based SSO is configured. [LOGIN]
-* Fix: The shortcode configurator to embed a SharePoint List or Library now warns if the wrong Microsoft Graph version is selected on the plugin's "Integration" configuration page. [LOGIN, M365 APPS]
-* Fix: WPO365 User Sync will now include the low-level DB error message if an error occurs when logging the results to the database. [CUSTOMERS, SYNC, INTRANET]
-* Fix: The WPO365 configuration pages will now show the correct values for Entra ID / AAD related options retrieved from wp-config.php (instead of from the database). [ALL PREMIUM]
-* Fix: The Mail Audit Log will now create a new table at the correct "level" in case WordPress Multisite would be activated and WPO365's default support mode for WPMU (= Shared) is configured. [MAIL, CUSTOMERS, SYNC, INTRANET]
-* Fix: WPO365 will now only attempt to retrieve a User Resource from Microsoft Graph when the administrator explicitly configured "Microsoft Graph" as the desired "Source for custom user fields" on the plugin's "User Sync" configuration page. [LOGIN+, CUSTOMERS, SYNC, INTRANET]
-* Fix: The Redirect URI for the WPO365 Microsoft Graph Mailer no longer indicates an error for the Redirect URI migrated from "Mail Integration for Office 365 / Outlook" plugin. [LOGIN, MICROSOFT GRAPH MAILER]
-* Fix: The WP Avatar no longer shows a broken picture link when the Avatar feature is enabled but WPO365 fails to retrieve the user's profile photo from Microsoft Graph. [AVATAR, SYNC, INTRANET]
-
-= v28.0 =
-* Patched vulnerability (CVE-2024-4706): Validation of the script URL - used to embed Microsoft 365 services in WordPress - is now validated to ensure it points to a resource on the local WordPress server. [ALL]
-* Breaking Change (Microsoft Graph Mailer): WPO365 [retains **mail log** entries](https://docs.wpo365.com/article/217-mail-log-retention) that are less than approximately 90 days old and deletes entries that exceed the configured number of days. [MAIL]
-* Breaking Change (WordPress Multisite): Profile pictures for *WordPress Avatars* and downloaded from Microsoft Graph will always be saved in /wp-content/uploads/wpo365/profile-images instead of /wp-content/uploads/sites/[blog_id]/wpo365/profile-images. [AVATAR, SYNC, INTRANET]
-* Improvement: In an attempt to better understand errors that involve *cURL*, administrators can now enable [verbose logging for cURL](https://docs.wpo365.com/article/214-enable-curl-verbose). [ALL]
-* Improvement: The *Allowed (login) domains* list can now be changed into a [list of domains that are not allowed to sign in](https://docs.wpo365.com/article/43-domain-whitelist). This is especially useful for administrators that allow users from any Microsoft Entra ID / AAD tenant to sign in to their WordPress website. [LOGIN+, SYNC, INTRANET]
-* Improvement: Administrators can now configure WPO365 to [add new or existing users to all subsites in a WordPress Multisite Network](https://docs.wpo365.com/article/215-always-add-all-users-to-all-wpmu-subsites) when they sign in with Microsoft or when their data is synchronized. Additionally, all existing users can be added a new subsite, when it is first initialized. [LOGIN+, SYNC, INTRANET]
-* Improvement: A monitor (in the form of a WP Cron Job) for [WPO365 User Synchronization](https://www.wpo365.com/feature/user-synchronization/) will be started automatically (each time a new user synchronization starts) and will check every 5 minutes for unfinished synchronization jobs for which no WP Cron Job (to process the next batch of users) exists and re-create this job if needed. [SYNC, INTRANET]
-* Improvement: If WPO365 is used to [integrate WordPress with Azure AD B2C](https://www.wpo365.com/feature/azure-ad-b2c/) and the administrator has configured WPO365 to create users in Azure AD B2C from WordPress, the status of this upstream-synchronization will now also show on a user's profile page. [CUSTOMERS, SYNC, INTRANET]
-* Improvement: If enabled, [WPO365 Audiences](https://www.wpo365.com/feature/audiences/) will now be shown for each post and / or page on WordPress pages, listing all posts and pages. [ROLES + ACCESS, SYNC, INTRANET]
-* Improvement: The response - when a non-logged-in user requests a post or a page that is restricted by a WPO365 Audience - is now streamlined with the option [Response for visitors requesting a page that requires a logged-in user](https://docs.wpo365.com/article/197-post-types-that-require-a-logged-in-user). [ROLES + ACCESS, SYNC, INTRANET]
-* Improvement: The *Admin Credential > Secret Token* that is used for [Entra ID (AAD) User provisioning (SCIM) for WordPress](https://docs.wpo365.com/article/59-wordpress-user-provisioning-with-azure-ad-scim) can now be administered on the plugin's *User Sync* configuration page. [SCIM, INTRANET]
-* Improvement: WPO365 now supports [Custom URL Domains for Microsoft Entra (Ext.) ID](https://learn.microsoft.com/en-us/entra/external-id/customers/how-to-custom-url-domain). [LOGIN+, SYNC, INTRANET]
-* Improvement: If activated, WPO365 will terminate the loading of WordPress, whenever it identifies a login attempt (with local WordPress credentials) by a user whose username is not included in the [WPO_ADMINS list](https://docs.wpo365.com/article/174-restrict-access-to-the-wpo365-configuration-pages). See the [online documentation](https://docs.wpo365.com/article/216-only-wpoadmins-can-sign-in-locally) for details. [ALL]
-* Improvement: The title for the *Office 365 Profile Information* section on a user's profile (only visible if the administrator enabled the option to [Show Azure AD user attributes in a WordPress user profile](https://docs.wpo365.com/article/98-synchronize-microsoft-365-azure-ad-profile-fields)) can now be translated (go to WP Admin > WPO365 > ... > Translations). [CUSTOM USER FIELDS, LOGIN+, SYNC, PREMIUM]
-* Improvement: Administrators of a WordPress Multisite installation with dedicated mode enabled (so that subsites can be configured independently of each other) can now go to the plugins *Import / Export* configuration for a subsite to replace the (empty) configuration of the subsite with a copy of the central WPO365 configuration template. See the [updated documentation](https://docs.wpo365.com/article/29-support-for-wordpress-multisite-wpmu) for details. [ALL]
-* Preview: Administrators of GCCH tenants can now select this type of tenant from the list of Identity Providers, in order to change the TLD for all relevant Microsoft endpoints to ".us" (instead of ".com"). [ALL]
-* Fix: Translations for the Employee Directory app now correctly handle special characters (however, it may be necessary to recreate the shortcode). [ALL]
-* Fix: The premium WPO365 | MAIL option to resend failed emails automatically can now be started when the premium addon is used in combination with WPO365 | MICROSOFT GRAPH MAILER. [MICROSOFT GRAPH MAILER]
-
-= v27.2 =
-* Improvement: The lis of "Optional SCIM attribute mappings" on the plugin's "User Sync" configuration page has been deprecated. Administrators that have support for SCIM based Azure AD User provisioning enabled, are urged to migrate these mappings to the list "SCIM attribute to WordPress user meta mappings" in the section "Custom User Fields" using the corresponding "Migrate optional SCIM attribute mappings" button. [SCIM, INTRANET]
-* Fix: Some "SCIM attribute to WordPress user meta mappings" e.g. "emails[type eq "work"].value" were only processed by WPO365 internally e.g. to update a user's WordPress profile. With this change, these attributes can now also be mapped to WordPress user meta. [SCIM, INTRANET]
-* Fix: An administrator now can (and should) - besides the ID token claim - also specify the corresponding AAD user property (and SCIM claim, if support for SCIM based Azure AD User provisioning has been enabled) that WPO365 should use for a new WordPress user's username. This only concerns those administrators, who configured a custom claim as the username of a new WordPress user (on the plugin's "User registraton" configuration page). [(LOGIN+), CUSTOMERS, SCIM, SYNC, SCIM]
-* Fix: By fixing a caching issue, WPO365 should - after this update - no longer show a notification that "There is a new version of [...] available [...]" for WPO365 premium addons and bundles, after those were updated to the lastest version. [ALL PREMIUM ADDONS / BUNDLES]
-
-= v27.1 =
-* Fix: "Strict Mode" for the Redirect URI can now also be enabled for the WPO365 | MICROSOFT GRAPH MAILER plugin (so it will only try process an Oauth response / payload detected at the exact URL which must be a path below the site's home address e.g. /oidc-auth/). [MICROSOFT GRAPH MAILER]
-* Fix: The plugin will not try and process an Oauth response / payload if both features SSO and MICROSOFT GRAPH MAILER are disabled or if SSO is disabled but MICROSOFT GRAPH MAILER is enabled and but the administrator did not start an attempt to authorize an account to send emails from. [LOGIN, MICROSOFT GRAPH MAILER]
-* Fix: WPO365 Health Messages are now correctly displayed on the corresponding panel for the MICROSOFT GRAPH MAILER plugin.
-* Fix: A cached Authorization Code will now be correctly removed from cache after it has been redeemed. [LOGIN]
-* Fix: A user's UPN is now correctly escaped before inserting it into the WPO365 User Synchronization database table (to support UPNs with single quotes). [SYNC, INTRANET]
-
-= v27.0 =
-* Breaking Change: HTML and CSS for the default **login-button** has changed slightly and the wrapper is now a flex-box, to allow for an additional drop-down list in case the administrator configured [multiple Identity Providers](https://tutorials.wpo365.com/courses/wp-config-php-multiple-identity-providers-idps/). An administrator, however, can revert this change and configure WPO365 to use the old login-button template (see the corresponding option on the plugin's *Miscellaneous* configuration page). [LOGIN]
-* Breaking Change: To support devOps workflows and site replication scenarios, WPO365 now automatically detects named constants in your website's wp-config.php file that either configure an [single Identity Provider (IdP)](https://tutorials.wpo365.com/courses/wp-config-php-single-identity-provider-idp/) or any of the [WPO365 settings](https://tutorials.wpo365.com/courses/wp-config-php-configuration-w-o-idps/) that are not directly related to an IdP. As a result, the option **Use WP-Config.php for AAD secrets** has been renamed to [Obfuscate AAD options](https://docs.wpo365.com/article/137-use-wp-config-for-aad-secrets) and the option **Use WP-Config.php to override (some) config options** has been removed. [ANY PREMIUM ADDON / BUNDLE]
-* Breaking Change: LearnDash enrollment rules are now also applied to existing users (when they sign in or when users are synchronized). [ROLES + ACCESS, SYNC, INTRANET]
-* Feature (preview): Administrators can now configure WPO365 to support multiple Identity Providers (IdP). If multiple IdPs have been configured, WPO365 will - by default - render a dropdown list enumerating IdPs by their "friendly name". A user simply picks an IdP from the list before clicking "Sign in with Microsoft". Refer to the new [tutorial](https://tutorials.wpo365.com/courses/wp-config-php-multiple-identity-providers-idps/) for further details. [ANY PREMIUM ADDON / BUNDLE]
-* Feature (preview): Now administrators can enable **WPO365 Insights** and aggregate various events into straightforward management dashboards. These dashboards are designed to offer valuable insights, such as tracking the count of users who have authenticated successfully or unsuccessfully, monitoring emails that have been sent successfully or unsuccessfully, and overseeing the synchronization status of users, whether through SCIM, WPO365 User synchronization, or during their initial sign-in. See the new [online guide](https://www.wpo365.com/feature/wpo365-insights/) for further details. [ALL]
-* Feature (preview): Administrators can now add **app roles** to an *App registration* in *Microsoft Entra Admin Center* and use them to dynamically assign WordPress roles to users. See the [online documentation](https://www.wpo365.com/feature/roles-access/) for further details. [ROLES + ACCESS, SYNC, INTRANET]
-* Feature (preview): WPO365 now also supports the SAML 2.0 protocol for use with Azure AD's **multi-tenancy feature**. See the [online documentation](https://docs.wpo365.com/article/211-support-for-multitenant-apps-saml-2-0) for further details. [LOGIN+, SYNC, INTRANET]
-* Improvement: WPO365 can now be configured to skip saving the default WP **avatar** for a user without a profile picture. See the [online documentation](https://docs.wpo365.com/article/212-do-not-save-default-wp-avatar) for further details. [AVATAR, SYNC, INTRANET]
-* Improvement: An administrator can now choose between the WordPress site URL or the WP Admin URL as the **default landing page** after a user successfully signed in with Microsoft. Alternatively, a custom URL can be defined when the LOGIN+ addon, or the SYNC or INTRANET is detected. [LOGIN, LOGIN+, SYNC, INTRANET]
-* Improvement: When a SAML 2.0 **X509 certificate** is missing from the configuration, is expired or has been withdrawn, WPO365 will try and read the tenant's federation metadata to obtain (and cache) a new signing key. [LOGIN]
-* Improvement: **WPO365 Health Messages** will no longer be displayed on a default WordPress notification banner, but instead a dismissable panel will slide over the configuration app. [LOGIN]
-* Improvement: After running the **Plugin self-test** for SAML 2.0 based SSO, the raw SAML response can now be viewed by clicking the corresponding link for the "SAML response has been processed and no errors occurred" test case. [LOGIN]
-* Improvement: Generated **passwords** are checked to ensure that the generated password has characters from all four possible categories (lower and upper case, numbers and symbols). [LOGIN]
-* Improvement: When deleting a WPO365 configuration, several caches e.g. for access tokens and certificates, are cleaned as well. [LOGIN]
-* Improvement: WPO365 will now update BuddyPress profile fields (provided that this option is enabled) whenever Azure AD Provisioning (SCIM) sends new / updated user attributes. [SCIM, INTRANET]
-* Fix: **Audiences** now work correctly if a user is a member of one Audience but not of all when more than one Audience has been added to a page. [ROLES + ACCESS, SYNC, INTRANET]
-* Fix: **User synchronization** of users with an apostrophe in their username now no longer generates an error when being logged into the database table. [SYNC, INTRANET]
-* Fix: **Auth.-Only** scenarios are now compatible with the **Audiences** feature to make a page private (restricting access exclusively to users who are authenticated). [ROLES + ACCESS, SYNC, INTRANET]
-* Fix: WPO365 will not send the user into an infinite loop anymore, if the administrator has enabled "strict mode" for the Redirect URI plus checked the option to use wp-config.php for AAD secrets. [ALL PREMIUM]
-* Fix: WPO365 now checks for before "Trying to create a duplicate log entry" during user synchronization and will update the existing log record instead. [SYNC, INTRANET]
-
-= v26.0 =
-* Feature: Embed an Outlook / Exchange Calendar in WordPress. See [online documentation](https://www.wpo365.com/feature/outlook-exchange-calendar/) for details. [LOGIN, APPS, INTRANET]
-* Feature: Embed a SharePoint Online List in WordPress. See [online documentation](https://www.wpo365.com/feature/sharepoint-list/) for details. [LOGIN, APPS, INTRANET]
-* Fix: The plugin attempted to process any POST request with parameter "error", mistakenly assuming that it would be an authentication-error sent by Microsoft. [LOGIN, MICROSOFT GRAPH MAILER]
-* Version bumped. [ALL]
 
 = Older versions =
 

@@ -26,34 +26,26 @@ if ( ! class_exists( '\Wpo\Services\User_Create_Service' ) ) {
 				: $wpo_usr->upn;
 
 			if ( is_multisite() ) {
-				$blog_id = get_current_blog_id();
+				$blog_name = get_bloginfo( 'name' );
 
-				/**
-				 * 1. WPMU Shared Mode
-				 * 2. Do NOT add all users to all (sub) sites
-				 * 3. Do NOT create new blog for user
-				 */
+				if ( ! Options_Service::mu_use_subsite_options() && ! Options_Service::get_global_boolean_var( 'mu_add_user_to_all_sites' ) ) {
 
-				if ( ! Options_Service::mu_use_subsite_options() && ! Options_Service::get_global_boolean_var( 'mu_add_user_to_all_sites' ) && ! Options_Service::get_global_boolean_var( 'mu_add_new_user_site' ) ) {
-
-					if ( is_main_site() ) { // Main Site
+					if ( is_main_site() ) {
 
 						if ( ! Options_Service::get_global_boolean_var( 'create_and_add_users' ) ) {
-							$error_message = sprintf( 'Not adding user with login %s to the network\'s main site because the administrator has unchecked the option to "Add users to WPMU main site"', $user_login );
+							Log_Service::write_log( 'WARN', sprintf( '%s -> User %s does not have privileges for site "%s" and is therefore denied access.', __METHOD__, $user_login, $blog_name ) );
+							wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
 						}
 					} elseif ( Options_Service::get_global_boolean_var( 'skip_add_user_to_subsite' ) ) { // Sub Site
-						$error_message = sprintf( 'Not adding user with login %s to the network\'s subsite with blog ID %d because the administrator has not checked the option "Do not add user to WPMU subsite"', $user_login, $blog_id );
+						Log_Service::write_log( 'WARN', sprintf( '%s -> User %s does not have privileges for site "%s" and is therefore denied access.', __METHOD__, $user_login, $blog_name ) );
+						wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
 					}
 				}
 
 				// WPMU Dedicated Mode
 				if ( Options_Service::mu_use_subsite_options() && ! Options_Service::get_global_boolean_var( 'create_and_add_users' ) ) {
-						$error_message = sprintf( 'Not adding user with login %s to (sub) site with blog ID %d becfause the administrator has unchecked the option to "Create new users in WordPress"', $user_login, $blog_id );
-				}
-
-				if ( ! empty( $error_message ) ) {
-					Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $error_message ) );
-					Authentication_Service::goodbye( Error_Service::USER_NOT_FOUND, false );
+					Log_Service::write_log( 'WARN', sprintf( '%s -> User %s does not have privileges for site "%s" and is therefore denied access.', __METHOD__, $user_login, $blog_name ) );
+					wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
 				}
 			} elseif ( ! Options_Service::get_global_boolean_var( 'create_and_add_users' ) ) {
 				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> User not found and settings prevented creating a new user on-demand for user ' . $user_login );

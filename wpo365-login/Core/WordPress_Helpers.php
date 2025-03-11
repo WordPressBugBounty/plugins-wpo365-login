@@ -80,7 +80,7 @@ if ( ! class_exists( '\Wpo\Core\WordPress_Helpers' ) ) {
 		/**
 		 * Helper to base64 URL decode.
 		 *
-		 * @param   string  $arg Input to be decoded.
+		 * @param   string $arg Input to be decoded.
 		 *
 		 * @return  string  Input decoded
 		 */
@@ -137,12 +137,14 @@ if ( ! class_exists( '\Wpo\Core\WordPress_Helpers' ) ) {
 				'action'              => array(),
 				'align'               => array(),
 				'alt'                 => array(),
+				'checked'             => array(),
 				'class'               => array(),
 				'data-nonce'          => array(),
 				'data-props'          => array(),
 				'data-wpajaxadminurl' => array(),
 				'data'                => array(),
 				'dir'                 => array(),
+				'disabled'            => array(),
 				'fill'                => array(),
 				'for'                 => array(),
 				'height'              => array(),
@@ -153,8 +155,8 @@ if ( ! class_exists( '\Wpo\Core\WordPress_Helpers' ) ) {
 				'method'              => array(),
 				'name'                => array(),
 				'novalidate'          => array(),
-				'onClick'             => array(),
 				'onclick'             => array(),
+				'onClick'             => array(),
 				'rel'                 => array(),
 				'rev'                 => array(),
 				'src'                 => array(),
@@ -180,6 +182,7 @@ if ( ! class_exists( '\Wpo\Core\WordPress_Helpers' ) ) {
 			$allowed_tags['button']   = $allowed_atts;
 			$allowed_tags['head']     = $allowed_atts;
 			$allowed_tags['html']     = $allowed_atts;
+			$allowed_tags['input']    = $allowed_atts;
 			$allowed_tags['option']   = $allowed_atts;
 			$allowed_tags['rect']     = $allowed_atts;
 			$allowed_tags['select']   = $allowed_atts;

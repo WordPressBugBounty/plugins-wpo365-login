@@ -70,7 +70,23 @@ if ( ! class_exists( '\Wpo\Core\Globals' ) ) {
 				$home = preg_replace( '/^http:/i', 'https:', $home );
 			}
 
-			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? Url_Helpers::ensure_trailing_slash_path( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : ''; // phpcs:ignore
+
+			if ( ! empty( $request_uri ) ) {
+				$request_uri_segments = explode( '/', $request_uri );
+				$request_uri_segments = array_filter( // Filtering is applied to sanitize invalid URLs e.g. https://site/subsite//wp-login.php.
+					$request_uri_segments,
+					function ( $segment ) {
+						return ! empty( $segment );
+					}
+				);
+				$request_uri          = sprintf( // Restore any trailing slashes.
+					'/%s%s',
+					implode( '/', $request_uri_segments ),
+					substr( $request_uri, -1 ) === '/' ? '/' : ''
+				);
+			}
+
 			$home_path   = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( $home, PHP_URL_PATH ) );
 			$host        = wp_parse_url( $home, PHP_URL_HOST );
 			$current_url = $scheme . '://' . $host . $request_uri;

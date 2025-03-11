@@ -197,7 +197,13 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 				return new \WP_Error( 'ProxyFetchError', $warning );
 			}
 
-			$body = wp_remote_retrieve_body( $response );
+			$body   = wp_remote_retrieve_body( $response );
+			$status = wp_remote_retrieve_response_code( $response );
+
+			if ( $status < 200 || $status > 299 ) {
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Error occured whilst fetching from Microsoft Graph: HTTP STATUS %d', __METHOD__, intval( $status ) ) );
+				return new \WP_Error( 'ProxyFetchError', sprintf( 'Error occurred whilst fetching from Microsoft Graph: HTTP STATUS %d', intval( $status ) ) );
+			}
 
 			if ( $binary ) {
 				return array( 'binary' => \base64_encode( $body ) ); // phpcs:ignore
@@ -210,9 +216,10 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 				return $body;
 			}
 
-			$error_message = 'Error occured whilst converting to JSON: ' . $json_error;
-			Log_Service::write_log( 'WARN', __METHOD__ . ' -> ' . $error_message );
-			return new \WP_Error( 'ProxyFetchError', $error_message );
+			Log_Service::write_log( 'WARN', sprintf( '%s -> Error occured whilst converting to JSON: %d [See next line for raw response]', __METHOD__, $json_error ) );
+			Log_Service::write_log( 'DEBUG', $body );
+
+			return new \WP_Error( 'ProxyFetchError', sprintf( 'Error occurred whilst converting to JSON: %d', $json_error ) );
 		}
 
 		/**

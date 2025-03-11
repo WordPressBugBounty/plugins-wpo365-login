@@ -434,7 +434,12 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 				$segment_count     = count( $url_host_segments );
 
 				for ( $i = 0; $i < $segment_count && $i < 2; $i++ ) {
-					array_pop( $url_host_segments );
+					$value = array_pop( $url_host_segments );
+
+					// Checking for TLD lan.
+					if ( $i === 0 && strcasecmp( 'lan', $value ) === 0 ) {
+						$skip_license_check = true;
+					}
 				}
 
 				$url_subdomain = implode( '.', $url_host_segments );

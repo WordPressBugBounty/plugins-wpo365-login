@@ -157,6 +157,15 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 		public static function route_initiate_user_authentication() {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
+			// Remove sso-bypass-cookie.
+			$cookie_name = defined( 'WPO_SSO_BYPASS_COOKIE' ) ? constant( 'WPO_SSO_BYPASS_COOKIE' ) : 'wordpress_wpo365_sso_bypass';
+
+			if ( isset( $_COOKIE[ $cookie_name ] ) ) {
+				$secure = ( wp_parse_url( wp_login_url(), PHP_URL_SCHEME ) === 'https' );
+				setcookie( $cookie_name, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, $secure );
+				unset( $_COOKIE[ $cookie_name ] );
+			}
+
 			/**
 			 * In case of multiple IdPs the type of IdP is leading the way.
 			 */

@@ -22,6 +22,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Rest_Protection' ) ) {
 		private $wp_rest_aad_application_id_uri  = null;
 		private $wp_rest_aad_protected_endpoints = array();
 		private $wp_rest_configuration_errors    = false;
+		private $wp_rest_aad_use_app_roles       = false;
 
 		private $extensions = array();
 		private $request    = null;
@@ -119,9 +120,17 @@ if ( ! class_exists( '\Wpo\Tests\Test_Rest_Protection' ) ) {
 				return $test_result;
 			}
 
-			$wp_rest_aad_protected_endpoint = $this->wp_rest_aad_protected_endpoints[0];
+			$wp_rest_aad_protected_endpoint  = $this->wp_rest_aad_protected_endpoints[0];
+			$this->wp_rest_aad_use_app_roles = Options_Service::get_global_boolean_var( 'wp_rest_aad_use_app_roles' );
 
-			$this->access_token = Access_Token_Service::get_access_token( $wp_rest_aad_protected_endpoint['strC'] );
+			if ( $this->wp_rest_aad_use_app_roles ) {
+				$scope              = sprintf( '%s/.default', $this->wp_rest_aad_application_id_uri );
+				$this->access_token = Access_Token_Service::get_app_only_access_token( $scope );
+			} else {
+				$this->access_token = Access_Token_Service::get_access_token( $wp_rest_aad_protected_endpoint['strC'] );
+			}
+
+			$test_result->data = $this->access_token;
 
 			if ( is_wp_error( $this->access_token ) ) {
 				$this->wp_rest_configuration_errors = true;
@@ -141,20 +150,32 @@ if ( ! class_exists( '\Wpo\Tests\Test_Rest_Protection' ) ) {
 				return $test_result;
 			}
 
-			if ( ! property_exists( $this->claims, 'aud' ) || strcasecmp( $this->claims->aud, $this->wp_rest_aad_application_id_uri ) !== 0 ) {
+			if ( ! property_exists( $this->claims, 'aud' ) || stripos( $this->claims->aud, $this->wp_rest_aad_application_id ) === false ) {
 				$this->wp_rest_configuration_errors = true;
 				$test_result->passed                = false;
-				$test_result->message               = 'The access token is for audience ' . $this->claims->aud . ' which differs from the configured Azure AD Application ID URI ' . $this->wp_rest_aad_application_id_uri;
+				$test_result->message               = 'The access token is for audience ' . $this->claims->aud . ' and appears not to contain the Application ID ' . $this->wp_rest_aad_application_id;
 				$test_result->more_info             = 'https://docs.wpo365.com/article/147-azure-ad-based-protection-for-the-wordpress-rest-api';
 				return $test_result;
 			}
 
-			if ( ! property_exists( $this->claims, 'scp' ) || WordPress_Helpers::stripos( $wp_rest_aad_protected_endpoint['strC'], $this->claims->scp ) <= 0 ) {
-				$this->wp_rest_configuration_errors = true;
-				$test_result->passed                = false;
-				$test_result->message               = 'The access token is for scope ' . $this->claims->scp . ' which differs from the requested scope ' . $wp_rest_aad_protected_endpoint['strC'];
-				$test_result->more_info             = 'https://docs.wpo365.com/article/147-azure-ad-based-protection-for-the-wordpress-rest-api';
-				return $test_result;
+			if ( $this->wp_rest_aad_use_app_roles ) {
+				$roles         = property_exists( $this->claims, 'roles' ) ? $this->claims->roles : array();
+				$role_segments = explode( '/', $wp_rest_aad_protected_endpoint['strC'] );
+				$role          = count( $role_segments ) > 0 ? array_pop( $role_segments ) : '';
+
+				if ( ! in_array( $role, $roles, true ) ) {
+					$this->wp_rest_configuration_errors = true;
+					$test_result->passed                = false;
+					$test_result->message               = 'The access token has the following roles ' . print_r( $roles, true ) . ' and not the requested role ' . $role; // phpcs:ignore
+					$test_result->more_info             = 'https://docs.wpo365.com/article/147-azure-ad-based-protection-for-the-wordpress-rest-api';
+					return $test_result;
+				}
+			} elseif ( ! property_exists( $this->claims, 'scp' ) || WordPress_Helpers::stripos( $wp_rest_aad_protected_endpoint['strC'], $this->claims->scp ) === false ) {
+					$this->wp_rest_configuration_errors = true;
+					$test_result->passed                = false;
+					$test_result->message               = 'The access token is for scope ' . $this->claims->scp . ' which differs from the requested scope ' . $wp_rest_aad_protected_endpoint['strC'];
+					$test_result->more_info             = 'https://docs.wpo365.com/article/147-azure-ad-based-protection-for-the-wordpress-rest-api';
+					return $test_result;
 			}
 
 			$test_result->data = array( 'access_token' => $this->access_token->access_token );

@@ -538,7 +538,11 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 			// Set up new subsite for new user (WPMU)
 			if ( method_exists( '\Wpo\Services\User_Create_Update_Service', 'wpmu_add_new_user_site' ) ) {
 				add_action( 'wpo365/user/created', '\Wpo\Services\User_Create_Update_Service::wpmu_add_new_user_site', 10, 1 );
+				add_filter( 'wpo365/wpmu/user_site/name', '\Wpo\Core\Wpmu_Helpers::user_site_name', 10, 1 );
 			}
+
+			// To show a custom access denied splash (WPMU).
+			add_action( 'wpo365/wpmu/access_denied', '\Wpo\Core\Wpmu_Helpers::wpmu_access_denied_splash', 10, 1 );
 
 			// Apply updates to the internal WPO365 representation of a User (see Wpo\Core\User)
 			if ( method_exists( '\Wpo\Services\User_Details_Service', 'set_user_display_name' ) ) {

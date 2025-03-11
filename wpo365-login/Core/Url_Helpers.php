@@ -327,14 +327,16 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		 *
 		 * @return void
 		 */
-		public static function goto_after( $wpo_usr ) {
+		public static function goto_after( $wpo_usr = null ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
 			// Get URL and redirect user (default is the WordPress homepage)
 			$redirect_url = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
 
 			if ( \class_exists( '\Wpo\Services\Redirect_Service' ) && \method_exists( '\Wpo\Services\Redirect_Service', 'get_redirect_url' ) ) {
-				$redirect_url = \Wpo\Services\Redirect_Service::get_redirect_url( $redirect_url, $wpo_usr->groups, $wpo_usr->created );
+				$groups       = ! empty( $wpo_usr ) ? $wpo_usr->groups : array();
+				$is_new_user  = ! empty( $wpo_usr ) ? $wpo_usr->created : false;
+				$redirect_url = \Wpo\Services\Redirect_Service::get_redirect_url( $redirect_url, $groups, $is_new_user );
 			} else {
 				$redirect_url = self::get_redirect_url();
 			}
@@ -399,11 +401,11 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 				}
 			}
 
-			if ( ! strcasecmp( rtrim( $validated_redirect_url, '/' ), rtrim( $redirect_url, '/' ) ) === 0 ) {
+			if ( strcasecmp( rtrim( $validated_redirect_url, '/' ), rtrim( $redirect_url, '/' ) ) !== 0 ) {
 				Log_Service::write_log(
 					'ERROR',
 					sprintf(
-						'%s -> WPO365 has prevented to redirect a user (that just successfully signed in with Microsoft) to an invalid URL [%s]. The user will instead remain at the Entra Redirect URI [%s].',
+						'%s -> WPO365 has prevented to redirect a user (that just successfully signed in with Microsoft) to an invalid URL [%s]. The user will instead be sent to the Entra Redirect URI [%s].',
 						__METHOD__,
 						$redirect_url,
 						$aad_redirect_url
@@ -467,14 +469,7 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		 * @return string
 		 */
 		public static function get_state_url( $url = '', $query_args = array() ) {
-			Log_Service::write_log(
-				'DEBUG',
-				sprintf(
-					'##### ->  %s [Arg(s): %s]',
-					__METHOD__,
-					implode( ' ', func_get_args() )
-				)
-			);
+			Log_Service::write_log( 'DEBUG', sprintf( '##### ->  %s', __METHOD__ ) );
 
 			// if $url is empty take redirect_to or else the current URL as long as it ain't our own post-back (then take referer)
 			if ( empty( $url ) ) {
