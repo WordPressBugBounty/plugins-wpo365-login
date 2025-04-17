@@ -83,7 +83,7 @@ if ( ! class_exists( '\Wpo\Core\Globals' ) ) {
 				$request_uri          = sprintf( // Restore any trailing slashes.
 					'/%s%s',
 					implode( '/', $request_uri_segments ),
-					substr( $request_uri, -1 ) === '/' ? '/' : ''
+					substr( $request_uri, -1 ) === '/' && strlen( $request_uri ) > 1 ? '/' : ''
 				);
 			}
 

@@ -3,7 +3,7 @@
         'name' => 'wpo365/wpo365-login',
         'pretty_version' => 'dev-develop',
         'version' => 'dev-develop',
-        'reference' => '7001a95d33640fbc8850d720d6e26a92a37a7789',
+        'reference' => '0daac0f2befc9575a23737ecd18703bf0cefc40e',
         'type' => 'plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -40,7 +40,7 @@
         'wpo365/wpo365-login' => array(
             'pretty_version' => 'dev-develop',
             'version' => 'dev-develop',
-            'reference' => '7001a95d33640fbc8850d720d6e26a92a37a7789',
+            'reference' => '0daac0f2befc9575a23737ecd18703bf0cefc40e',
             'type' => 'plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

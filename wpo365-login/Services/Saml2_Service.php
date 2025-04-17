@@ -541,7 +541,7 @@ if ( ! class_exists( '\Wpo\Services\Saml2_Service' ) ) {
 			}
 
 			if ( empty( $federation_metadata_url ) ) {
-				$tld                     = Options_Service::get_global_string_var( 'tld' );
+				$tld                     = Options_Service::get_aad_option( 'tld' );
 				$tld                     = ! empty( $tld ) ? $tld : '.com';
 				$federation_metadata_url = sprintf(
 					'https://login.microsoftonline%s/%s/FederationMetadata/2007-06/FederationMetadata.xml',

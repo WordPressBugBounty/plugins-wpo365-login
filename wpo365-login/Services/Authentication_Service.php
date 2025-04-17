@@ -73,8 +73,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 
 				Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> User is not logged in and therefore sending the user to Microsoft to sign in' );
 				$login_hint = isset( $_REQUEST['login_hint'] ) // phpcs:ignore
-					? \sanitize_text_field( $_REQUEST['login_hint'] ) // phpcs:ignore
-					: null;
+				? \sanitize_text_field( $_REQUEST['login_hint'] ) // phpcs:ignore
+				: null;
 				self::redirect_to_microsoft( $login_hint );
 			}
 
@@ -141,8 +141,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			}
 
 			$wpo_usr = Options_Service::get_global_boolean_var( 'use_b2c' ) && \class_exists( '\Wpo\Services\Id_Token_Service_B2c' )
-				? User_Service::user_from_b2c_id_token( $id_token )
-				: User_Service::user_from_id_token( $id_token );
+			? User_Service::user_from_b2c_id_token( $id_token )
+			: User_Service::user_from_id_token( $id_token );
 
 			self::user_in_group( $wpo_usr );
 
@@ -484,7 +484,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 									return true;
 								}
 							} elseif ( strcasecmp( $test_domain, $domain ) === 0 ) {
-									return true;
+								return true;
 							}
 						}
 					}
@@ -517,17 +517,17 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 					// Users from specific domains are NOT allowed to sign in
 				} elseif ( $found ) {
 
-						Log_Service::write_log(
-							'WARN',
-							sprintf(
-								'%s -> Access denied error because the administrator has blocked access for domain [login: %s, email: %s]',
-								__METHOD__,
-								$login_domain,
-								$email_domain
-							)
-						);
-						self::goodbye( Error_Service::NOT_FROM_DOMAIN );
-						exit();
+					Log_Service::write_log(
+						'WARN',
+						sprintf(
+							'%s -> Access denied error because the administrator has blocked access for domain [login: %s, email: %s]',
+							__METHOD__,
+							$login_domain,
+							$email_domain
+						)
+					);
+					self::goodbye( Error_Service::NOT_FROM_DOMAIN );
+					exit();
 				}
 			}
 		}
@@ -556,7 +556,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				sprintf(
 					'%s -> Destroying session for %s',
 					__METHOD__,
-					( isset( $_SERVER['PHP_SELF'] ) ? strtolower( basename( $_SERVER['PHP_SELF'] ) ) : '' ) // phpcs:ignore
+				( isset( $_SERVER['PHP_SELF'] ) ? strtolower( basename( $_SERVER['PHP_SELF'] ) ) : '' ) // phpcs:ignore
 				)
 			);
 
@@ -583,8 +583,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			$error_page_path = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
 
 			$redirect_to = ( empty( $error_page_url ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] )
-				? Url_Helpers::get_preferred_login_url()
-				: $error_page_url;
+			? Url_Helpers::get_preferred_login_url()
+			: $error_page_url;
 
 			if ( empty( $_SERVER['PHP_SELF'] ) ) {
 				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> $_SERVER[PHP_SELF] is empty. Please review your server configuration.' );
@@ -622,8 +622,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 
 			if ( ! empty( $state_url ) ) {
 				$redirect_to = add_query_arg( 'redirect_to', $state_url, $redirect_to );
-			} elseif ( ! empty( wp_unslash( $_REQUEST['redirect_to'] ) ) ) { // phpcs:ignore
-				$redirect_to = add_query_arg( 'redirect_to', esc_url_raw( $_REQUEST['redirect_to'] ), $redirect_to ); // phpcs:ignore
+				} elseif ( ! empty( $_REQUEST['redirect_to'] ) ) { // phpcs:ignore
+			$redirect_to = add_query_arg( 'redirect_to', esc_url_raw( $_REQUEST['redirect_to'] ), $redirect_to ); // phpcs:ignore
 			}
 
 			Url_Helpers::force_redirect( $redirect_to );
@@ -656,8 +656,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				$error_page_path = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
 
 				$redirect_to = ( empty( $error_page_url ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] )
-					? Url_Helpers::get_preferred_login_url()
-					: $error_page_url;
+				? Url_Helpers::get_preferred_login_url()
+				: $error_page_url;
 
 				$redirect_to = add_query_arg( 'login_errors', Error_Service::DEACTIVATED, $redirect_to );
 				Url_Helpers::force_redirect( $redirect_to );
@@ -714,8 +714,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 
 			// Skip when a basic authentication header is detected
 			if (
-				Options_Service::get_global_boolean_var( 'skip_api_basic_auth_request' ) === true
-				&& Url_Helpers::is_basic_auth_api_request()
+			Options_Service::get_global_boolean_var( 'skip_api_basic_auth_request' ) === true
+			&& Url_Helpers::is_basic_auth_api_request()
 			) {
 				return true;
 			}
@@ -750,58 +750,93 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 					return true;
 				}
 
-				$dual_login_enabled = Options_Service::get_global_boolean_var( 'redirect_to_login_v2' );
-				$skip_wp_admin      = Options_Service::get_global_boolean_var( 'skip_wp_admin' );
-				$bypass_key         = Options_Service::get_aad_option( 'redirect_on_login_secret' );
-				$error_page         = Options_Service::get_global_string_var( 'error_page_url' );
-				$secure             = ( wp_parse_url( wp_login_url(), PHP_URL_SCHEME ) === 'https' );
-				$cookie_name        = defined( 'WPO_SSO_BYPASS_COOKIE' ) ? constant( 'WPO_SSO_BYPASS_COOKIE' ) : 'wordpress_wpo365_sso_bypass';
-				$rp_key             = $action === 'rp' && isset( $_REQUEST['login'] ) && isset( $_REQUEST['key'] ) ? sanitize_text_field( $_REQUEST['key'] ) : ''; // phpcs:ignore
-				$rp_login           = $action === 'rp' && isset( $_REQUEST['login'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['login'] ) ) : ''; // phpcs:ignore
-				$rp_key_check_valid = empty( $rp_key ) || empty( $rp_login ) ? false : ! is_wp_error( check_password_reset_key( $rp_key, $rp_login ) );
-				$is_post_password   = $action === 'postpass' && isset( $_POST['post_password'] ) && is_string( $_POST['post_password'] ); // phpcs:ignore
-
-				// Bail out early when a request with valid key to reset the password is detected.
-				if ( $rp_key_check_valid ) {
-					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> A request for the reset password page will be allowed pass-thru [cookie will be set]' );
-					setcookie( $cookie_name, $bypass_key, 0, COOKIEPATH, COOKIE_DOMAIN, $secure );
+				// Or bail out early in the case of user switching.
+				if ( ( $action === 'switch_to_user' || $action === 'switch_to_olduser' ) && ! isset( $_REQUEST['log'] ) && ! isset( $_REQUEST['pwd'] ) ) { // phpcs:ignore
 					return true;
 				}
 
-				// Bail out early when user enters a password to view a password-protected post or attempts to reset their password.
-				if ( $is_post_password ) {
-					return true;
-				} elseif ( isset( $_COOKIE[ $cookie_name ] ) ) { // Admin has configured to enable SSO for the login page but pre-requisites are not fulfulled.
-					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> A request for the login page will be allowed pass-thru [cookie will be deleted]' );
-					$cookie = wp_unslash( $_COOKIE[ $cookie_name ] ); // phpcs:ignore
+				// Or bail out early when the current referrer is allowed to refer to the login page.
+				$allowed_referrers = Options_Service::get_global_list_var( 'redirect_on_login_referrers' );
 
-					// Remove sso-bypass-cookie when data is posted to the login page (unless user is resetting their password)
-					if ( ! empty( $_REQUEST ) && $action !== 'lostpassword' && $action !== 'rp' && $action !== 'resetpass' ) { // phpcs:ignore
-						setcookie( $cookie_name, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, $secure );
-						unset( $_COOKIE[ $cookie_name ] );
+				if ( ! empty( $allowed_referrers ) ) {
+					$current_referrer = ! empty( $_SERVER['HTTP_REFERER'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '';
+
+					if ( ! empty( $current_referrer ) ) {
+						$current_referrer_components = wp_parse_url( $current_referrer );
+
+						if ( $current_referrer_components !== false ) {
+							$current_referrer = sprintf(
+								'%s://%s%s',
+								isset( $current_referrer_components['scheme'] ) ? $current_referrer_components['scheme'] : '',
+								isset( $current_referrer_components['host'] ) ? $current_referrer_components['host'] : '',
+								isset( $current_referrer_components['path'] ) ? $current_referrer_components['path'] : ''
+							);
+
+							$current_referrer = WordPress_Helpers::rtrim( $current_referrer, '/' );
+
+							foreach ( $allowed_referrers as $allowed_referrer ) {
+								$allowed_referrer = WordPress_Helpers::rtrim( $allowed_referrer, '/' );
+
+								if ( ! empty( $allowed_referrer ) && strcasecmp( $current_referrer, $allowed_referrer ) === 0 ) {
+									return true;
+								}
+							}
+						}
 					}
 
-					if ( $cookie === $bypass_key ) {
+					$dual_login_enabled = Options_Service::get_global_boolean_var( 'redirect_to_login_v2' );
+					$skip_wp_admin      = Options_Service::get_global_boolean_var( 'skip_wp_admin' );
+					$bypass_key         = Options_Service::get_aad_option( 'redirect_on_login_secret' );
+					$error_page         = Options_Service::get_global_string_var( 'error_page_url' );
+					$secure             = ( wp_parse_url( wp_login_url(), PHP_URL_SCHEME ) === 'https' );
+					$cookie_name        = defined( 'WPO_SSO_BYPASS_COOKIE' ) ? constant( 'WPO_SSO_BYPASS_COOKIE' ) : 'wordpress_wpo365_sso_bypass';
+					$rp_key             = $action === 'rp' && isset( $_REQUEST['login'] ) && isset( $_REQUEST['key'] ) ? sanitize_text_field( $_REQUEST['key'] ) : ''; // phpcs:ignore
+					$rp_login           = $action === 'rp' && isset( $_REQUEST['login'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['login'] ) ) : ''; // phpcs:ignore
+					$rp_key_check_valid = empty( $rp_key ) || empty( $rp_login ) ? false : ! is_wp_error( check_password_reset_key( $rp_key, $rp_login ) );
+					$is_post_password   = $action === 'postpass' && isset( $_POST['post_password'] ) && is_string( $_POST['post_password'] ); // phpcs:ignore
+
+					// Bail out early when a request with valid key to reset the password is detected.
+					if ( $rp_key_check_valid ) {
+						Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> A request for the reset password page will be allowed pass-thru [cookie will be set]' );
+						setcookie( $cookie_name, $bypass_key, 0, COOKIEPATH, COOKIE_DOMAIN, $secure );
 						return true;
 					}
-				} elseif ( $dual_login_enabled ) {
-					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has also enabled the contradicting Dual Login feature' );
-				} elseif ( $skip_wp_admin ) {
-					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator enabled SSO for the login page but has also disabled SSO for WP Admin' );
-				} elseif ( empty( $bypass_key ) ) {
-					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has not configured a mandatory secret key to bypass SSO' );
-				} elseif ( strlen( $bypass_key ) < 32 ) {
-					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but the length of the mandatory secret key to bypass SSO is less than 32 characters' );
-				} elseif ( empty( $error_page ) ) {
-					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has not configured a mandatory error page' );
-				} elseif ( is_user_logged_in() ) { // Admin has configured to enable SSO for the login page but user is already logged-in.
-					Url_Helpers::goto_after();
-				} elseif ( isset( $_GET[ $bypass_key ] ) ) { // phpcs:ignore
-					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> A request for the login page will be allowed pass-thru [cookie will be set]' );
-					setcookie( $cookie_name, $bypass_key, 0, COOKIEPATH, COOKIE_DOMAIN, $secure );
-					return true;
-				} else { // Admin has configured to enable SSO for the login page but no secret key has been detected.
-					return false;
+
+					// Bail out early when user enters a password to view a password-protected post or attempts to reset their password.
+					if ( $is_post_password ) {
+						return true;
+					} elseif ( isset( $_COOKIE[ $cookie_name ] ) ) { // Admin has configured to enable SSO for the login page but pre-requisites are not fulfulled.
+						Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> A request for the login page will be allowed pass-thru [cookie will be deleted]' );
+						$cookie = wp_unslash( $_COOKIE[ $cookie_name ] ); // phpcs:ignore
+
+						// Remove sso-bypass-cookie when data is posted to the login page (unless user is resetting their password)
+						if ( ! empty( $_REQUEST ) && $action !== 'lostpassword' && $action !== 'rp' && $action !== 'resetpass' ) { // phpcs:ignore
+							setcookie( $cookie_name, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, $secure );
+							unset( $_COOKIE[ $cookie_name ] );
+						}
+
+						if ( $cookie === $bypass_key ) {
+							return true;
+						}
+					} elseif ( $dual_login_enabled ) {
+						Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has also enabled the contradicting Dual Login feature' );
+					} elseif ( $skip_wp_admin ) {
+						Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator enabled SSO for the login page but has also disabled SSO for WP Admin' );
+					} elseif ( empty( $bypass_key ) ) {
+						Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has not configured a mandatory secret key to bypass SSO' );
+					} elseif ( strlen( $bypass_key ) < 32 ) {
+						Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but the length of the mandatory secret key to bypass SSO is less than 32 characters' );
+					} elseif ( empty( $error_page ) ) {
+						Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has not configured a mandatory error page' );
+					} elseif ( is_user_logged_in() ) { // Admin has configured to enable SSO for the login page but user is already logged-in.
+						Url_Helpers::goto_after();
+					} elseif ( isset( $_GET[ $bypass_key ] ) ) { // phpcs:ignore
+						Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> A request for the login page will be allowed pass-thru [cookie will be set]' );
+						setcookie( $cookie_name, $bypass_key, 0, COOKIEPATH, COOKIE_DOMAIN, $secure );
+						return true;
+					} else { // Admin has configured to enable SSO for the login page but no secret key has been detected.
+						return false;
+					}
 				}
 			}
 

@@ -245,6 +245,33 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		}
 
 		/**
+		 * Helper method to determine whether the current URL is the custom logout URL.
+		 *
+		 * @since 7.11
+		 *
+		 * @return boolean true if the current form is the wp login form.
+		 */
+		public static function is_custom_logout_url( $uri = null ) {
+
+			if ( empty( $uri ) ) {
+				$uri = $GLOBALS['WPO_CONFIG']['url_info']['request_uri'];
+			}
+
+			$custom_logout_url = Options_Service::get_global_string_var( 'error_page_url' );
+
+			// No custom logout URL configured.
+			if ( empty( $custom_logout_url ) ) {
+				return false;
+			}
+
+			$custom_logout_url      = WordPress_Helpers::rtrim( $custom_logout_url, '/' );
+			$custom_logout_url_path = wp_parse_url( $custom_logout_url, PHP_URL_PATH );
+
+			return ! empty( $custom_logout_url_path )
+				&& WordPress_Helpers::stripos( $uri, $custom_logout_url_path ) !== false;
+		}
+
+		/**
 		 * Checks whether headers are sent before trying to redirect and if sent falls
 		 * back to an alternative method
 		 *
@@ -496,8 +523,8 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 			// make $url an absolute URL but if empty take the site's home address
 			$url = self::url_ensure_absolute( $url );
 
-			// if $url is a login URL then either update to its redirect_to query arg or take the site's home address
-			if ( self::is_wp_login( $url ) ) {
+			// if $url is a login / logout URL then either update to its redirect_to query arg or take the site's home address
+			if ( self::is_wp_login( $url ) || self::is_custom_logout_url( $url ) ) {
 
 				if ( ! self::try_get_redirect_to_query_arg( $url ) ) {
 					// URL configured by the admin where users should be sent if not following a deep link
@@ -603,6 +630,11 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 				}
 
 				if ( ! empty( $result['redirect_to'] ) ) {
+
+					if ( self::is_wp_login( $result['redirect_to'] ) || self::is_custom_logout_url( $result['redirect_to'] ) ) {
+						return false;
+					}
+
 					$url = esc_url_raw( $result['redirect_to'] );
 					return true;
 				}

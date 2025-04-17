@@ -168,6 +168,11 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 					ksort( $options );
 				}
 
+				if ( isset( $wpo_aad['tld'] ) && strcasecmp( $wpo_aad['tld'], '.us' ) === 0 ) {
+					$options['use_gcc'] = true;
+					ksort( $options );
+				}
+
 				$request->set_item( 'wpo_aad', $wpo_aad );
 				return;
 			}
@@ -204,6 +209,11 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 					if ( isset( $wpo_aad['tenant_type'] ) ) {
 						$options['use_b2c']  = $wpo_aad['tenant_type'] === 'b2c';
 						$options['use_ciam'] = $wpo_aad['tenant_type'] === 'ciam';
+						ksort( $options );
+					}
+
+					if ( isset( $wpo_aad['tld'] ) && strcasecmp( $wpo_aad['tld'], '.us' ) === 0 ) {
+						$options['use_gcc'] = true;
 						ksort( $options );
 					}
 
@@ -519,6 +529,7 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 					'saml_sp_sls_url',
 					'saml_x509_cert',
 					'tenant_id',
+					'tld',
 					'wp_rest_aad_application_id_uri',
 				),
 				'bools'   => array(

@@ -2,8 +2,8 @@
 Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
-Tested up to: 6.7
-Stable tag: 36.0
+Tested up to: 6.8
+Stable tag: 36.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -207,6 +207,15 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v36.1 =
+* Improvement: Confirms support for WordPress 6.8. [ALL]
+* Improvement: An administrator can define a (list of) referrer(s) that are allowed to send credentials to the login page when SSO is forced for the login page. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Improvement: Configuring a "GCC (High)" tenant using wp-config.php is now supported for both single and multiple IdP scenarios. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: The function of the "Public Homepage" setting has been restored. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: Support for the plugin [User Switching](https://wordpress.org/plugins/user-switching/) has been restored when SSO is forced for the login page. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: When an administrator configures WPO365 for WPMU to allow partial independence for each subsite, WPO365 will now always require users to re-authenticate when navigating between subsites. [ALL]
+* Fix: When "WPO365 User Synchronization" fails because its next-link has expired, it will now correctly send a "failure" notification. [INTEGRATE (SYNC, INTRANET)]
 
 = v36.0 =
 * Breaking Change: A previous update that redirected users without privileges for the site they requested to their dashboard URL or primary site in a WordPress Multisite Network has been rolled back. Now, WPO365 will display an access-denied splash screen instead, notifying the user of the denied access. If the user has already authenticated successfully, the screen will also show a list of sites where they have do privileges. [LOGIN]

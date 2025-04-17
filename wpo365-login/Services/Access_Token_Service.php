@@ -38,7 +38,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 
 			$request_service     = Request_Service::get_instance();
 			$request             = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
-			$tld                 = Options_Service::get_global_string_var( 'tld' );
+			$tld                 = Options_Service::get_aad_option( 'tld' );
 			$tld                 = empty( $tld ) ? '.com' : $tld;
 			$scope               = urldecode( $scope );
 			$scope               = str_replace( '.com', $tld, $scope );
@@ -193,7 +193,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 				$host_name_portion = 'login.microsoftonline';
 			}
 
-			$tld             = Options_Service::get_global_string_var( 'tld' );
+			$tld             = Options_Service::get_aad_option( 'tld' );
 			$tld             = empty( $tld ) ? '.com' : $tld;
 			$authorize_url   = sprintf(
 				'https://%s%s/%s/oauth2/v2.0/token',
@@ -440,7 +440,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 		public static function get_app_only_access_token( $scope = 'https://graph.microsoft.com/.default', $role = null, $use_mail_config = false, $level = 'WARN' ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
-			$tld   = Options_Service::get_global_string_var( 'tld' );
+			$tld   = Options_Service::get_aad_option( 'tld' );
 			$tld   = empty( $tld ) ? '.com' : $tld;
 			$scope = str_replace( '.com', $tld, $scope );
 
@@ -537,7 +537,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 
 			Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Requesting app-only access token' );
 
-			$tld             = Options_Service::get_global_string_var( 'tld' );
+			$tld             = Options_Service::get_aad_option( 'tld' );
 			$tld             = empty( $tld ) ? '.com' : $tld;
 			$authorize_url   = sprintf(
 				'https://login.microsoftonline%s/%s/oauth2/v2.0/token',

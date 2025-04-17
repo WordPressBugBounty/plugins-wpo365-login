@@ -233,7 +233,7 @@ if ( ! class_exists( '\Wpo\Services\Jwt_Token_Service' ) ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
 			if ( Options_Service::get_global_boolean_var( 'multi_tenanted' ) ) {
-				$tld      = Options_Service::get_global_string_var( 'tld' );
+				$tld      = Options_Service::get_aad_option( 'tld' );
 				$tld      = ! empty( $tld ) ? $tld : '.com';
 				$jwks_uri = sprintf(
 					'https://login.microsoftonline%s/common/discovery/v2.0/keys',
@@ -285,7 +285,7 @@ if ( ! class_exists( '\Wpo\Services\Jwt_Token_Service' ) ) {
 
 				$open_id_config_url = "$ciam_domain$directory_id/v2.0/.well-known/openid-configuration";
 			} else {
-				$tld                = Options_Service::get_global_string_var( 'tld' );
+				$tld                = Options_Service::get_aad_option( 'tld' );
 				$tld                = ! empty( $tld ) ? $tld : '.com';
 				$open_id_config_url = sprintf(
 					'https://login.microsoftonline%s/%s/v2.0/.well-known/openid-configuration?appid=%s',

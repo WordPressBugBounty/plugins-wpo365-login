@@ -242,6 +242,20 @@ if ( ! class_exists( '\Wpo\Core\Wpmu_Helpers' ) ) {
 					wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
 				}
 
+				// In dedicated mode restrictions may apply for domain and group membership or role assignment so the user must sign in again.
+				if ( $use_subsite_options ) {
+					$request_service  = Request_Service::get_instance();
+					$request          = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+					$is_oidc_response = $request->get_item( 'is_oidc_response' );
+					$is_saml_response = $request->get_item( 'is_saml_response' );
+
+					// Only redirect the user to the login page when they are not currently signing in.
+					if ( ! $is_oidc_response && ! $is_saml_response ) {
+						Authentication_Service::goodbye( Error_Service::LOGGED_OUT );
+						exit();
+					}
+				}
+
 				add_user_to_blog( $blog_id, $wp_usr_id, $usr_default_role );
 
 				// Refresh the user's role etc. to avoid "You are not allowed access to this page".

@@ -79,7 +79,7 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service' ) ) {
 			 */
 
 			if ( class_exists( '\Wpo\Services\User_Create_Update_Service' ) ) {
-				$tld   = Options_Service::get_global_string_var( 'tld' );
+				$tld   = Options_Service::get_aad_option( 'tld' );
 				$tld   = ! empty( $tld ) ? $tld : '.com';
 				$scope = "https://graph.microsoft$tld/user.read openid email profile";
 			} else {
@@ -152,7 +152,7 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service' ) ) {
 			 * @since 34.x  Filters the authorization params.
 			 */
 			$params   = apply_filters( 'wpo365/oidc/params', $params );
-			$tld      = Options_Service::get_global_string_var( 'tld' );
+			$tld      = Options_Service::get_aad_option( 'tld' );
 			$tld      = ! empty( $tld ) ? $tld : '.com';
 			$auth_url = sprintf(
 				'https://login.microsoftonline%s/%s/oauth2/v2.0/authorize?%s',
@@ -238,7 +238,7 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service' ) ) {
 
 			$multi_tenanted      = Options_Service::get_global_boolean_var( 'multi_tenanted' ) && ! $use_mail_config && ! Options_Service::get_global_boolean_var( 'use_b2c' );
 			$mail_multi_tenanted = Options_Service::get_global_boolean_var( 'mail_multi_tenanted' );
-			$tld                 = Options_Service::get_global_string_var( 'tld' );
+			$tld                 = Options_Service::get_aad_option( 'tld' );
 			$tld                 = ! empty( $tld ) ? $tld : '.com';
 			$scope               = str_replace( '.com', $tld, $scope );
 			$scope               = $mode === 'mailAuthorize' && $mail_multi_tenanted
@@ -293,7 +293,7 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service' ) ) {
 			}
 
 			$skip_ssl_verify = ! Options_Service::get_global_boolean_var( 'skip_host_verification' );
-			$tld             = Options_Service::get_global_string_var( 'tld' );
+			$tld             = Options_Service::get_aad_option( 'tld' );
 			$tld             = ! empty( $tld ) ? $tld : '.com';
 			$token_url       = sprintf(
 				'https://login.microsoftonline%s/%s/oauth2/v2.0/token',

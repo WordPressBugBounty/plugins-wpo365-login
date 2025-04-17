@@ -98,7 +98,7 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 				$access_token = Access_Token_Service::get_access_token( $scope );
 			} elseif ( $use_app_only ) {
 				$scope_host     = WordPress_Helpers::stripos( $scope, 'https://' ) !== false ? wp_parse_url( $scope, PHP_URL_HOST ) : 'graph.microsoft.com';
-				$tld            = Options_Service::get_global_string_var( 'tld' );
+				$tld            = Options_Service::get_aad_option( 'tld' );
 				$tld            = ! empty( $tld ) ? $tld : '.com';
 				$scope_host     = str_replace( '.com', $tld, $scope_host );
 				$app_only_scope = "https://$scope_host/.default";

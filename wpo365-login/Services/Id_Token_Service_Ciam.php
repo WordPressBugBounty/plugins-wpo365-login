@@ -80,7 +80,7 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service_Ciam' ) ) {
 			$state_url = Url_Helpers::get_state_url();
 
 			if ( class_exists( '\Wpo\Services\User_Create_Update_Service' ) ) {
-				$tld   = Options_Service::get_global_string_var( 'tld' );
+				$tld   = Options_Service::get_aad_option( 'tld' );
 				$tld   = ! empty( $tld ) ? $tld : '.com';
 				$scope = "https://graph.microsoft$tld/user.read openid email profile";
 			} else {

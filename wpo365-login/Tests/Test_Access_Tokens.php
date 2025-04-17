@@ -41,7 +41,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 		private $tld                     = '.com';
 
 		public function __construct() {
-			$tld                      = Options_Service::get_global_string_var( 'tld' );
+			$tld                      = Options_Service::get_aad_option( 'tld' );
 			$this->tld                = empty( $tld ) ? '.com' : $tld;
 			$this->no_sso             = Options_Service::get_global_boolean_var( 'no_sso' );
 			$this->use_saml           = Options_Service::get_global_boolean_var( 'use_saml' );

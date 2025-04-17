@@ -273,7 +273,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 				return true;
 			} else {
 				if ( WordPress_Helpers::stripos( $endpoint, '/' ) === 0 ) {
-					$tld      = Options_Service::get_global_string_var( 'tld' );
+					$tld      = Options_Service::get_aad_option( 'tld' );
 					$tld      = ! empty( $tld ) ? $tld : '.com';
 					$endpoint = sprintf( 'https://graph.microsoft%s/_%s', $tld, $endpoint );
 				}

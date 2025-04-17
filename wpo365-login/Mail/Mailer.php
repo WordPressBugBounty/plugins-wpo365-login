@@ -545,7 +545,7 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 				? 'v1.0'
 				: 'beta';
 
-			$tld = Options_Service::get_global_string_var( 'tld' );
+			$tld = Options_Service::get_aad_option( 'tld' );
 			$url = WordPress_Helpers::stripos( $query, 'https://' ) === 0
 				? $query
 				: sprintf(
