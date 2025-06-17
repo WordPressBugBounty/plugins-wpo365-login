@@ -393,7 +393,7 @@ if ( ! class_exists( '\Wpo\Core\Wpmu_Helpers' ) ) {
 			}
 
 			if ( filter_var( $wp_usr->user_email, FILTER_VALIDATE_EMAIL ) === false ) {
-				Log_Service::write_log( 'WARN', sprintf( '%s -> Cannot update the user site name [Error: Invalid email]' ) );
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Cannot update the user site name [Error: Invalid email]', __METHOD__ ) );
 				return $wp_usr_id_str;
 			}
 

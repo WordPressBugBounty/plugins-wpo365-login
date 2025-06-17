@@ -133,8 +133,8 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				}
 
 				// SCIM specific WP AJAX endpoints
-				if ( Options_Service::get_global_boolean_var( 'enable_scim' ) && method_exists( '\Wpo\SCIM\SCIM_Service', 'generate_scim_secret_token' ) ) {
-					add_action( 'wp_ajax_wpo365_generate_scim_secret_token', '\Wpo\SCIM\SCIM_Service::generate_scim_secret_token' );
+				if ( Options_Service::get_global_boolean_var( 'enable_scim' ) && method_exists( '\Wpo\Services\Scim_Service', 'generate_scim_secret_token' ) ) {
+					add_action( 'wp_ajax_wpo365_generate_scim_secret_token', '\Wpo\Services\Scim_Service::generate_scim_secret_token' );
 				}
 
 				// To force WordPress to check for plugin updates if requested by an administrator
@@ -363,15 +363,8 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				add_action( 'wp_authenticate', '\Wpo\Services\Authentication_Service::is_deactivated', 10, 1 );
 			}
 
-			if ( Options_Service::get_global_boolean_var( 'enable_scim', false ) && class_exists( '\Wpo\SCIM\SCIM_Controller' ) ) {
-				// Init the custom REST API for SCIM
-				add_action(
-					'rest_api_init',
-					function () {
-						$scim_controller = new \Wpo\SCIM\SCIM_Controller();
-						$scim_controller->register_routes();
-					}
-				);
+			if ( Options_Service::get_global_boolean_var( 'enable_scim', false ) && method_exists( '\Wpo\Services\Scim_Service', 'register_routes' ) ) {
+				add_action( 'rest_api_init', '\Wpo\Services\Scim_Service::register_routes' );
 			}
 
 			if ( Options_Service::get_global_boolean_var( 'use_graph_mailer', false ) ) {

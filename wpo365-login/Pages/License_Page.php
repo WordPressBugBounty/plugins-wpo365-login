@@ -9,12 +9,11 @@ use Wpo\Services\Options_Service;
 use Wpo\Services\Log_Service;
 
 // Prevent public access to this script
-defined( 'ABSPATH' ) or die();
+defined( 'ABSPATH' ) || die();
 
 if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 
 	class License_Page {
-
 
 		private static $extensions = array();
 
@@ -41,6 +40,9 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 			if ( empty( self::$extensions ) ) {
 				return;
 			}
+
+			// Refresh the license notices.
+			\Wpo\Core\Plugin_Helpers::check_licenses();
 
 			/**
 			 * Add admin page.
@@ -229,7 +231,7 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 					: admin_url( 'admin.php?page=wpo365-manage-licenses' );
 
 				if ( ! empty( $message ) ) {
-					Options_Service::add_update_option( $option_name, '' ); // WPMU > Will update site option because this page is only availabe in the network-admin
+					// Options_Service::add_update_option( $option_name, '' ); // WPMU > Will update site option because this page is only availabe in the network-admin
 					$redirect = add_query_arg(
 						array(
 							'sl_activation' => 'false',
@@ -247,9 +249,6 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 						$base_url
 					);
 				}
-
-				// Clean the plugins cache because the package URL must be recalculated
-				wp_clean_plugins_cache( true );
 
 				\Wpo\Core\Plugin_Helpers::check_licenses();
 
@@ -314,7 +313,7 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 						$base_url
 					);
 				} else {
-					Options_Service::add_update_option( $option_name, '' );
+					// Options_Service::add_update_option( $option_name, '' );
 					$license_data = json_decode( wp_remote_retrieve_body( $response ) );
 
 					if ( $license_data->license == 'deactivated' ) {
@@ -336,9 +335,6 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 					}
 				}
 
-				// Clean the plugins cache because the package URL must be recalculated
-				wp_clean_plugins_cache( true );
-
 				\Wpo\Core\Plugin_Helpers::check_licenses();
 
 				wp_redirect( $redirect );
@@ -347,6 +343,29 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 		}
 
 		public static function license_page() {
+			$lic_notices = Wpmu_Helpers::mu_get_transient( 'wpo365_lic_notices' );
+
+			if ( empty( $lic_notices ) ) {
+				$lic_notices = array();
+			}
+
+			$license_is_active = function ( $store_item ) use ( $lic_notices ) {
+
+				// An empty store item cannot be activated.
+				if ( empty( $store_item ) ) {
+					return false;
+				}
+
+				foreach ( $lic_notices as $lic_notice ) {
+
+					if ( strpos( $lic_notice, $store_item ) >= 0 ) {
+						return false;
+					}
+				}
+
+				return true;
+			};
+
 			?>
 			<style>
 				.wpo365-license-table {
@@ -427,7 +446,7 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 										<?php echo wp_nonce_field( 'wpo365-manage-licenses', 'wpo365_license_nonce' ); ?>
 										<input type="text" class="regular-text" id="<?php echo esc_attr( $license_key_name ); ?>" name="<?php echo esc_attr( $license_key_name ); ?>" value="<?php echo esc_attr( $license_key ); ?>">
 
-										<?php if ( ! empty( $license_key ) ) : ?>
+										<?php if ( $license_is_active( $data['store_item'] ) ) : ?>
 											<input type="submit" class="button-secondary" name="deactivate_license" value="<?php _e( 'Deactivate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />
 										<?php else : ?>
 											<input type="submit" class="button-secondary" name="activate_license" value="<?php _e( 'Activate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />

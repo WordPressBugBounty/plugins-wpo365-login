@@ -1,18 +1,18 @@
-=== WordPress + Microsoft Office 365 / Azure AD | LOGIN ===
+=== WPO365 | SEAMLESS WORDPRESS + MICROSOFT INTEGRATION (WPO365 | LOGIN) ===
 Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 36.2
+Stable tag: 37.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Swiss Army Knife to integrate WordPress + Microsoft | Entra | Azure | B2C | 365. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI and more
+WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI ...
 
 == Description ==
 
-Enable users to sign in with their corporate or school account (Azure AD (B2C) / Entra (Ext.) ID) to access your WordPress website: No username or password required. But there is more!
+WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI ...
 
 = SINGLE SIGN-ON (SSO) =
 
@@ -30,10 +30,6 @@ Enable users to sign in with their corporate or school account (Azure AD (B2C) /
 - Configure the **intranet** authentication mode to restrict access to all front-end posts and pages [more](https://www.wpo365.com/article/building-a-wordpress-based-intranet-restrict-access/)
 - Hide the  **WordPress Admin Bar** for specific roles [more](https://docs.wpo365.com/article/150-hide-wp-admin-bar-for-roles)
 
-= MICROSOFT TEAMS =
-
-- Support for (seamless) integration of your WordPress website into a **Microsoft Teams** Tabs and Apps [more](https://www.wpo365.com/feature/microsoft-teams/)
-
 = MAIL =
 
 - **Send emails using Microsoft Graph** instead of SMTP from your WordPress website [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
@@ -42,9 +38,14 @@ Enable users to sign in with their corporate or school account (Azure AD (B2C) /
 - Save to the **Sent Items** folder
 - Support for **file attachments**
 
-= WORDPRESS MULTISITE =
+= SCIM =
 
-- Support for **WordPress Multisite** [more](https://www.wpo365.com/feature/wordpress-multisite/)
+- Entra **User Provisioning** (SCIM) [more](https://www.wpo365.com/feature/azure-ad-user-provisioning-scim/)
+- **Create** new WP Users
+
+= MICROSOFT TEAMS =
+
+- Support for (seamless) integration of your WordPress website into a **Microsoft Teams** Tabs and Apps [more](https://www.wpo365.com/feature/microsoft-teams/)
 
 = POWER BI =
 
@@ -60,6 +61,10 @@ Enable users to sign in with their corporate or school account (Azure AD (B2C) /
 = EMPLOYEE DIRECTORY =
 
 - Embed an intuitve Azure AD / Microsoft Graph based **Employee Directory** into a front-end post or page [more](https://www.wpo365.com/feature/employee-directory/)
+
+= WORDPRESS MULTISITE =
+
+- Support for **WordPress Multisite** [more](https://www.wpo365.com/feature/wordpress-multisite/)
 
 = REST API ENDPOINT PROTECTION =
 
@@ -87,10 +92,11 @@ The features below can be unlocked with [premium addOns and bundles](https://www
 
 = SCIM =
 
-- Entra **User Provisioning** (SCIM) [more](https://www.wpo365.com/feature/azure-ad-user-provisioning-scim/)
+- Integrate with Entra **User Provisioning** (SCIM) [more](https://www.wpo365.com/feature/azure-ad-user-provisioning-scim/)
 - **Create** new WP Users
 - **Update** existing WP Users
 - (Soft) **Delete** existing WP Users
+- **Map User Attributes** beyond name and email and store as WordPress user meta
 
 *WP User Roles, Profiles and Avatars will be updated and other rules e.g. LearnDash Enrollments will be applied*
 
@@ -106,10 +112,6 @@ The features below can be unlocked with [premium addOns and bundles](https://www
 
 = CUSTOM USER FIELDS =
 - Enhance WordPress / BuddyPress User Profiles with **Entra User Attributes** [more](https://www.wpo365.com/feature/custom-user-fields/)
-
-= AVATAR =
-
-- M365 Profile Picture as WordPress / BuddyPress Avatar [more](https://www.wpo365.com/feature/avatar/)
 
 = MAIL =
 
@@ -148,9 +150,9 @@ The features below can be unlocked with [premium addOns and bundles](https://www
 - Embedded B2C login [more](https://www.wpo365.com/feature/advanced-login-options/)
 - Custom new User email [more](https://www.wpo365.com/feature/advanced-login-options/)
 
-= PROFILE+ =
+= AVATAR =
 
-- Update a WordPress user's first, last and full name, their mail address and their role, whenever they sign in with Microsoft
+- M365 Profile Picture as WordPress / BuddyPress Avatar [more](https://www.wpo365.com/feature/avatar/)
 
 = REST API ENDPOINT PROTECTION =
 
@@ -207,6 +209,17 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v37.0 =
+* Improvement: As of version 37.0, creating new users through the SCIM-based integration with the Microsoft Entra ID Application/User Provisioning service is now available as a free feature. [Get started today!](https://tutorials.wpo365.com/courses/sync-entra-user-provisioning-scim/) [LOGIN]
+* Improvement: Beginning with version 37.0, WPO365 | LOGIN - available at no cost - can now also populate a new WordPress user's name and email profile attributes, a capability that previously required the PROFILE+ add-on. [LOGIN]
+* Improvement: It is now possible to schedule WPO365 User Synchronization without the need to rely on WP Cron by triggering both the start of a new user-sync job and the processing of each batch using an external task scheduler. See the [updated tutorial](https://tutorials.wpo365.com/courses/synchronize-users-from-azure-ad-to-wordpress/lessons/choose-your-user-synchronization-trigger/) for details. [INTEGRATE (SYNC, INTRANET)]
+* Improvement: A new filter has been added that allows developers to filter the custom Error Page URL. Consult the [updated documenations](https://docs.wpo365.com/article/82-developer-hooks) for details. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Improvement: Administrators experiencing issues with WPO365 User Synchronization or the SCIM-based integration with the Microsoft Entra ID Application/User Provisioning service, can now enable a custom logging function that helps collect more data in a separate server log. [SCIM, INTEGRATE, CUSTOMERS (SYNC, INTRANET)]
+* Fix: An issue - previously causing a critical error when creating a new WordPress Network Subsite for a new user without a valid email address - has been resolved. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: A bug has been fixed that prevented WPO365 from detecting whether or not a user should be considered a user that signed in with Microsoft and preventing users from changing their email address or password. [LOGIN]
+* Fix: A few issues related to saving an (updated) WPO365 configuration (as JSON) on the plugin's "Import / Export" page have been addressed.
+* Fix: The sub headers of the wizard now will support rtl-direction.
 
 = v36.2 =
 * Fix: Functionality for forcing SSO for the (default / custom) login page has been restored. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]

@@ -391,7 +391,7 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 			);
 
 			if ( self::request_recently_failed() ) {
-				return false;
+				return;
 			}
 
 			$lic_notices = Wpmu_Helpers::mu_get_transient( 'wpo365_lic_notices' );
@@ -650,8 +650,7 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 				$lic_notices[] = $message;
 				Wpmu_Helpers::mu_set_transient( 'wpo365_lic_notices', $lic_notices );
 
-				Log_Service::write_log(
-					'ERROR',
+				Compatibility_Helpers::compat_warning(
 					sprintf(
 						'%s -> License key %s for %s is not valid for site with URL %s [error: %s]',
 						__METHOD__,

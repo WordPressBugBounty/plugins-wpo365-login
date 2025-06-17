@@ -2,8 +2,11 @@
 
 namespace Wpo\Services;
 
+use Error;
 use Wpo\Core\Url_Helpers;
+use Wpo\Core\Version;
 use Wpo\Core\WordPress_Helpers;
+use Wpo\Core\Wpmu_Helpers;
 use Wpo\Services\Authentication_Service;
 use Wpo\Services\Error_Service;
 use Wpo\Services\Id_Token_Service;
@@ -103,43 +106,14 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 			}
 
 			// check for user sync start request via external link
-			if ( ! empty( $_REQUEST['wpo365_sync_run'] ) && wp_unslash( $_REQUEST['wpo365_sync_run'] ) === 'start' ) { // phpcs:ignore
+			if ( ! empty( $_REQUEST['wpo365_sync_run'] ) ) { // phpcs:ignore
 
-				if ( ! empty( $_REQUEST['job_id'] ) ) { // phpcs:ignore
+				$action = wp_unslash( $_REQUEST['wpo365_sync_run'] ); // phpcs:ignore
 
-					if ( isset( $_REQUEST['type'] ) && wp_unslash( $_REQUEST['type'] === 'wpToAad' ) ) { // phpcs:ignore
-
-						if ( class_exists( '\Wpo\Sync\Sync_Wp_To_Aad_Service' ) ) {
-							\Wpo\Sync\Sync_Wp_To_Aad_Service::sync_users( sanitize_text_field( wp_unslash( $_REQUEST['job_id'] ) ) ); // phpcs:ignore
-							exit();
-						}
-
-						Log_Service::write_log( 'WARN', sprintf( '%s -> Could not start a WP to AAD User synchronization job because the required classes are not installed', __METHOD__ ) );
-						exit();
-					}
-
-					if ( class_exists( '\Wpo\Sync\SyncV2_Service' ) && isset( $_REQUEST['job_id'] ) ) { // phpcs:ignore
-
-						if ( class_exists( '\Wpo\Sync\Sync_Helpers' ) ) {
-							$job = \Wpo\Sync\Sync_Helpers::get_user_sync_job_by_id( sanitize_text_field( wp_unslash( $_REQUEST['job_id'] ) ) ); // phpcs:ignore
-
-							if ( is_wp_error( $job ) ) {
-								Log_Service::write_log( 'ERROR', sprintf( '%s -> An attempt to start a user-synchronization job from an external URL was detected but no job was found for ID %s', __METHOD__, sanitize_text_field( wp_unslash( $_REQUEST['job_id'] ) ) ) ); // phpcs:ignore
-								exit();
-							}
-						}
-
-						add_action(
-							'init',
-							function () {
-								\Wpo\Sync\SyncV2_Service::sync_users( sanitize_text_field( $_REQUEST['job_id'] ) ); // phpcs:ignore
-								exit();
-							},
-							10
-						);
-
-						return true;
-					}
+				if ( $action === 'start' ) {
+					self::start_user_sync();
+				} elseif ( $action === 'next' ) {
+					self::next_user_sync();
 				}
 			}
 
@@ -405,7 +379,7 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 		public static function process_state_url( $url, $request ) {
 			$url = urldecode( $url );
 			$url = wp_sanitize_redirect( $url );
-			$url = str_replace( '#', '_____', $url ); // Replace the hash because parse_url does not handle it well
+			$url = str_replace( '#', '_____', $url ); // Replace the hash because parse_url does not handle it well.
 
 			if ( WordPress_Helpers::stripos( $url, '/' ) === 0 ) {
 				$url = sprintf(
@@ -561,6 +535,114 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 			);
 
 			return true;
+		}
+
+		/**
+		 * Will try to start a user-synchronization job from an external URL.
+		 *
+		 * @since 37.0
+		 *
+		 * @return never
+		 */
+		private static function start_user_sync() {
+
+			// Bail out early if no job id has been supplied.
+			if ( empty( $_REQUEST['job_id'] ) ) { // phpcs:ignore
+				$log_message    = sprintf( '%s -> Can not start a user-synchronization job from an external URL because the job_id parameter was not found', __METHOD__ );
+				$can_custom_log = version_compare( Version::$current, '36.2' ) > 0;
+				$can_custom_log && Log_Service::write_to_custom_log( $log_message, 'sync' );
+				Log_Service::write_log( 'ERROR', $log_message );
+				exit();
+			}
+
+			$job_id = sanitize_text_field( wp_unslash( $_REQUEST['job_id'] ) ); // phpcs:ignore
+
+			if ( isset( $_REQUEST['type'] ) && wp_unslash( $_REQUEST['type'] === 'wpToAad' ) ) { // phpcs:ignore
+
+				if ( class_exists( '\Wpo\Sync\Sync_Wp_To_Aad_Service' ) ) {
+					\Wpo\Sync\Sync_Wp_To_Aad_Service::sync_users( $job_id ); // phpcs:ignore
+					exit();
+				}
+
+				Log_Service::write_log( 'ERROR', sprintf( '%s -> Can not start a WP to AAD user-synchronization job because required classes are not installed', __METHOD__ ) );
+				exit();
+			}
+
+			if ( class_exists( '\Wpo\Sync\SyncV2_Service' ) ) { // phpcs:ignore
+
+				if ( class_exists( '\Wpo\Sync\Sync_Helpers' ) ) {
+					$job = \Wpo\Sync\Sync_Helpers::get_user_sync_job_by_id( $job_id ); // phpcs:ignore
+
+					if ( is_wp_error( $job ) ) {
+						$log_message    = sprintf( '%s -> Can not start a user-synchronization job from an external URL [job_id: %s]', __METHOD__, $job_id );
+						$can_custom_log = version_compare( Version::$current, '36.2' ) > 0;
+						$can_custom_log && Log_Service::write_to_custom_log( $log_message, 'sync' );
+						Log_Service::write_log( 'ERROR', $log_message );
+						exit();
+					}
+
+					\Wpo\Sync\SyncV2_Service::sync_users( $job_id ); // phpcs:ignore
+					exit();
+				}
+			}
+
+			$log_message    = sprintf( '%s -> Can not start a user-synchronization job because required classes are not installed', __METHOD__ );
+			$can_custom_log = version_compare( Version::$current, '36.2' ) > 0;
+			$can_custom_log && Log_Service::write_to_custom_log( $log_message, 'sync' );
+			Log_Service::write_log( 'ERROR', $log_message );
+
+			exit();
+		}
+
+		/**
+		 * Will try to process a next batch of users from an external URL.
+		 *
+		 * @since 37.0
+		 *
+		 * @return never
+		 */
+		private static function next_user_sync() {
+
+			// Bail out early if no job id has been supplied.
+			if ( empty( $_REQUEST['job_id'] ) ) { // phpcs:ignore
+				$can_custom_log = version_compare( Version::$current, '36.2' ) > 0;
+				$can_custom_log && Log_Service::write_to_custom_log( sprintf( '%s -> Can not process a next batch of users from an external URL because the job_id parameter is not found', __METHOD__ ), 'sync' );
+				exit();
+			}
+
+			$job_id        = sanitize_text_field( wp_unslash( $_REQUEST['job_id'] ) ); // phpcs:ignore
+			$job_info_name = sprintf( '%s_wpo365_sync_next', $job_id );
+			$graph_query   = Wpmu_Helpers::mu_get_transient( $job_info_name );
+
+			if ( empty( $graph_query ) ) {
+				$log_message    = sprintf( '%s -> Can not process a next batch of users from an external URL because the next-link is not found', __METHOD__ );
+				$can_custom_log = version_compare( Version::$current, '36.2' ) > 0;
+				$can_custom_log && Log_Service::write_to_custom_log( $log_message, 'sync' );
+				Log_Service::write_log( 'DEBUG', $log_message );
+				exit();
+			}
+
+			if ( class_exists( '\Wpo\Sync\SyncV2_Service' ) && class_exists( '\Wpo\Sync\Sync_Helpers' ) ) { // phpcs:ignore
+
+				$job = \Wpo\Sync\Sync_Helpers::get_user_sync_job_by_id( $job_id ); // phpcs:ignore
+
+				if ( is_wp_error( $job ) ) {
+					$log_message    = sprintf( '%s -> Can not process a next batch of users from an external URL [job_id: %s]', __METHOD__, $job_id );
+					$can_custom_log = version_compare( Version::$current, '36.2' ) > 0;
+					$can_custom_log && Log_Service::write_to_custom_log( $log_message, 'sync' );
+					Log_Service::write_log( 'ERROR', $log_message );
+					exit();
+				}
+
+				\Wpo\Sync\SyncV2_Service::fetch_users( $job_id, $graph_query );
+				exit();
+			}
+
+			$log_message    = sprintf( '%s -> Can not start a user-synchronization job because required classes are not installed', __METHOD__ );
+			$can_custom_log = version_compare( Version::$current, '36.2' ) > 0;
+			$can_custom_log && Log_Service::write_to_custom_log( $log_message, 'sync' );
+			Log_Service::write_log( 'ERROR', $log_message );
+			exit();
 		}
 	}
 }

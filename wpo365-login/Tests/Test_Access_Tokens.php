@@ -213,7 +213,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				return;
 			}
 
-			$test_result         = new Test_Result( 'Get a user\'s basic profile (first, last and display name and email address) with <em>delegated</em> permissions.', Test_Result::CAPABILITY_PROFILE_PLUS, Test_Result::SEVERITY_LOW );
+			$test_result         = new Test_Result( 'Get a user\'s basic profile (name and email address) with <em>delegated</em> permissions from Microsoft Graph.', Test_Result::CAPABILITY_PROFILE_PLUS, Test_Result::SEVERITY_LOW );
 			$test_result->passed = true;
 
 			// Check if suitable extensions can be found
@@ -240,7 +240,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( count( $this->extensions ) === 0 || count( \array_intersect_key( $suitable_extensions, $this->extensions ) ) === 0 ) {
 				$test_result->passed    = false;
-				$test_result->message   = 'No WPO365 extension was found that would enable the PROFILE+ feature.';
+				$test_result->message   = 'No WPO365 extension was found that would enable the PROFILE+ feature. Please note that the WPO365 | LOGIN will nevertheless populate a new WordPress user\'s name and email profile attributes when those attributes were found in the ID token or SAML 2.0 response, upon login.';
 				$test_result->more_info = 'https://www.wpo365.com/compare-all-wpo365-extensions/';
 				return $test_result;
 			}
@@ -302,7 +302,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				return;
 			}
 
-			$test_result         = new Test_Result( 'Get a user\'s basic profile (first, last and display name and email address) with <em>application</em> permissions.', Test_Result::CAPABILITY_PROFILE_PLUS, Test_Result::SEVERITY_LOW );
+			$test_result         = new Test_Result( 'Get a user\'s basic profile (ame and email address) with <em>application</em> permissions from Microsoft Graph.', Test_Result::CAPABILITY_PROFILE_PLUS, Test_Result::SEVERITY_LOW );
 			$test_result->passed = true;
 
 			// Check if suitable extension can be found
@@ -329,7 +329,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( count( $this->extensions ) === 0 || count( \array_intersect_key( $suitable_extensions, $this->extensions ) ) === 0 ) {
 				$test_result->passed    = false;
-				$test_result->message   = 'No WPO365 extension was found that would enable the PROFILE+ feature.';
+				$test_result->message   = 'No WPO365 extension was found that would enable the PROFILE+ feature. Please note that the WPO365 | LOGIN will nevertheless populate a new WordPress user\'s name and email profile attributes when those attributes were found in the ID token or SAML 2.0 response, upon login.';
 				$test_result->more_info = 'https://www.wpo365.com/compare-all-wpo365-extensions/';
 				return $test_result;
 			}
@@ -1315,103 +1315,6 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$test_result->passed    = false;
 				$test_result->message   = 'Unknow error occurred [class could not be loaded].';
 				$test_result->more_info = 'https://docs.wpo365.com/article/57-synchronize-users-from-azure-ad-to-wordpress';
-			}
-
-			return $test_result;
-		}
-
-		/**
-		 * SCIM | APPLICATION
-		 */
-		public function test_scim_application() {
-			$test_result         = new Test_Result( 'Provision Azure AD users with <em>application</em> permissions (using the built-in SCIM client).', Test_Result::CAPABILITY_SCIM, Test_Result::SEVERITY_LOW );
-			$test_result->passed = true;
-
-			$suitable_extensions = \array_flip(
-				array(
-					'wpo365-login-intranet/wpo365-login.php',
-					'wpo365-scim/wpo365-scim.php',
-					'wpo365-intranet-5y/wpo365-intranet-5y.php',
-					'wpo365-integrate/wpo365-integrate.php',
-				)
-			);
-
-			// Check if suitable extensions can be found
-			if ( count( $this->extensions ) === 0 || count( \array_intersect_key( $suitable_extensions, $this->extensions ) ) === 0 ) {
-				$test_result->passed    = false;
-				$test_result->message   = 'No WPO365 extension was found that would enable the SCIM feature.';
-				$test_result->more_info = 'https://www.wpo365.com/compare-all-wpo365-bundles/';
-				return $test_result;
-			}
-
-			// Check if scim is enabled
-			$scim_enabled = Options_Service::get_global_boolean_var( 'enable_scim' );
-
-			if ( empty( $scim_enabled ) ) {
-				$test_result->passed    = false;
-				$test_result->message   = "Enable SCIM based Azure AD User provisioning on the plugin's <a href=\"#userSync\">User sync</a> configuration page.";
-				$test_result->fix       = array(
-					array(
-						'op'    => 'replace',
-						'value' => array(
-							'enableScim' => true,
-						),
-					),
-				);
-				$test_result->more_info = 'https://docs.wpo365.com/article/59-wordpress-user-provisioning-with-azure-ad-scim';
-				return $test_result;
-			}
-
-			// Check if SCIM secret has been defined
-			if ( empty( Options_Service::get_global_string_var( 'scim_secret_token' ) ) && ( ! defined( 'WPO_SCIM_TOKEN' ) || empty( constant( 'WPO_SCIM_TOKEN' ) ) ) ) {
-				$test_result->passed    = false;
-				$test_result->message   = 'As part of the Admin Credentials (for Azure AD User provisioning) you must create a secret token and add it to wp-config.php.';
-				$test_result->more_info = 'https://docs.wpo365.com/article/59-wordpress-user-provisioning-with-azure-ad-scim';
-				return $test_result;
-			}
-
-			$allowed_urls = Options_Service::get_global_list_var( 'pages_blacklist' );
-			$found        = false;
-
-			foreach ( $allowed_urls as $url ) {
-
-				if ( WordPress_Helpers::stripos( $url, '/wp-json/wpo365/v1/' ) !== false ) {
-					$found = true;
-					break;
-				}
-			}
-
-			if ( empty( $found ) ) {
-				$test_result->passed    = false;
-				$test_result->message   = 'You must add "/wp-json/wpo365/v1/" to the list of pages freed from authentication on the plugin\'s <a href="#singleSignOn">Single Sign-on</a> configuration page or else Azure AD\'s User provisioning cannot connect with your website.';
-				$test_result->more_info = 'https://docs.wpo365.com/article/37-pages-blacklist';
-				$test_result->fix       = array(
-					array(
-						'op'    => 'add',
-						'value' => array(
-							'pagesBlacklist' => '/wp-json/wpo365/v1/',
-						),
-					),
-				);
-				return $test_result;
-			}
-
-			// Check if sending email changed emails has been disabled
-			$disabled = Options_Service::get_global_boolean_var( 'prevent_send_email_change_email' );
-
-			if ( ! $disabled ) {
-				$test_result->passed    = false;
-				$test_result->message   = 'It is recommended to disable the automatic email response to users when their password or email is changed during User synchronization on the plugin\'s <a href="#miscellaneous">Miscellaneous</a> configuration page.';
-				$test_result->more_info = 'https://docs.wpo365.com/article/115-prevent-wordpress-to-send-email-changed-email';
-				$test_result->fix       = array(
-					array(
-						'op'    => 'replace',
-						'value' => array(
-							'preventSendEmailChangeEmail' => true,
-						),
-					),
-				);
-				return $test_result;
 			}
 
 			return $test_result;

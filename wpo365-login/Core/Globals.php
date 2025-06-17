@@ -27,21 +27,21 @@ if ( ! class_exists( '\Wpo\Core\Globals' ) ) {
 			$base_name = plugin_basename( $plugin_file );
 
 			$GLOBALS['WPO_CONFIG'] = array(
-				'options'        => array(),
-				'plugin'         => $base_name,
-				'plugin_dir'     => $plugin_dir,
-				'plugin_url'     => plugin_dir_url( $plugin_file ),
-				'plugin_file'    => $plugin_file,
 				'extension_file' => '',
 				'extensions'     => array(),
-				'slug'           => substr( $base_name, 0, WordPress_Helpers::stripos( $base_name, '/' ) ),
-				'store'          => 'https://www.wpo365.com',
-				'store_item'     => '',
-				'store_item_id'  => '',
+				'ina'            => ( array_key_exists( 'ina', $_POST ) && filter_var( $_POST['ina'], FILTER_VALIDATE_BOOLEAN ) === true ), // phpcs:ignore
+				'options'        => array(),
+				'plugin_dir'     => $plugin_dir,
+				'plugin_file'    => $plugin_file,
+				'plugin_url'     => plugin_dir_url( $plugin_file ),
+				'plugin'         => $base_name,
 				'request_id'     => uniqid( '', true ),
+				'slug'           => substr( $base_name, 0, WordPress_Helpers::stripos( $base_name, '/' ) ),
+				'store_item_id'  => '',
+				'store_item'     => '',
+				'store'          => 'https://www.wpo365.com',
 				'url_info'       => self::get_url_info(),
 				'version'        => $plugin_data['Version'],
-				'ina'            => ( array_key_exists( 'ina', $_POST ) && filter_var( $_POST['ina'], FILTER_VALIDATE_BOOLEAN ) === true ), // phpcs:ignore
 			);
 		}
 

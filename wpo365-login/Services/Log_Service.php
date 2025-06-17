@@ -2,6 +2,7 @@
 
 namespace Wpo\Services;
 
+use Wpo\Core\Compatibility_Helpers;
 use Wpo\Core\Wpmu_Helpers;
 use Wpo\Services\Options_Service;
 use Wpo\Services\Request_Service;
@@ -150,6 +151,53 @@ if ( ! class_exists( '\Wpo\Services\Log_Service' ) ) {
 				$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 				$request->set_item( 'curl_log', $curl_log );
 				curl_setopt( $handle, CURLOPT_STDERR, $curl_log ); // phpcs:ignore
+			}
+		}
+
+		/**
+		 * Logs a message to a custom log file in the plugin's root folder.
+		 *
+		 * @param mixed  $message Message to be logged.
+		 * @param string $log Name of the log e.g. scim.log or sync.log.
+		 * @return void
+		 */
+		public static function write_to_custom_log( $message, $log ) {
+			$request_service = Request_Service::get_instance();
+			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+			$custom_logs     = $request->get_item( 'custom_logs' );
+
+			if ( $custom_logs === false ) {
+				$custom_logs = array();
+
+				if ( Options_Service::get_global_boolean_var( 'enable_custom_log_sync' ) ) {
+					$custom_logs[] = 'sync';
+				}
+
+				if ( Options_Service::get_global_boolean_var( 'enable_custom_log_scim' ) ) {
+					$custom_logs[] = 'scim';
+				}
+
+				$request->set_item( 'custom_logs', $custom_logs );
+			}
+
+			if ( ! in_array( $log, $custom_logs, true ) ) {
+				return;
+			}
+
+			$destination = sprintf( '%s%s.log', plugin_dir_path( __DIR__ ), $log );
+			$body 		 	 = is_array( $message ) || is_object( $message ) ? print_r( $message, true ) : $message; // phpcs:ignore
+			$now         = \DateTime::createFromFormat( 'U.u', number_format( microtime( true ), 6, '.', '' ) );
+
+			if ( function_exists( 'wp_timezone_string' ) ) {
+				$wp_time_zone_str = wp_timezone_string();
+				$time_zone        = new \DateTimeZone( $wp_time_zone_str );
+				$now->setTimezone( $time_zone );
+			}
+
+			$message = sprintf( '%s | %s', $now->format( 'm-d-Y H:i:s.u' ), $body ) . PHP_EOL;
+
+			if ( ! error_log( $message, 3, $destination ) ) { // phpcs:ignore
+				Compatibility_Helpers::compat_warning( sprintf( '%s -> You have enabled custom logging for "%s". However, WPO365 failed to create the log and / or write to it [destination: %s]. Please fix this or disable the custom logging on the plugin\'s "Debug" configuration page.', __METHOD__, $log, $destination ) );
 			}
 		}
 

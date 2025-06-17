@@ -19,7 +19,7 @@ if ( ! class_exists( '\Wpo\Core\Permissions_Helpers' ) ) {
 		 * @since 7.12
 		 */
 		public static function user_is_admin( $user ) {
-			return user_can( $user->ID, 'remove_users' );
+			return is_a( $user, 'WP_User' ) ? user_can( $user->ID, 'remove_users' ) : false;
 		}
 
 		/**

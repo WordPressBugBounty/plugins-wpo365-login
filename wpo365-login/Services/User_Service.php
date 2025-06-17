@@ -761,7 +761,7 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			 */
 
 			if ( self::try_get_user_object_id( $wp_usr_id ) !== null ) {
-				self::IS_O365_USER;
+				return self::IS_O365_USER;
 			}
 
 			$wp_usr = get_user_by( 'ID', intval( $wp_usr_id ) );

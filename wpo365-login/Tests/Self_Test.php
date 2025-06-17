@@ -88,6 +88,10 @@ if ( ! class_exists( '\Wpo\Tests\Self_Test' ) ) {
 				$test_sets[] = new Test_Rest_Protection();
 			}
 
+			if ( Options_Service::get_global_boolean_var( 'enable_scim' ) ) {
+				$test_sets[] = new Test_Scim();
+			}
+
 			foreach ( $test_sets as $test_set ) {
 				$tests = preg_grep( '/^test_/', get_class_methods( $test_set ) );
 

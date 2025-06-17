@@ -18,38 +18,41 @@ if ( ! class_exists( '\Wpo\Services\User_Create_Service' ) ) {
 		/**
 		 * @since 11.0
 		 */
-		public static function create_user( &$wpo_usr ) {
+		public static function create_user( &$wpo_usr, $is_deamon = false, $exit_on_error = true ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
 			$user_login = ! empty( $wpo_usr->preferred_username )
 				? $wpo_usr->preferred_username
 				: $wpo_usr->upn;
 
-			if ( is_multisite() ) {
-				$blog_name = get_bloginfo( 'name' );
+			if ( ! $is_deamon ) { // Do not apply when synchronizing users
 
-				if ( ! Options_Service::mu_use_subsite_options() && ! Options_Service::get_global_boolean_var( 'mu_add_user_to_all_sites' ) ) {
+				if ( is_multisite() ) {
+					$blog_name = get_bloginfo( 'name' );
 
-					if ( is_main_site() ) {
+					if ( ! Options_Service::mu_use_subsite_options() && ! Options_Service::get_global_boolean_var( 'mu_add_user_to_all_sites' ) ) {
 
-						if ( ! Options_Service::get_global_boolean_var( 'create_and_add_users' ) ) {
+						if ( is_main_site() ) {
+
+							if ( ! Options_Service::get_global_boolean_var( 'create_and_add_users' ) ) {
+								Log_Service::write_log( 'WARN', sprintf( '%s -> User %s does not have privileges for site "%s" and is therefore denied access.', __METHOD__, $user_login, $blog_name ) );
+								wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
+							}
+						} elseif ( Options_Service::get_global_boolean_var( 'skip_add_user_to_subsite' ) ) { // Sub Site
 							Log_Service::write_log( 'WARN', sprintf( '%s -> User %s does not have privileges for site "%s" and is therefore denied access.', __METHOD__, $user_login, $blog_name ) );
 							wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
 						}
-					} elseif ( Options_Service::get_global_boolean_var( 'skip_add_user_to_subsite' ) ) { // Sub Site
+					}
+
+					// WPMU Dedicated Mode
+					if ( Options_Service::mu_use_subsite_options() && ! Options_Service::get_global_boolean_var( 'create_and_add_users' ) ) {
 						Log_Service::write_log( 'WARN', sprintf( '%s -> User %s does not have privileges for site "%s" and is therefore denied access.', __METHOD__, $user_login, $blog_name ) );
 						wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
 					}
+				} elseif ( ! Options_Service::get_global_boolean_var( 'create_and_add_users' ) ) {
+					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> User not found and settings prevented creating a new user on-demand for user ' . $user_login );
+					Authentication_Service::goodbye( Error_Service::USER_NOT_FOUND, false );
 				}
-
-				// WPMU Dedicated Mode
-				if ( Options_Service::mu_use_subsite_options() && ! Options_Service::get_global_boolean_var( 'create_and_add_users' ) ) {
-					Log_Service::write_log( 'WARN', sprintf( '%s -> User %s does not have privileges for site "%s" and is therefore denied access.', __METHOD__, $user_login, $blog_name ) );
-					wp_die( sprintf( __( 'You attempted to access "%s", but you do not currently have privileges on this site. If you believe you should be able to access the site, please contact your network administrator.' ), $blog_name ), 403 ); // phpcs:ignore
-				}
-			} elseif ( ! Options_Service::get_global_boolean_var( 'create_and_add_users' ) ) {
-				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> User not found and settings prevented creating a new user on-demand for user ' . $user_login );
-				Authentication_Service::goodbye( Error_Service::USER_NOT_FOUND, false );
 			}
 
 			/**
@@ -82,9 +85,13 @@ if ( ! class_exists( '\Wpo\Services\User_Create_Service' ) ) {
 			$user_login = apply_filters( 'wpo365/user/user_login', $user_login );
 
 			$userdata = array(
-				'user_login' => $user_login,
-				'user_pass'  => $password,
-				'role'       => $usr_default_role,
+				'user_login'   => $user_login,
+				'user_pass'    => $password,
+				'display_name' => $wpo_usr->full_name,
+				'user_email'   => $wpo_usr->email,
+				'first_name'   => $wpo_usr->first_name,
+				'last_name'    => $wpo_usr->last_name,
+				'role'         => $usr_default_role,
 			);
 
 			/**
@@ -121,7 +128,12 @@ if ( ! class_exists( '\Wpo\Services\User_Create_Service' ) ) {
 			if ( is_wp_error( $wp_usr_id ) ) {
 				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Could not create wp user. See next line for error information.' );
 				Log_Service::write_log( 'ERROR', $wp_usr_id );
-				Authentication_Service::goodbye( Error_Service::CHECK_LOG, false );
+
+				if ( $exit_on_error ) {
+					Authentication_Service::goodbye( Error_Service::CHECK_LOG, false );
+				}
+
+				return 0;
 			}
 
 			if ( ! empty( $wpo_usr ) ) {

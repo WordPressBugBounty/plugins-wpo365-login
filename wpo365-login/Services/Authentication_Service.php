@@ -579,12 +579,13 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 		public static function goodbye( $login_error_code, $login_error = true ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
-			$error_page_url  = Options_Service::get_global_string_var( 'error_page_url' );
-			$error_page_path = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
+			$error_page_url      = Options_Service::get_global_string_var( 'error_page_url' );
+			$error_page_path     = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
+			$preferred_login_url = Url_Helpers::get_preferred_login_url();
 
 			$redirect_to = ( empty( $error_page_url ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] )
-			? Url_Helpers::get_preferred_login_url()
-			: $error_page_url;
+			? $preferred_login_url
+			: apply_filters( 'wpo365/goodbye/error_page_uri', $error_page_url, get_current_user_id(), $login_error_code );
 
 			if ( empty( $_SERVER['PHP_SELF'] ) ) {
 				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> $_SERVER[PHP_SELF] is empty. Please review your server configuration.' );
@@ -606,24 +607,27 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			unset( $_COOKIE[ SECURE_AUTH_COOKIE ] );
 			unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
 
-			$redirect_to = add_query_arg( 'login_errors', $login_error_code, $redirect_to );
+			// Only add error information if redirect_to is equal to unmodified error_page_url.
+			if ( strcmp( $redirect_to, $error_page_url ) === 0 || strcmp( $redirect_to, $preferred_login_url ) === 0 ) {
+				$redirect_to = add_query_arg( 'login_errors', $login_error_code, $redirect_to );
 
-			/**
-			 * @since 34.3 Adding the redirect_to query arg to enable the user to recover from the error
-			 */
+				/**
+				 * @since 34.3 Adding the redirect_to query arg to enable the user to recover from the error
+				 */
 
-			$request_service = Request_Service::get_instance();
-			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
-			$state_url       = $request->get_item( 'state' );
+				$request_service = Request_Service::get_instance();
+				$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+				$state_url       = $request->get_item( 'state' );
 
-			if ( empty( $state_url ) ) {
-				$state_url = $request->get_item( 'relay_state' );
-			}
+				if ( empty( $state_url ) ) {
+					$state_url = $request->get_item( 'relay_state' );
+				}
 
-			if ( ! empty( $state_url ) ) {
-				$redirect_to = add_query_arg( 'redirect_to', $state_url, $redirect_to );
-				} elseif ( ! empty( $_REQUEST['redirect_to'] ) ) { // phpcs:ignore
-			$redirect_to = add_query_arg( 'redirect_to', esc_url_raw( $_REQUEST['redirect_to'] ), $redirect_to ); // phpcs:ignore
+				if ( ! empty( $state_url ) ) {
+					$redirect_to = add_query_arg( 'redirect_to', $state_url, $redirect_to );
+			} elseif ( ! empty( $_REQUEST['redirect_to'] ) ) { // phpcs:ignore
+					$redirect_to = add_query_arg( 'redirect_to', esc_url_raw( $_REQUEST['redirect_to'] ), $redirect_to ); // phpcs:ignore
+				}
 			}
 
 			Url_Helpers::force_redirect( $redirect_to );
@@ -652,14 +656,19 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 					exit();
 				}
 
-				$error_page_url  = Options_Service::get_global_string_var( 'error_page_url' );
-				$error_page_path = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
+				$error_page_url      = Options_Service::get_global_string_var( 'error_page_url' );
+				$error_page_path     = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
+				$preferred_login_url = Url_Helpers::get_preferred_login_url();
 
 				$redirect_to = ( empty( $error_page_url ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] )
-				? Url_Helpers::get_preferred_login_url()
-				: $error_page_url;
+				? $preferred_login_url
+				: apply_filters( 'wpo365/goodbye/error_page_uri', $error_page_url, get_current_user_id(), Error_Service::DEACTIVATED );
 
-				$redirect_to = add_query_arg( 'login_errors', Error_Service::DEACTIVATED, $redirect_to );
+				// Only add error information if redirect_to is equal to unmodified error_page_url.
+				if ( strcmp( $redirect_to, $error_page_url ) === 0 || strcmp( $redirect_to, $preferred_login_url ) === 0 ) {
+					$redirect_to = add_query_arg( 'login_errors', Error_Service::DEACTIVATED, $redirect_to );
+				}
+
 				Url_Helpers::force_redirect( $redirect_to );
 			}
 		}
