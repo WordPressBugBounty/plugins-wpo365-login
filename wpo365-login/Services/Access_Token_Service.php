@@ -579,12 +579,14 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 			}
 
 			// Store the new token as a site option with the shorter ttl of both auth and token
-			$access_token->audience = $application_id;
-			$access_token->expiry   = time() + intval( $access_token->expires_in );
-			$access_token->scope    = $scope;
-			$access_token->roles    = self::get_application_roles( $access_token->access_token );
+			$access_token->audience      = $application_id;
+			$access_token->expiry        = time() + intval( $access_token->expires_in );
+			$access_token->scope         = $scope;
+			$access_token->roles         = self::get_application_roles( $access_token->access_token );
+			$mail_authorization_scenario = Options_Service::get_global_string_var( 'mail_authorization_scenario' );
+			$skip_role_check             = $use_mail_config && strcasecmp( $mail_authorization_scenario, 'rbac' ) === 0;
 
-			if ( ! empty( $role ) ) {
+			if ( ! empty( $role ) && ! $skip_role_check ) {
 
 				if ( ! self::token_has_role( $access_token, $role ) ) {
 					return new \WP_Error( '1041', sprintf( 'Access token with application level permissions for scope %s does not has the role requested (%s)', $scope, $role ) );

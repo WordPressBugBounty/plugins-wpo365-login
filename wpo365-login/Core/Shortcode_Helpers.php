@@ -116,7 +116,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 
 			// Load the js dependency
 			ob_start();
-			include Extensions_Helpers::get_active_extension_dir( array( 'wpo365-login-premium/wpo365-login.php', 'wpo365-sync-5y/wpo365-sync-5y.php', 'wpo365-login-intranet/wpo365-login.php', 'wpo365-intranet-5y/wpo365-intranet-5y.php', 'wpo365-integrate/wpo365-integrate.php', 'wpo365-pro/wpo365-pro.php', 'wpo365-essentials/wpo365-essentials.php' ) ) . '/templates/openid-ssolink.php';
+			include Extensions_Helpers::get_active_extension_dir( array( 'wpo365-login-premium/wpo365-login.php', 'wpo365-sync-5y/wpo365-sync-5y.php', 'wpo365-login-intranet/wpo365-login.php', 'wpo365-intranet-5y/wpo365-intranet-5y.php', 'wpo365-integrate/wpo365-integrate.php', 'wpo365-pro/wpo365-pro.php', 'wpo365-customers/wpo365-customers.php', 'wpo365-essentials/wpo365-essentials.php' ) ) . '/templates/openid-ssolink.php';
 			$js_lib = ob_get_clean();
 
 			// Sanitize the HTML template

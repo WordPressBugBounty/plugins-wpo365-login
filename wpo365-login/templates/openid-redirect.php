@@ -235,29 +235,36 @@ if ( class_exists( '\Wpo\Services\Options_Service' ) ) {
 		<div id="wpo365OpenIdRedirect"></div>
 	</div>
 
-	<?php if ( \Wpo\Services\Options_Service::get_global_boolean_var( 'use_no_teams_sso' ) ) : ?>
-		<script src="<?php echo esc_url( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) ); ?>apps/dist/pintra-redirect-wo-teams.js?v=<?php echo esc_html( $GLOBALS['WPO_CONFIG']['version'] ); ?>"></script>
-	<?php elseif ( \Wpo\Services\Options_Service::get_global_boolean_var( 'use_ms_teams_sso_v1' ) ) : ?>
-		<script src="<?php echo esc_url( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) ); ?>apps/dist/pintra-redirect-v1.js?v=<?php echo esc_html( $GLOBALS['WPO_CONFIG']['version'] ); ?>"></script>
-	<?php else : ?>
-		<script src="<?php echo esc_url( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) ); ?>apps/dist/pintra-redirect.js?v=<?php echo esc_html( $GLOBALS['WPO_CONFIG']['version'] ); ?>"></script>
-	<?php endif ?>
+	<?php
+	if ( \Wpo\Services\Options_Service::get_global_boolean_var( 'use_no_teams_sso' ) ) {
+		wp_print_script_tag(
+			array(
+				'src' => sprintf( '%sapps/dist/pintra-redirect-wo-teams.js?v=%s', esc_url( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) ), esc_html( $GLOBALS['WPO_CONFIG']['version'] ) ),
+			)
+		);
+	} elseif ( \Wpo\Services\Options_Service::get_global_boolean_var( 'use_ms_teams_sso_v1' ) ) {
+		wp_print_script_tag(
+			array(
+				'src' => sprintf( '%sapps/dist/pintra-redirect-v1.js?v=%s', esc_url( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) ), esc_html( $GLOBALS['WPO_CONFIG']['version'] ) ),
+			)
+		);
+	} else {
+		wp_print_script_tag(
+			array(
+				'src' => sprintf( '%sapps/dist/pintra-redirect.js?v=%s', esc_url( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) ), esc_html( $GLOBALS['WPO_CONFIG']['version'] ) ),
+			)
+		);
+	}
 
-	<script>
-		window.wpo365 = window.wpo365 || {};
-		<?php if ( class_exists( '\Wpo\Core\Url_Helpers' ) && \Wpo\Core\Url_Helpers::is_wp_login() ) : ?>
-			window.wpo365.siteUrl = '<?php echo esc_url_raw( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'] ); ?>';
-		<?php endif; ?>
-		<?php if ( \Wpo\Services\Options_Service::get_global_boolean_var( 'bounce_to_admin' ) ) : ?>
-			window.wpo365.bounceUrl = '<?php echo esc_url_raw( admin_url() ); ?>';
-		<?php endif; ?>
-		try {
-			window.wpo365.pintraRedirect.toMsOnline('<?php echo ( ! empty( $login_hint ) ? esc_html( $login_hint ) : '' ); ?>');
-		} catch (err) {
-			console.log('Error occured whilst trying to redirect to MS online');
-			console.error(err);
-		}
-	</script>
+	$javascript = "window.wpo365 = window.wpo365 || {};\n" .
+								( class_exists( '\Wpo\Core\Url_Helpers' ) && \Wpo\Core\Url_Helpers::is_wp_login() ? sprintf( "window.wpo365.siteUrl = '%s';\n", esc_url_raw( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'] ) ) : '' ) .
+								( \Wpo\Services\Options_Service::get_global_boolean_var( 'bounce_to_admin' ) ? sprintf( "window.wpo365.bounceUrl = '%s';\n", esc_url_raw( admin_url() ) ) : '' ) .
+								"try {\n" .
+								sprintf( "window.wpo365.pintraRedirect.toMsOnline('%s');", ( ! empty( $login_hint ) ? esc_html( $login_hint ) : '' ) ) .
+								"} catch (err) { console.log('Error occured whilst trying to redirect to MS online'); console.error(err); }\n";
+
+	wp_print_inline_script_tag( $javascript );
+	?>
 
 	<?php if ( ! $header_sent ) : ?>
 	</body>

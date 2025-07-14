@@ -464,6 +464,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 					'wpo365-sync-5y/wpo365-sync-5y.php',
 					'wpo365-integrate/wpo365-integrate.php',
 					'wpo365-pro/wpo365-pro.php',
+					'wpo365-customers/wpo365-customers.php',
 				)
 			);
 
@@ -514,6 +515,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 					'wpo365-sync-5y/wpo365-sync-5y.php',
 					'wpo365-integrate/wpo365-integrate.php',
 					'wpo365-pro/wpo365-pro.php',
+					'wpo365-customers/wpo365-customers.php',
 				)
 			);
 
@@ -571,6 +573,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 					'wpo365-sync-5y/wpo365-sync-5y.php',
 					'wpo365-integrate/wpo365-integrate.php',
 					'wpo365-pro/wpo365-pro.php',
+					'wpo365-customers/wpo365-customers.php',
 				)
 			);
 
@@ -633,6 +636,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 					'wpo365-sync-5y/wpo365-sync-5y.php',
 					'wpo365-integrate/wpo365-integrate.php',
 					'wpo365-pro/wpo365-pro.php',
+					'wpo365-customers/wpo365-customers.php',
 				)
 			);
 
@@ -675,6 +679,26 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				'and as a result the plugin cannot retrieve a user\'s Azure AD group memberships.',
 				'https://docs.wpo365.com/article/23-integration'
 			);
+
+			// Check if access token has appropriate permissions
+			$test_result_user_read_all = $this->check_static_permission(
+				$this->delegated_access_token,
+				'user.read.all',
+				'delegated',
+				$this->delegated_static_permissions,
+				Test_Result::SEVERITY_LOW,
+				Test_Result::CAPABILITY_ROLES_ACCESS,
+				'and as a result the plugin cannot retrieve a user\'s Azure AD group memberships.',
+				'https://docs.wpo365.com/article/23-integration'
+			);
+
+			if ( ! $test_result_user_read_all->passed ) {
+				$application_id         = Options_Service::get_aad_option( 'application_id' );
+				$test_result->passed    = false;
+				$test_result->message   = $test_result_user_read_all->message;
+				$test_result->more_info = 'https://docs.wpo365.com/article/23-integration';
+				return $test_result;
+			}
 
 			if ( ! $test_result_groupmember_read_all->passed && $test_result_group_read_all->passed ) {
 				$application_id         = Options_Service::get_aad_option( 'application_id' );
@@ -725,6 +749,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 					'wpo365-sync-5y/wpo365-sync-5y.php',
 					'wpo365-integrate/wpo365-integrate.php',
 					'wpo365-pro/wpo365-pro.php',
+					'wpo365-customers/wpo365-customers.php',
 				)
 			);
 
@@ -768,6 +793,25 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				'https://docs.wpo365.com/article/23-integration'
 			);
 
+			// Check if access token has appropriate permissions
+			$test_result_user_read_all = $this->check_static_permission(
+				$this->application_access_token,
+				'user.read.all',
+				'application',
+				$this->application_static_permissions,
+				Test_Result::SEVERITY_LOW,
+				Test_Result::CAPABILITY_ROLES_ACCESS,
+				'and as a result the plugin cannot retrieve a user\'s Azure AD group memberships.',
+				'https://docs.wpo365.com/article/23-integration'
+			);
+
+			if ( ! $test_result_user_read_all->passed ) {
+				$test_result->passed    = $test_result_user_read_all->passed;
+				$test_result->message   = $test_result_user_read_all->message;
+				$test_result->more_info = $test_result_user_read_all->more_info;
+				return $test_result;
+			}
+
 			if ( ! $test_result_groupmember_read_all->passed && $test_result_group_read_all->passed ) {
 				$application_id         = Options_Service::get_aad_option( 'app_only_application_id' );
 				$test_result->passed    = false;
@@ -790,7 +834,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 				if ( ! isset( $test_result->data['response_code'] ) || $test_result->data['response_code'] !== 200 ) {
 					$test_result->passed  = false;
-					$test_result->message = 'Failed to retrieve the Azure AD groups for current user from Microsoft Graph. Inspect the data that was received below for a possible reason.';
+					$test_result->message = 'Failed to retrieve the Azure AD groups for current user from Microsoft Graph.';
 				}
 			} else {
 				$test_result->passed  = false;
@@ -1046,146 +1090,6 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 		}
 
 		/**
-		 * SYNC | DELEGATED
-		 */
-		public function test_sync_delegated() {
-
-			// Skip if using SAML
-			if ( $this->no_sso || $this->use_saml || $this->use_b2c ) {
-				return;
-			}
-
-			$test_result         = new Test_Result( 'Synchronize users with <em>delegated</em> permissions.', Test_Result::CAPABILITY_SYNC, Test_Result::SEVERITY_LOW );
-			$test_result->passed = true;
-
-			$suitable_extensions = \array_flip(
-				array(
-					'wpo365-customers/wpo365-customers.php',
-					'wpo365-login-premium/wpo365-login.php',
-					'wpo365-login-intranet/wpo365-login.php',
-					'wpo365-intranet-5y/wpo365-intranet-5y.php',
-					'wpo365-sync-5y/wpo365-sync-5y.php',
-					'wpo365-integrate/wpo365-integrate.php',
-				)
-			);
-
-			// Check if suitable extensions can be found
-			if ( count( $this->extensions ) === 0 || count( \array_intersect_key( $suitable_extensions, $this->extensions ) ) === 0 ) {
-				$test_result->passed    = false;
-				$test_result->message   = 'No WPO365 extension was found that would enable the SYNC feature.';
-				$test_result->more_info = 'https://www.wpo365.com/compare-all-wpo365-bundles/';
-				return $test_result;
-			}
-
-			// Check if sync is en
-			$sync_enabled = Options_Service::get_global_boolean_var( 'enable_user_sync' );
-
-			if ( empty( $sync_enabled ) ) {
-				$test_result->passed    = false;
-				$test_result->message   = "Enable User synchronization on the plugin's <a href=\"#userSync\">User sync</a> configuration page.";
-				$test_result->fix       = array(
-					array(
-						'op'    => 'replace',
-						'value' => array(
-							'enableUserSync' => true,
-						),
-					),
-				);
-				$test_result->more_info = 'https://docs.wpo365.com/article/57-synchronize-users-from-azure-ad-to-wordpress';
-				return $test_result;
-			}
-
-			// Check if cron has been disabled
-			$disabled = Options_Service::get_global_boolean_var( 'prevent_send_email_change_email' );
-
-			if ( ! $disabled ) {
-				$test_result->passed    = false;
-				$test_result->message   = 'It is recommended to disable the automatic email response to users when their password or email is changed during User synchronization on the plugin\'s <a href="#miscellaneous">Miscellaneous</a> configuration page.';
-				$test_result->more_info = 'https://docs.wpo365.com/article/115-prevent-wordpress-to-send-email-changed-email';
-				$test_result->fix       = array(
-					array(
-						'op'    => 'replace',
-						'value' => array(
-							'preventSendEmailChangeEmail' => true,
-						),
-					),
-				);
-				return $test_result;
-			}
-
-			$allowed_urls = Options_Service::get_global_list_var( 'pages_blacklist' );
-			$found        = false;
-
-			foreach ( $allowed_urls as $url ) {
-
-				if ( WordPress_Helpers::stripos( $url, '/wp-json/wpo365/v1/' ) !== false ) {
-					$found = true;
-					break;
-				}
-			}
-
-			if ( empty( $found ) ) {
-				$test_result->passed    = false;
-				$test_result->message   = 'You must add "/wp-json/wpo365/v1/" to the list of pages freed from authentication on the plugin\'s <a href="#singleSignOn">Single Sign-on</a> configuration page to be able to synchronize users.';
-				$test_result->more_info = 'https://docs.wpo365.com/article/37-pages-blacklist';
-				$test_result->fix       = array(
-					array(
-						'op'    => 'add',
-						'value' => array(
-							'pagesBlacklist' => '/wp-json/wpo365/v1/',
-						),
-					),
-				);
-				return $test_result;
-			}
-
-			// Check if suitable access token with delegated permissions can be found
-			if ( ! $this->delegated_access_token_test_result->passed ) {
-				$test_result->passed    = false;
-				$test_result->message   = $this->delegated_access_token_test_result->message;
-				$test_result->more_info = $this->delegated_access_token_test_result->more_info;
-				return $test_result;
-			}
-
-			// Check if access token has appropriate permissions
-			$test_result_user_read_all = $this->check_static_permission(
-				$this->delegated_access_token,
-				'user.read.all',
-				'delegated',
-				$this->delegated_static_permissions,
-				Test_Result::SEVERITY_LOW,
-				Test_Result::CAPABILITY_SYNC,
-				'and as a result the plugin cannot retrieve users from your organization from Microsoft Graph to synchronize with WordPress.',
-				'https://docs.wpo365.com/article/57-synchronize-users-from-azure-ad-to-wordpress'
-			);
-
-			if ( ! $test_result_user_read_all->passed ) {
-				$test_result->passed    = $test_result_user_read_all->passed;
-				$test_result->message   = $test_result_user_read_all->message;
-				$test_result->more_info = $test_result_user_read_all->more_info;
-				return $test_result;
-			}
-
-			// Check if the default sync query can be executed against Microsoft Graph
-			if ( \class_exists( '\Wpo\Sync\SyncV2_Service' ) ) {
-
-				$test_result->data = Graph_Service::fetch( '/myorganization/users?$filter=accountEnabled+eq+true+and+userType+eq+%27member%27&$top=1', 'GET', false, array( 'Accept: application/json;odata.metadata=minimal' ), true, false, '', 'https://graph.microsoft.com/User.Read.All' );
-
-				if ( \is_wp_error( $test_result->data ) || ! isset( $test_result->data['response_code'] ) || $test_result->data['response_code'] !== 200 ) {
-					$test_result->passed    = false;
-					$test_result->message   = 'Failed to retrieve users from your organization from Microsoft to synchronize with WordPress. Inspect the data that was received below for a possible reason.';
-					$test_result->more_info = 'https://docs.wpo365.com/article/57-synchronize-users-from-azure-ad-to-wordpress';
-				}
-			} else {
-				$test_result->passed    = false;
-				$test_result->message   = 'Unknow error occurred [class could not be loaded].';
-				$test_result->more_info = 'https://docs.wpo365.com/article/57-synchronize-users-from-azure-ad-to-wordpress';
-			}
-
-			return $test_result;
-		}
-
-		/**
 		 * SYNC | APPLICATION
 		 */
 		public function test_sync_application() {
@@ -1201,6 +1105,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 					'wpo365-intranet-5y/wpo365-intranet-5y.php',
 					'wpo365-sync-5y/wpo365-sync-5y.php',
 					'wpo365-integrate/wpo365-integrate.php',
+					'wpo365-customers/wpo365-customers.php',
 				)
 			);
 

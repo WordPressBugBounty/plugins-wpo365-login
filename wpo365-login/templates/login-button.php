@@ -2,26 +2,24 @@
 
 defined( 'ABSPATH' ) || die();
 
-?>
-
-<script>
-	window.wpo365 = window.wpo365 || {};
-	<?php
-	if ( class_exists( '\Wpo\Core\Url_Helpers' ) && \Wpo\Core\Url_Helpers::is_wp_login() ) :
+if ( class_exists( '\Wpo\Core\Url_Helpers' ) && \Wpo\Core\Url_Helpers::is_wp_login() ) {
 		$_site_url = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
 
-		if ( defined( 'WPO_AUTH_SCENARIO' ) && constant( 'WPO_AUTH_SCENARIO' ) === 'internet' ) {
-			$_site_url = \Wpo\Services\Options_Service::get_aad_option( 'redirect_url' );
-			$_site_url = \Wpo\Services\Options_Service::get_global_boolean_var( 'use_saml' )
-				? \Wpo\Services\Options_Service::get_aad_option( 'saml_sp_acs_url' )
-				: $_site_url;
-			$_site_url = apply_filters( 'wpo365/aad/redirect_uri', $_site_url );
-		}
+	if ( defined( 'WPO_AUTH_SCENARIO' ) && constant( 'WPO_AUTH_SCENARIO' ) === 'internet' ) {
+		$_site_url = \Wpo\Services\Options_Service::get_aad_option( 'redirect_url' );
+		$_site_url = \Wpo\Services\Options_Service::get_global_boolean_var( 'use_saml' )
+			? \Wpo\Services\Options_Service::get_aad_option( 'saml_sp_acs_url' )
+			: $_site_url;
+		$_site_url = apply_filters( 'wpo365/aad/redirect_uri', $_site_url );
+	}
+}
 
-		?>
-		window.wpo365.siteUrl = '<?php echo esc_url_raw( $_site_url ); ?>';
-	<?php endif; ?>
-</script>
+$javascript = "window.wpo365 = window.wpo365 || {};\n" .
+							( ! empty( $_site_url ) ? sprintf( "window.wpo365.siteUrl = '%s';\n", $_site_url ) : '' );
+
+wp_print_inline_script_tag( $javascript );
+
+?>
 
 <div>
 	<style>

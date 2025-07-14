@@ -106,11 +106,6 @@ if ( ! class_exists( '\Wpo\Core\Extensions_Helpers' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			}
 
-			if ( $request->get_item( 'cleaned_plugins_cache' ) !== 1 ) {
-				wp_clean_plugins_cache( false );
-				$request->set_item( 'cleaned_plugins_cache', 1 );
-			}
-
 			$plugins = \get_plugins();
 
 			$version = function ( $_slug ) use ( $plugins ) {

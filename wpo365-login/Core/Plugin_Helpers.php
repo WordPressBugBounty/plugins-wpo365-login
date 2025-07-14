@@ -70,7 +70,9 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		 * @return object
 		 */
 		public static function check_for_updates( $check_for_updates_data ) {
-			if ( $check_for_updates_data === null ) {
+			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
+
+			if ( $check_for_updates_data === null || ! isset( $check_for_updates_data->response ) ) {
 				return $check_for_updates_data;
 			}
 
@@ -99,9 +101,10 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		}
 
 		public static function check_licenses() {
+			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
+
 			Wpmu_Helpers::mu_delete_transient( 'wpo365_lic_notices' );
 			$extensions = Extensions_Helpers::get_active_extensions();
-			wp_clean_plugins_cache( true );
 
 			foreach ( $extensions as $slug => $extension ) {
 				list($license_key, $url) = self::get_plugin_license_key( $extension );
@@ -233,6 +236,8 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 				'plugins' => array(),
 			);
 
+			self::check_licenses();
+
 			$plugin_version_infos = self::get_version_from_remote( $installed_plugins );
 
 			if ( is_array( $plugin_version_infos ) ) {
@@ -242,7 +247,7 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 				}
 			}
 
-			set_site_transient( $cache_key, $data, 12 * HOUR_IN_SECONDS );
+			set_site_transient( $cache_key, $data, 4 * HOUR_IN_SECONDS );
 
 			return $data['plugins'];
 		}
@@ -279,6 +284,8 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		 * @return  false|object    The (EDD) plugin update info from the wpo365.com server; Otherwise false.
 		 */
 		private static function get_version_from_remote( $installed_plugins ) {
+			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
+
 			if ( self::request_recently_failed() ) {
 				return false;
 			}
@@ -381,23 +388,10 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		}
 
 		private static function check_license( $extension, $license_key, $url = '' ) {
-			Log_Service::write_log(
-				'DEBUG',
-				sprintf(
-					'##### -> %s [%s]',
-					__METHOD__,
-					$extension['store_item']
-				)
-			);
+			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s [%s]', __METHOD__, $extension['store_item'] ) );
 
 			if ( self::request_recently_failed() ) {
 				return;
-			}
-
-			$lic_notices = Wpmu_Helpers::mu_get_transient( 'wpo365_lic_notices' );
-
-			if ( empty( $lic_notices ) ) {
-				$lic_notices = array();
 			}
 
 			$lic_url = is_multisite()
@@ -484,6 +478,12 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 
 			// Generate warning if license was not found
 			if ( empty( $license_key ) ) {
+				$lic_notices = Wpmu_Helpers::mu_get_transient( 'wpo365_lic_notices' );
+
+				if ( empty( $lic_notices ) ) {
+					$lic_notices = array();
+				}
+
 				$lic_notices[] = \sprintf(
 					'Could not find a license for <strong>%s</strong>. Please go to <a href="%s">WP Admin > WPO365 > Licenses</a> and activate your license or purchase a <a href="%s" target="_blank">new license online</a>. See the <a href="%s" target="_blank">End User License Agreement</a> for details',
 					$extension['store_item'],
@@ -491,9 +491,32 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 					$extension['store_url'],
 					'https://www.wpo365.com/end-user-license-agreement/'
 				);
+
 				Wpmu_Helpers::mu_set_transient( 'wpo365_lic_notices', $lic_notices );
 				return;
 			}
+
+			self::check_license_remotely(
+				$extension,
+				$license_key,
+				$url,
+				$empty_url_arg,
+				$lic_url
+			);
+		}
+
+		/**
+		 * Will check the license remotely.
+		 *
+		 * @param mixed $extension The plugin data.
+		 * @param mixed $license_key  The license key entered by the user.
+		 * @param mixed $url The URL for which the license should be activated.
+		 * @param mixed $empty_url_arg No URL was previously paired with the license key and persisted.
+		 * @param mixed $lic_url The URL for the WPO365 "Licenses" sub page, where to send the user to activate the license.
+		 * @return void
+		 */
+		private static function check_license_remotely( $extension, $license_key, $url, $empty_url_arg, $lic_url ) {
+			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
 
 			// Call the custom API.
 			$response = wp_remote_get(
@@ -504,149 +527,156 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 				)
 			);
 
+			$message = '';
+
 			// make sure the response came back okay
 			if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
 
 				if ( is_wp_error( $response ) ) {
 					$message = $response->get_error_message();
 				} else {
-					$message = __( 'An error occurred, please try again.' );
+					$message = sprintf(
+						'An unknown error occurred whilst checking your license key for %s. Please check WP Admin > WPO365 > ... > Debug to view the raw request (and optionally send it to support@wpo365.com).',
+						$extension['store_item']
+					);
 				}
 
-				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $message ) );
-				self::log_failed_request();
-
-				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> ' . $message );
-			}
-
-			$license_data = json_decode( wp_remote_retrieve_body( $response ) );
-			$message      = '';
-
-			switch ( $license_data->license ) {
-
-				case 'valid':
-					Log_Service::write_log(
-						'DEBUG',
-						sprintf(
-							'%s -> License key for %s is valid',
-							__METHOD__,
-							$extension['store_item']
-						)
-					);
-
-					/**
-					 * @since   23.0    Lets cache the URL for which the license check was successful
-					 */
-
-					if ( $empty_url_arg ) {
-						$license_key_name = \sprintf( 'license_%d', $extension['store_item_id'] );
-						$network_options  = get_site_option( 'wpo365_options' );
-
-						if ( ! empty( $network_options[ $license_key_name ] ) ) {
-							$network_options[ $license_key_name ] = sprintf( '%s|%s', $license_key, $url );
-							update_site_option( 'wpo365_options', $network_options );
-							$GLOBALS['WPO_CONFIG']['options'] = array();
-						}
-					}
-
-					return;
-
-				case 'expired':
-					$message = sprintf(
-						/* translators: 1: Name of premium plugin 2: Date the license expired 3: URL of the Licenses page 4: URL to purchase new license 5: URL of the EULA */
-						__( 'Your license key for <strong>%1$s</strong> expired on %2$s. Please go to <a href="%3$s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license or purchase a <a href="%4$s" target="_blank">new license online</a>. See the <a href="%5$s" target="_blank">End User License Agreement</a> for details' ),
-						$extension['store_item'],
-						date_i18n( get_option( 'date_format' ), strtotime( $license_data->expires, current_time( 'timestamp' ) ) ), // phpcs:ignore
-						$lic_url,
-						$extension['store_url'],
-						'https://www.wpo365.com/end-user-license-agreement/'
-					);
-					break;
-
-				case 'disabled':
-					$message =
-						sprintf(
-							/* translators: 1: Name of premium plugin 2: URL of the Licenses page 3: URL to purchase new license 4: URL of the EULA */
-							__( 'Your license key for <strong>%1$s</strong> has been disabled. Please go to <a href="%2$s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license or purchase a <a href="%3$s" target="_blank">new license online</a>. See the <a href="%4$s" target="_blank">End User License Agreement</a> for details' ),
-							$extension['store_item'],
-							$lic_url,
-							$extension['store_url'],
-							'https://www.wpo365.com/end-user-license-agreement/'
-						);
-					break;
-
-				case 'key_mismatch':
-				case 'item_name_mismatch':
-					$message =
-						sprintf(
-							/* translators: 1: Name of premium plugin 2: URL of the Licenses page 3: URL to purchase new license 4: URL of the EULA */
-							__( 'Your license key for <strong>%1$s</strong> is not valid for this product. Please go to <a href="%2$s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license key or purchase additional <a href="%3$s" target="_blank">licenses online</a>. See the <a href="%4$s" target="_blank">End User License Agreement</a> for details' ),
-							$extension['store_item'],
-							$lic_url,
-							$extension['store_url'],
-							'https://www.wpo365.com/end-user-license-agreement/'
-						);
-					break;
-
-				case 'site_inactive':
-					$message =
-						sprintf(
-							/* translators: 1: Name of premium plugin 2: URL of the Licenses page 3: URL to purchase new license 4: URL of the EULA */
-							__( 'Your license key for <strong>%1$s</strong> is not active for this site. Please go to <a href="%2$s" target="_blank">WP Admin > WPO365 > Licenses</a> and activate your license or purchase additional <a href="%3$s" target="_blank">licenses online</a>. See the <a href="%4$s" target="_blank">End User License Agreement</a> for details' ),
-							$extension['store_item'],
-							$lic_url,
-							$extension['store_url'],
-							'https://www.wpo365.com/end-user-license-agreement/'
-						);
-					break;
-
-				case 'invalid_item_id':
-					$message =
-						sprintf(
-							/* translators: 1: ID of premium plugin 2: Name of premium plugin 3: URL of the Licenses page 4: URL to purchase new license 5: URL of the EULA */
-							__( 'The item ID <strong>%1$s</strong> for <strong>%2$s</strong> is not valid. Please go to <a href="%3$s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license key or purchase additional <a href="%4$s" target="_blank">licenses online</a>. See the <a href="%5$s" target="_blank">End User License Agreement</a> for details' ),
-							$extension['store_item_id'],
-							$extension['store_item'],
-							$lic_url,
-							$extension['store_url'],
-							'https://www.wpo365.com/end-user-license-agreement/'
-						);
-					break;
-
-				case 'invalid':
-					$message =
-						sprintf(
-							/* translators: 1: Name of premium plugin 2: URL of the Licenses page 3: URL to purchase new license 4: URL of the EULA */
-							__( 'Your license key for <strong>%1$s</strong> is invalid. Please go to <a href="%2$s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license or purchase a <a href="%3$s" target="_blank">new license online</a>. See the <a href="%4$s" target="_blank">End User License Agreement</a> for details' ),
-							$extension['store_item'],
-							$lic_url,
-							$extension['store_url'],
-							'https://www.wpo365.com/end-user-license-agreement/'
-						);
-					break;
-
-				default:
-					$message =
-						sprintf(
-							/* translators: Name of premium plugin */
-							__( 'An unknown error occurred whilst checking your license key for %s. Please check WP Admin > WPO365 > ... > Debug to view the raw request (and optionally send it to support@wpo365.com).' ),
-							$extension['store_item']
-						);
-					Log_Service::write_log(
-						'WARN',
-						sprintf(
-							'%s -> License key %s for %s is not valid for site with URL %s [raw request: %s]',
-							__METHOD__,
-							$license_key,
-							$extension['store_item_id'],
-							$url,
+				Log_Service::write_log(
+					'WARN',
+					sprintf(
+						'%s -> License key %s for %s is not valid for site with URL %s [raw request: %s]',
+						__METHOD__,
+						$license_key,
+						$extension['store_item_id'],
+						$url,
 							htmlentities( serialize( $response ) ) // phpcs:ignore
-						)
-					);
-					break;
+					)
+				);
+
+				self::log_failed_request();
+			} else {
+				$license_data = json_decode( wp_remote_retrieve_body( $response ) );
+
+				switch ( $license_data->license ) {
+
+					case 'valid':
+						Log_Service::write_log(
+							'DEBUG',
+							sprintf(
+								'%s -> License key for %s is valid',
+								__METHOD__,
+								$extension['store_item']
+							)
+						);
+
+						/**
+						 * @since   23.0    Lets cache the URL for which the license check was successful
+						 */
+
+						if ( $empty_url_arg ) {
+							$license_key_name = \sprintf( 'license_%d', $extension['store_item_id'] );
+							$network_options  = get_site_option( 'wpo365_options' );
+
+							if ( ! empty( $network_options[ $license_key_name ] ) ) {
+								$network_options[ $license_key_name ] = sprintf( '%s|%s', $license_key, $url );
+								update_site_option( 'wpo365_options', $network_options );
+								$GLOBALS['WPO_CONFIG']['options'] = array();
+							}
+						}
+
+						return;
+
+					case 'expired':
+						$message = sprintf(
+							'Your license key for <strong>%s</strong> expired on %s. Please go to <a href="%s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license or purchase a <a href="%s" target="_blank">new license online</a>. See the <a href="%s" target="_blank">End User License Agreement</a> for details',
+							$extension['store_item'],
+							WordPress_Helpers::time_zone_corrected_formatted_date( $license_data->expires ),
+							$lic_url,
+							$extension['store_url'],
+							'https://www.wpo365.com/end-user-license-agreement/'
+						);
+						break;
+
+					case 'disabled':
+						$message = sprintf(
+							'Your license key for <strong>%s</strong> has been disabled. Please go to <a href="%s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license or purchase a <a href="%s" target="_blank">new license online</a>. See the <a href="%s" target="_blank">End User License Agreement</a> for details',
+							$extension['store_item'],
+							$lic_url,
+							$extension['store_url'],
+							'https://www.wpo365.com/end-user-license-agreement/'
+						);
+						break;
+
+					case 'key_mismatch':
+					case 'item_name_mismatch':
+						$message = sprintf(
+							'Your license key for <strong>%s</strong> is not valid for this product. Please go to <a href="%s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license key or purchase additional <a href="%s" target="_blank">licenses online</a>. See the <a href="%s" target="_blank">End User License Agreement</a> for details',
+							$extension['store_item'],
+							$lic_url,
+							$extension['store_url'],
+							'https://www.wpo365.com/end-user-license-agreement/'
+						);
+						break;
+
+					case 'site_inactive':
+						$message = sprintf(
+							'Your license key for <strong>%s</strong> is not active for this site. Please go to <a href="%s" target="_blank">WP Admin > WPO365 > Licenses</a> and activate your license or purchase additional <a href="%s" target="_blank">licenses online</a>. See the <a href="%s" target="_blank">End User License Agreement</a> for details',
+							$extension['store_item'],
+							$lic_url,
+							$extension['store_url'],
+							'https://www.wpo365.com/end-user-license-agreement/'
+						);
+
+						break;
+
+					case 'invalid_item_id':
+						$message = sprintf(
+							'The item ID <strong>%s</strong> for <strong>%s</strong> is not valid. Please go to <a href="%s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license key or purchase additional <a href="%s" target="_blank">licenses online</a>. See the <a href="%s" target="_blank">End User License Agreement</a> for details',
+							$extension['store_item_id'],
+							$extension['store_item'],
+							$lic_url,
+							$extension['store_url'],
+							'https://www.wpo365.com/end-user-license-agreement/'
+						);
+						break;
+
+					case 'invalid':
+						$message = sprintf(
+							'Your license key for <strong>%s</strong> is invalid. Please go to <a href="%s" target="_blank">WP Admin > WPO365 > Licenses</a> and update your license or purchase a <a href="%s" target="_blank">new license online</a>. See the <a href="%s" target="_blank">End User License Agreement</a> for details',
+							$extension['store_item'],
+							$lic_url,
+							$extension['store_url'],
+							'https://www.wpo365.com/end-user-license-agreement/'
+						);
+						break;
+
+					default:
+						$message = sprintf(
+							'An unknown error occurred whilst checking your license key for %s. Please check WP Admin > WPO365 > ... > Debug to view the raw request (and optionally send it to support@wpo365.com).',
+							$extension['store_item']
+						);
+						Log_Service::write_log(
+							'WARN',
+							sprintf(
+								'%s -> License key %s for %s is not valid for site with URL %s [raw request: %s]',
+								__METHOD__,
+								$license_key,
+								$extension['store_item_id'],
+								$url,
+							htmlentities( serialize( $response ) ) // phpcs:ignore
+							)
+						);
+						break;
+				}
 			}
 
 			if ( ! empty( $message ) ) {
+				$lic_notices = Wpmu_Helpers::mu_get_transient( 'wpo365_lic_notices' );
+
+				if ( empty( $lic_notices ) ) {
+					$lic_notices = array();
+				}
+
 				$lic_notices[] = $message;
 				Wpmu_Helpers::mu_set_transient( 'wpo365_lic_notices', $lic_notices );
 

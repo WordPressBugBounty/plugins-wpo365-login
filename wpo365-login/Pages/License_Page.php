@@ -41,9 +41,6 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 				return;
 			}
 
-			// Refresh the license notices.
-			\Wpo\Core\Plugin_Helpers::check_licenses();
-
 			/**
 			 * Add admin page.
 			 */
@@ -476,7 +473,7 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 							<form method="POST" action="<?php echo admin_url( 'admin-post.php' ); ?>" enctype="multipart/form-data">
 								<input type="hidden" name="action" value="wpo365_force_check_for_plugin_updates">
 								<?php wp_nonce_field( 'wpo365_force_check_for_plugin_updates', 'wpo365_force_check_for_plugin_updates_nonce' ); ?>
-								<input type="submit" class="button-secondary" value="<?php _e( 'Check for plugin updates' ); ?>" />
+								<input type="submit" class="button-secondary" value="<?php _e( 'Verify license and check for plugin updates' ); ?>" />
 							</form>
 						</td>
 					</tr>

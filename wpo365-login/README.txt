@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 37.0
+Stable tag: 37.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -209,6 +209,12 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v37.1 =
+* Improvement: The built-in WordPress Mailer for Microsoft Graph now supports [RBAC for Exchange Online](https://learn.microsoft.com/en-us/Exchange/permissions-exo/application-rbac). As a result, administrators should now explicitely configure the desired authorization scenario, as explained in a [new lesson in the tutorial](https://tutorials.wpo365.com/courses/email-configure-microsoft-graph-mailer/lessons/select-authorization-scenario/). [LOGIN, MICROSOFT GRAPH MAILER]
+* Improvement: All scripts now are created using either wp_print_script_tag or wp_print_inline_script_tag. As a result, developers can add your own nonce attribute using the wp_script_attributes and wp_inline_script_attributes filters e.g. to enable a Content-Security-Policy (or CSP). [LOGIN, MICROSOFT GRAPH MAILER]
+* Fix: For premium plugins, WPO365 would check the license status with every admin request, which could slow down your site unnecessarily. [ALL PREMIUM]
+* Fix: Some features were not included in the Plugin Self-Test for the CUSTOMERS premium plugin. [CUSTOMERS]
 
 = v37.0 =
 * Improvement: As of version 37.0, creating new users through the SCIM-based integration with the Microsoft Entra ID Application/User Provisioning service is now available as a free feature. [Get started today!](https://tutorials.wpo365.com/courses/sync-entra-user-provisioning-scim/) [LOGIN]
