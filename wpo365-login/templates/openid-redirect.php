@@ -263,7 +263,11 @@ if ( class_exists( '\Wpo\Services\Options_Service' ) ) {
 								sprintf( "window.wpo365.pintraRedirect.toMsOnline('%s');", ( ! empty( $login_hint ) ? esc_html( $login_hint ) : '' ) ) .
 								"} catch (err) { console.log('Error occured whilst trying to redirect to MS online'); console.error(err); }\n";
 
-	wp_print_inline_script_tag( $javascript );
+	if ( ! current_theme_supports( 'html5', 'script' ) || ! function_exists( 'wp_print_inline_script_tag' ) ) {
+		printf( "<script>%s</script>\n", $javascript ); // phpcs:ignore
+	} else {
+		wp_print_inline_script_tag( $javascript );
+	}
 	?>
 
 	<?php if ( ! $header_sent ) : ?>

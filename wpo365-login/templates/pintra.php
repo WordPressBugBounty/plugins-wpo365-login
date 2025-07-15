@@ -18,14 +18,17 @@ wp_print_script_tag( array(
 ) );
 
 $javascript = "window.wpo365 = window.wpo365 || {};\n" .
-							"window.wpo365.blocks = %s\n";
+							sprintf( "window.wpo365.blocks = %s\n", wp_json_encode( 
+								array(
+								'nonce'  => \wp_create_nonce( 'wp_rest' ),
+								'apiUrl' => esc_url_raw( \trailingslashit( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'] ) ) . 'wp-json/wpo365/v1/graph',
+							)));
 
-wp_print_inline_script_tag( sprintf( $javascript, wp_json_encode(
-		array(
-			'nonce'  => \wp_create_nonce( 'wp_rest' ),
-			'apiUrl' => esc_url_raw( \trailingslashit( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'] ) ) . 'wp-json/wpo365/v1/graph',
-		)
-	) ) );
+if ( ! current_theme_supports( 'html5', 'script' ) || ! function_exists( 'wp_print_inline_script_tag' ) ) {
+		printf( "<script>%s</script>\n", $javascript ); // phpcs:ignore
+	} else {
+		wp_print_inline_script_tag( $javascript );
+	}
 ?>
 
 <!-- Main -->

@@ -17,7 +17,11 @@ if ( class_exists( '\Wpo\Core\Url_Helpers' ) && \Wpo\Core\Url_Helpers::is_wp_log
 $javascript = "window.wpo365 = window.wpo365 || {};\n" .
 							( ! empty( $_site_url ) ? sprintf( "window.wpo365.siteUrl = '%s';\n", $_site_url ) : '' );
 
-wp_print_inline_script_tag( $javascript );
+if ( ! current_theme_supports( 'html5', 'script' ) || ! function_exists( 'wp_print_inline_script_tag' ) ) {
+		printf( "<script>%s</script>\n", $javascript ); // phpcs:ignore
+} else {
+	wp_print_inline_script_tag( $javascript );
+}
 
 ?>
 

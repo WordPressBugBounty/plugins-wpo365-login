@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 37.1
+Stable tag: 37.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -209,6 +209,9 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v37.2 =
+* Fix: WPO365 will avoid using "wp_print_inline_script_tag" and instead create a <script> tag itself, if the active WordPress theme does not declare support for the 'html5' and 'script' features. [ALL]
 
 = v37.1 =
 * Improvement: The built-in WordPress Mailer for Microsoft Graph now supports [RBAC for Exchange Online](https://learn.microsoft.com/en-us/Exchange/permissions-exo/application-rbac). As a result, administrators should now explicitely configure the desired authorization scenario, as explained in a [new lesson in the tutorial](https://tutorials.wpo365.com/courses/email-configure-microsoft-graph-mailer/lessons/select-authorization-scenario/). [LOGIN, MICROSOFT GRAPH MAILER]
