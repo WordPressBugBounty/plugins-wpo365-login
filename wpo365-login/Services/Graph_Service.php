@@ -112,7 +112,7 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 				$access_token = Access_Token_Service::get_app_only_access_token( $app_only_scope, $role, $use_mail_config );
 
 				if ( is_wp_error( $access_token ) && $user_has_delegated_access ) {
-					Log_Service::write_log( $log_level, sprintf( '%s -> no application role found to match scope %s therefore falling back to delegated permissions', __METHOD__, $scope ) );
+					Log_Service::write_log( $log_level, sprintf( '%s -> no application role found to match scope %s for query %s therefore falling back to delegated permissions', __METHOD__, $scope, $query ) );
 					$access_token = Access_Token_Service::get_access_token( $scope );
 				}
 			} elseif ( $use_b2c || $use_saml ) {

@@ -3,6 +3,7 @@
 namespace Wpo\Pages;
 
 use Wpo\Core\Extensions_Helpers;
+use Wpo\Core\Plugin_Helpers;
 use Wpo\Core\WordPress_Helpers;
 use Wpo\Core\Wpmu_Helpers;
 use Wpo\Services\Options_Service;
@@ -439,22 +440,27 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 									<th scope="row" valign="top">
 										<?php echo esc_html( $data['store_item'] ); ?>
 									</th>
-									<td>
-										<?php echo wp_nonce_field( 'wpo365-manage-licenses', 'wpo365_license_nonce' ); ?>
-										<input type="text" class="regular-text" id="<?php echo esc_attr( $license_key_name ); ?>" name="<?php echo esc_attr( $license_key_name ); ?>" value="<?php echo esc_attr( $license_key ); ?>">
+									<?php if ( Plugin_Helpers::is_license_required() ) : ?>
+										<td>
+											<?php echo wp_nonce_field( 'wpo365-manage-licenses', 'wpo365_license_nonce' ); ?>
+											<input type="text" class="regular-text" id="<?php echo esc_attr( $license_key_name ); ?>" name="<?php echo esc_attr( $license_key_name ); ?>" value="<?php echo esc_attr( $license_key ); ?>">
 
-										<?php if ( $license_is_active( $data['store_item'] ) ) : ?>
-											<input type="submit" class="button-secondary" name="deactivate_license" value="<?php _e( 'Deactivate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />
-										<?php else : ?>
-											<input type="submit" class="button-secondary" name="activate_license" value="<?php _e( 'Activate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />
-										<?php endif ?>
+											<?php if ( $license_is_active( $data['store_item'] ) ) : ?>
+												<input type="submit" class="button-secondary" name="deactivate_license" value="<?php _e( 'Deactivate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />
+											<?php else : ?>
+												<input type="submit" class="button-secondary" name="activate_license" value="<?php _e( 'Activate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />
+											<?php endif ?>
 
-										<div>
-											<p><a href="https://www.wpo365.com/your-account/" target="_blank">Manage Sites</a></p>
-										</div>
-									</td>
+											<div>
+												<p><a href="https://www.wpo365.com/your-account/" target="_blank">Manage Sites</a></p>
+											</div>
+										</td>
+									<?php else : ?>
+										<td>
+											<p>You're good to go - This environment is recognized as non-productive, so no license is required.</p>
+										</td>
+									<?php endif ?>
 								</tr>
-
 							<?php endforeach ?>
 						</tbody>
 					</table>

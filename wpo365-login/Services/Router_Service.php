@@ -610,9 +610,14 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 				exit();
 			}
 
-			$job_id        = sanitize_text_field( wp_unslash( $_REQUEST['job_id'] ) ); // phpcs:ignore
-			$job_info_name = sprintf( '%s_wpo365_sync_next', $job_id );
-			$graph_query   = Wpmu_Helpers::mu_get_transient( $job_info_name );
+			$job_id = sanitize_text_field( wp_unslash( $_REQUEST['job_id'] ) ); // phpcs:ignore
+
+			if ( method_exists( '\Wpo\Sync\SyncV2_Service', 'get_cached_next_link' ) ) {
+				$graph_query = \wpo\Sync\SyncV2_Service::get_cached_next_link( $job_id );
+			} else {
+				$job_info_name = sprintf( '%s_wpo365_sync_next', $job_id );
+				$graph_query   = Wpmu_Helpers::mu_get_transient( $job_info_name );
+			}
 
 			if ( empty( $graph_query ) ) {
 				$log_message    = sprintf( '%s -> Can not process a next batch of users from an external URL because the next-link is not found', __METHOD__ );

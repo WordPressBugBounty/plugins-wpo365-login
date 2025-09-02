@@ -50,15 +50,14 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 				);
 
 				if ( is_wp_error( $mail_access_token_app_only ) ) {
-					Log_Service::write_log(
-						'ERROR',
-						sprintf(
-							'%s -> Authorization to sent emails using Microsoft Graph is missing and therefore email with subject "%s" for recipient(s) "%s" was not sent using the WPO365 Graph Mailer. Please complete the authorization or disable the WPO365 Graph Mailer.',
-							__METHOD__,
+					$message = sprintf(
+						'%s -> Authorization to sent emails using Microsoft Graph is missing and therefore email with subject "%s" for recipient(s) "%s" was not sent using the WPO365 Graph Mailer. Please complete the authorization or disable the WPO365 Graph Mailer.',
+						__METHOD__,
 							$phpmailer->Subject, // phpcs:ignore
 							print_r( $phpmailer->getToAddresses(), true ) // phpcs:ignore
-						)
 					);
+					Log_Service::write_log( 'ERROR', $message );
+					do_action( 'wpo365/mail/sent/fail', $message );
 					return;
 				}
 			}

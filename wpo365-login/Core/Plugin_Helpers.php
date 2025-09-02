@@ -70,7 +70,6 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		 * @return object
 		 */
 		public static function check_for_updates( $check_for_updates_data ) {
-			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
 
 			if ( $check_for_updates_data === null || ! isset( $check_for_updates_data->response ) ) {
 				return $check_for_updates_data;
@@ -101,7 +100,6 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		}
 
 		public static function check_licenses() {
-			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
 
 			Wpmu_Helpers::mu_delete_transient( 'wpo365_lic_notices' );
 			$extensions = Extensions_Helpers::get_active_extensions();
@@ -277,6 +275,65 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		}
 
 		/**
+		 * Returns true if license-check is required, otherwise false.
+		 *
+		 * @since 38.0
+		 *
+		 * @param string $url
+		 * @return bool
+		 */
+		public static function is_license_required( $url = '' ) {
+
+			if ( empty( $url ) ) {
+				$url = is_multisite() ? network_home_url() : home_url();
+			}
+
+			$parsed_url = wp_parse_url( $url );
+
+			if ( ! $parsed_url || ! isset( $parsed_url['host'] ) ) {
+				return false; // Invalid or incomplete URL.
+			}
+
+			$host = strtolower( $parsed_url['host'] );
+			$path = isset( $parsed_url['path'] ) ? strtolower( $parsed_url['path'] ) : '';
+
+			// Keywords and TLDs that indicate non-productive environments.
+			$non_prod_keywords = array( 'dev', 'test', 'staging', 'stage', 'preprod', 'pre-prod,', 'uat', 'quality' );
+			$non_prod_tlds     = array( 'lan' );
+
+			// Check for localhost or loopback.
+			if ( $host === 'localhost' || $host === '127.0.0.1' ) {
+				return false;
+			}
+
+			// Check if host contains any non-productive keywords.
+			foreach ( $non_prod_keywords as $keyword ) {
+
+				if ( strpos( $host, $keyword ) !== false ) {
+					return false;
+				}
+			}
+
+			// Check for non-productive TLDs.
+			$host_parts = explode( '.', $host );
+			$tld        = end( $host_parts );
+
+			if ( in_array( $tld, $non_prod_tlds, true ) ) {
+				return false;
+			}
+
+			// Check if path contains non-productive indicators.
+			foreach ( $non_prod_keywords as $keyword ) {
+
+				if ( strpos( $path, $keyword ) !== false ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
 		 * Connects to the EDD SL service endpoint at wpo365.com to get the
 		 * plugin update info for the plugin in question.
 		 *
@@ -284,7 +341,6 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		 * @return  false|object    The (EDD) plugin update info from the wpo365.com server; Otherwise false.
 		 */
 		private static function get_version_from_remote( $installed_plugins ) {
-			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
 
 			if ( self::request_recently_failed() ) {
 				return false;
@@ -388,7 +444,6 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		}
 
 		private static function check_license( $extension, $license_key, $url = '' ) {
-			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s [%s]', __METHOD__, $extension['store_item'] ) );
 
 			if ( self::request_recently_failed() ) {
 				return;
@@ -416,44 +471,7 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 				}
 			}
 
-			$skip_license_check = false;
-
-			if ( WordPress_Helpers::stripos( $url, 'localhost' ) !== false ) {
-				$skip_license_check = true;
-			} else {
-				$url_host = wp_parse_url( $url, PHP_URL_HOST );
-				$url_path = wp_parse_url( $url, PHP_URL_PATH );
-
-				$url_host_segments = explode( '.', $url_host );
-				$segment_count     = count( $url_host_segments );
-
-				for ( $i = 0; $i < $segment_count && $i < 2; $i++ ) {
-					$value = array_pop( $url_host_segments );
-
-					// Checking for TLD lan.
-					if ( $i === 0 && strcasecmp( 'lan', $value ) === 0 ) {
-						$skip_license_check = true;
-					}
-				}
-
-				$url_subdomain = implode( '.', $url_host_segments );
-				$skip_list     = array( 'dev', 'test', 'staging', 'stage', 'preprod', 'pre-prod,', 'uat', 'quality' );
-
-				foreach ( $skip_list as $skip ) {
-
-					if ( WordPress_Helpers::stripos( $url_path, $skip ) !== false ) {
-						$skip_license_check = true;
-						break;
-					}
-
-					if ( WordPress_Helpers::stripos( $url_subdomain, $skip ) !== false ) {
-						$skip_license_check = true;
-						break;
-					}
-				}
-			}
-
-			if ( $skip_license_check ) {
+			if ( ! self::is_license_required( $url ) ) {
 				Log_Service::write_log(
 					'DEBUG',
 					sprintf(
@@ -516,8 +534,6 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 		 * @return void
 		 */
 		private static function check_license_remotely( $extension, $license_key, $url, $empty_url_arg, $lic_url ) {
-			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
-
 			// Call the custom API.
 			$response = wp_remote_get(
 				\sprintf( 'https://www.wpo365.com/?edd_action=check_license&license=%s&item_id=%s&url=%s', $license_key, $extension['store_item_id'], $url ),

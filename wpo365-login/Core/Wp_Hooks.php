@@ -54,6 +54,7 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				add_action( 'wp_ajax_wpo365_get_multiple_idps', '\Wpo\Services\Ajax_Service::get_multiple_idps' );
 				add_action( 'wp_ajax_wpo365_copy_main_site_options', '\Wpo\Services\Ajax_Service::copy_main_site_options' );
 				add_action( 'wp_ajax_wpo365_switch_wpmu_mode', '\Wpo\Services\Ajax_Service::switch_wpmu_mode' );
+				add_action( 'wp_ajax_wpo365_send_test_alert', '\Wpo\Services\Ajax_Service::send_test_alert' );
 
 				// Graph mailer
 
@@ -141,7 +142,30 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				add_action( 'admin_post_wpo365_force_check_for_plugin_updates', '\Wpo\Core\Plugin_Helpers::force_check_for_plugin_updates' );
 				add_filter( 'plugin_row_meta', '\Wpo\Core\Plugin_Helpers::show_old_version_warning', 10, 2 );
 				add_filter( 'plugins_api', '\Wpo\Core\Plugin_Helpers::plugin_info', 20, 3 );
+
+				// Set up the dashboard widget.
+				add_action( 'wp_dashboard_setup', '\Wpo\Insights\Dashboard_Service::insights_widget' );
 			} // End admin stuff
+
+			if ( Options_Service::get_global_boolean_var( 'insights_alerts_enabled' ) && class_exists( '\Wpo\Insights\Event_Notify_Service' ) ) {
+				add_action(
+					'wpo365/insights/notify',
+					function ( $message, $category = 'N/A', $recipient = '' ) {
+						$nofications = new \Wpo\Insights\Event_Notify_Service();
+						$nofications->notify( $message, $category, $recipient );
+					},
+					10,
+					3
+				);
+
+				add_action(
+					'wpo365_insights_check_failed_notifications',
+					function () {
+						$nofications = new \Wpo\Insights\Event_Notify_Service();
+						$nofications->check_failed_notifications();
+					}
+				);
+			}
 
 			// WP Cron job triggered action to check for each registered application whether its secret will epxire soon.
 			add_action( 'wpo_check_password_credentials_expiration', '\Wpo\Services\Password_Credentials_Service::check_password_credentials_expiration' );
@@ -501,16 +525,18 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 
 			// To collect Insights
 			if ( Options_Service::get_global_boolean_var( 'insights_enabled', false ) ) {
-				add_action( 'user_register', '\Wpo\Services\Event_Service::user_created__handler', 10, 1 );
-				add_action( 'wpo365/user/created/fail', '\Wpo\Services\Event_Service::user_created_fail__handler', 10, 1 );
-				add_action( 'set_logged_in_cookie', '\Wpo\Services\Event_Service::user_loggedin__handler', 10, 6 );
-				add_action( 'wpo365/user/loggedin/fail', '\Wpo\Services\Event_Service::user_loggedin_fail__handler', 10, 1 );
-				add_filter( 'authenticate', '\Wpo\Services\Event_Service::authenticate__handler', 10, 3 );
-				add_action( 'wp_login_failed', '\Wpo\Services\Event_Service::wp_login_failed__handler', 10, 2 );
-				add_action( 'wpo365/user/updated', '\Wpo\Services\Event_Service::user_updated__handler', 10, 1 );
-				add_action( 'wpo365/user/updated/fail', '\Wpo\Services\Event_Service::user_updated_fail__handler', 10, 2 );
-				add_action( 'wpo365/mail/sent', '\Wpo\Services\Event_Service::mail_sent__handler', 10, 1 );
-				add_action( 'wpo365/mail/sent/fail', '\Wpo\Services\Event_Service::mail_sent_fail__handler', 10, 1 );
+				add_action( 'user_register', '\Wpo\Insights\Event_Service::user_created__handler', 10, 1 );
+				add_action( 'wpo365/user/created/fail', '\Wpo\Insights\Event_Service::user_created_fail__handler', 10, 1 );
+				add_action( 'set_logged_in_cookie', '\Wpo\Insights\Event_Service::user_loggedin__handler', 10, 6 );
+				add_action( 'wpo365/user/loggedin/fail', '\Wpo\Insights\Event_Service::user_loggedin_fail__handler', 10, 1 );
+				add_filter( 'authenticate', '\Wpo\Insights\Event_Service::authenticate__handler', 10, 3 );
+				add_action( 'wp_login_failed', '\Wpo\Insights\Event_Service::wp_login_failed__handler', 10, 2 );
+				add_action( 'wpo365/user/updated', '\Wpo\Insights\Event_Service::user_updated__handler', 10, 1 );
+				add_action( 'wpo365/user/updated/fail', '\Wpo\Insights\Event_Service::user_updated_fail__handler', 10, 2 );
+				add_action( 'wpo365/mail/sent', '\Wpo\Insights\Event_Service::mail_sent__handler', 10, 1 );
+				add_action( 'wpo365/mail/sent/fail', '\Wpo\Insights\Event_Service::mail_sent_fail__handler', 10, 1 );
+				add_action( 'wpo365/alert/submitted', '\Wpo\Insights\Event_Service::notification_sent__handler', 10, 3 );
+				add_action( 'wpo365/alert/submitted/fail', '\Wpo\Insights\Event_Service::notification_sent_fail__handler', 10, 3 );
 			}
 
 			// To collect cURL logging

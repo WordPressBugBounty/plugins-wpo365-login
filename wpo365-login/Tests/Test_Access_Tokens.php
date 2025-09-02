@@ -302,7 +302,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				return;
 			}
 
-			$test_result         = new Test_Result( 'Get a user\'s basic profile (ame and email address) with <em>application</em> permissions from Microsoft Graph.', Test_Result::CAPABILITY_PROFILE_PLUS, Test_Result::SEVERITY_LOW );
+			$test_result         = new Test_Result( 'Get a user\'s basic profile (name and email address) with <em>application</em> permissions from Microsoft Graph.', Test_Result::CAPABILITY_PROFILE_PLUS, Test_Result::SEVERITY_LOW );
 			$test_result->passed = true;
 
 			// Check if suitable extension can be found
@@ -829,10 +829,9 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			// Check if a user's member groups can be retrieved from Microsoft Graph
 			if ( ! empty( $this->wpo_usr ) && \class_exists( '\Wpo\Services\User_Aad_Groups_Service' ) ) {
-
 				$test_result->data = \Wpo\Services\User_Aad_Groups_Service::get_aad_groups( $this->wpo_usr, true, true );
 
-				if ( ! isset( $test_result->data['response_code'] ) || $test_result->data['response_code'] !== 200 ) {
+				if ( is_wp_error( $test_result->data ) || ! isset( $test_result->data['response_code'] ) || $test_result->data['response_code'] !== 200 ) {
 					$test_result->passed  = false;
 					$test_result->message = 'Failed to retrieve the Azure AD groups for current user from Microsoft Graph.';
 				}

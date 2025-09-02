@@ -15,6 +15,7 @@ use Wpo\Services\Options_Service;
 use Wpo\Services\Request_Service;
 use Wpo\Services\Saml2_Service;
 use Wpo\Services\User_Create_Service;
+use Wpo\Services\Wp_Config_Service;
 
 if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 
@@ -56,40 +57,40 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			}
 
 			$upn = isset( $id_token->upn )
-				? WordPress_Helpers::trim( strtolower( $id_token->upn ) )
-				: '';
+			? WordPress_Helpers::trim( strtolower( $id_token->upn ) )
+			: '';
 
 			$email = isset( $id_token->email )
-				? WordPress_Helpers::trim( strtolower( $id_token->email ) )
-				: '';
+			? WordPress_Helpers::trim( strtolower( $id_token->email ) )
+			: '';
 
 			$first_name = isset( $id_token->given_name )
-				? WordPress_Helpers::trim( $id_token->given_name )
-				: '';
+			? WordPress_Helpers::trim( $id_token->given_name )
+			: '';
 
 			$last_name = isset( $id_token->family_name )
-				? WordPress_Helpers::trim( $id_token->family_name )
-				: '';
+			? WordPress_Helpers::trim( $id_token->family_name )
+			: '';
 
 			$full_name = isset( $id_token->name )
-				? WordPress_Helpers::trim( $id_token->name )
-				: '';
+			? WordPress_Helpers::trim( $id_token->name )
+			: '';
 
 			$tid = isset( $id_token->tid )
-				? WordPress_Helpers::trim( $id_token->tid )
-				: '';
+			? WordPress_Helpers::trim( $id_token->tid )
+			: '';
 
 			$oid = isset( $id_token->oid )
-				? WordPress_Helpers::trim( $id_token->oid )
-				: '';
+			? WordPress_Helpers::trim( $id_token->oid )
+			: '';
 
 			$groups = property_exists( $id_token, 'groups' ) && is_array( $id_token->groups )
-				? array_flip( $id_token->groups )
-				: array();
+			? array_flip( $id_token->groups )
+			: array();
 
 			$app_roles = property_exists( $id_token, 'roles' ) && is_array( $id_token->roles )
-				? array_flip( $id_token->roles )
-				: array();
+			? array_flip( $id_token->roles )
+			: array();
 
 			$wpo_usr                     = new User();
 			$wpo_usr->from_idp_token     = true;
@@ -119,11 +120,11 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			if ( ! $wpo_usr->is_msa && Options_Service::get_global_string_var( 'extra_user_fields_source' ) === 'graph' && method_exists( '\Wpo\Services\User_Details_Service', 'get_graph_user' ) ) {
 
 				$resource_identifier = ! empty( $wpo_usr->oid )
-					? $wpo_usr->oid
-					: (
-						( ! empty( $wpo_usr->upn )
-							? $wpo_usr->upn
-							: null )
+				? $wpo_usr->oid
+				: (
+				( ! empty( $wpo_usr->upn )
+					? $wpo_usr->upn
+					: null )
 					);
 
 				$graph_resource = \Wpo\Services\User_Details_Service::get_graph_user( $resource_identifier, false, false, true );
@@ -185,8 +186,8 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
 			$email = isset( $id_token->emails ) && \is_array( $id_token->emails ) && \count( $id_token->emails ) > 0
-				? WordPress_Helpers::trim( strtolower( $id_token->emails[0] ) )
-				: '';
+			? WordPress_Helpers::trim( strtolower( $id_token->emails[0] ) )
+			: '';
 
 			if ( empty( $email ) && ! empty( $id_token->email ) ) {
 				$email = $id_token->email;
@@ -205,32 +206,32 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			}
 
 			$upn = isset( $id_token->upn )
-				? WordPress_Helpers::trim( strtolower( $id_token->upn ) )
-				: '';
+			? WordPress_Helpers::trim( strtolower( $id_token->upn ) )
+			: '';
 
 			$first_name = isset( $id_token->given_name )
-				? WordPress_Helpers::trim( $id_token->given_name )
-				: '';
+			? WordPress_Helpers::trim( $id_token->given_name )
+			: '';
 
 			$last_name = isset( $id_token->family_name )
-				? WordPress_Helpers::trim( $id_token->family_name )
-				: '';
+			? WordPress_Helpers::trim( $id_token->family_name )
+			: '';
 
 			$full_name = isset( $id_token->name )
-				? WordPress_Helpers::trim( $id_token->name )
-				: '';
+			? WordPress_Helpers::trim( $id_token->name )
+			: '';
 
 			$tid = isset( $id_token->tid )
-				? WordPress_Helpers::trim( $id_token->tid )
-				: '';
+			? WordPress_Helpers::trim( $id_token->tid )
+			: '';
 
 			$oid = isset( $id_token->oid )
-				? WordPress_Helpers::trim( $id_token->oid )
-				: '';
+			? WordPress_Helpers::trim( $id_token->oid )
+			: '';
 
 			$groups = property_exists( $id_token, 'groups' ) && is_array( $id_token->groups )
-				? array_flip( $id_token->groups )
-				: array();
+			? array_flip( $id_token->groups )
+			: array();
 
 			$wpo_usr                     = new User();
 			$wpo_usr->from_idp_token     = true;
@@ -263,11 +264,11 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			if ( ! $wpo_usr->is_msa && Options_Service::get_global_string_var( 'extra_user_fields_source' ) === 'graph' && method_exists( '\Wpo\Services\User_Details_Service', 'get_graph_user' ) ) {
 
 				$resource_identifier = ! empty( $wpo_usr->oid )
-					? $wpo_usr->oid
-					: (
-						( ! empty( $wpo_usr->upn )
-							? $wpo_usr->upn
-							: null )
+				? $wpo_usr->oid
+				: (
+				( ! empty( $wpo_usr->upn )
+					? $wpo_usr->upn
+					: null )
 					);
 
 				$graph_resource = \Wpo\Services\User_Details_Service::get_graph_user( $resource_identifier, false, false, true );
@@ -372,8 +373,8 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			$wpo_usr->upn            = isset( $graph_resource['userPrincipalName'] ) ? $graph_resource['userPrincipalName'] : '';
 			$wpo_usr->oid            = isset( $graph_resource['id'] ) ? $graph_resource['id'] : '';
 			$wpo_usr->name           = ! empty( $wpo_usr->full_name )
-				? $wpo_usr->full_name
-				: $wpo_usr->preferred_username;
+			? $wpo_usr->full_name
+			: $wpo_usr->preferred_username;
 			$wpo_usr->graph_resource = $graph_resource;
 
 			// Enrich -> Azure AD groups
@@ -459,11 +460,11 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			if ( Options_Service::get_global_string_var( 'extra_user_fields_source' ) === 'graph' && method_exists( '\Wpo\Services\User_Details_Service', 'get_graph_user' ) ) {
 
 				$resource_identifier = ! empty( $wpo_usr->oid )
-					? $wpo_usr->oid
-					: (
-						( ! empty( $wpo_usr->upn )
-							? $wpo_usr->upn
-							: null )
+				? $wpo_usr->oid
+				: (
+				( ! empty( $wpo_usr->upn )
+					? $wpo_usr->upn
+					: null )
 					);
 
 				$graph_resource = \Wpo\Services\User_Details_Service::get_graph_user( $resource_identifier, false, false, true );
@@ -541,8 +542,8 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			}
 
 			if (
-				! Options_Service::get_global_boolean_var( 'express_login' )
-				&& class_exists( '\Wpo\Services\User_Create_Update_Service' ) && \method_exists( '\Wpo\Services\User_Create_Update_Service', 'update_user' )
+			! Options_Service::get_global_boolean_var( 'express_login' )
+			&& class_exists( '\Wpo\Services\User_Create_Update_Service' ) && \method_exists( '\Wpo\Services\User_Create_Update_Service', 'update_user' )
 			) {
 				\Wpo\Services\User_Create_Update_Service::update_user( $wp_usr_id, $wpo_usr );
 			} else {
@@ -701,11 +702,33 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 		 * @since 11.0
 		 */
 		public static function save_user_idp_id( $idp_id ) {
+
+			if ( empty( $idp_id ) ) {
+				return;
+			}
+
 			$wp_usr_id = get_current_user_id();
 
 			if ( $wp_usr_id > 0 && ! empty( $idp_id ) ) {
-				Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Successfully saved user IdP id ' . $idp_id );
-				update_user_meta( $wp_usr_id, 'wpo365_idp_id', $idp_id );
+				$wpo_idps = Wp_Config_Service::get_multiple_idps();
+
+				if ( ! is_array( $wpo_idps ) ) {
+					return;
+				}
+
+				$filtered_idps = array_filter(
+					$wpo_idps,
+					function ( $idp ) use ( $idp_id ) {
+						return ! empty( $idp['id'] ) && strcasecmp( $idp['id'], $idp_id ) === 0;
+					}
+				);
+
+				$filtered_idps = array_values( $filtered_idps ); // re-index from 0
+
+				if ( count( $filtered_idps ) === 1 ) {
+					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Successfully saved user IdP id ' . $idp_id );
+					update_user_meta( $wp_usr_id, 'wpo365_idp_id', $idp_id );
+				}
 			}
 		}
 
@@ -725,18 +748,18 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 				return null;
 			}
 
-			$oid = get_user_meta( $wp_usr_id, 'aadObjectId', true );
+					$oid = get_user_meta( $wp_usr_id, 'aadObjectId', true );
 
 			if ( empty( $oid ) ) {
 				$oid = null;
 			}
 
-			return $oid;
+					return $oid;
 		}
 
-		/**
-		 * @since 11.0
-		 */
+				/**
+				 * @since 11.0
+				 */
 		public static function save_user_object_id( $oid, $wp_usr_id = 0 ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
@@ -746,13 +769,13 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			}
 		}
 
-		/**
-		 * Checks whether current user is O365 user
-		 *
-		 * @since   1.0
-		 * @return  int One of the following User Service class constants
-		 *              USER_NOT_LOGGED_IN, IS_O365_USER or IS_NOT_O365_USER
-		 */
+				/**
+				 * Checks whether current user is O365 user
+				 *
+				 * @since   1.0
+				 * @return  int One of the following User Service class constants
+				 *              USER_NOT_LOGGED_IN, IS_O365_USER or IS_NOT_O365_USER
+				 */
 		public static function user_is_o365_user( $wp_usr_id, $email = '' ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
@@ -786,11 +809,11 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			return self::IS_NOT_O365_USER;
 		}
 
-		/**
-		 *
-		 * @param User $wpo_usr
-		 * @return mixed(User|null)
-		 */
+				/**
+				 *
+				 * @param User $wpo_usr
+				 * @return mixed(User|null)
+				 */
 		public static function get_user_by_oid( $wpo_usr ) {
 
 			if ( empty( $wpo_usr ) || empty( $wpo_usr->oid ) ) {
@@ -811,12 +834,12 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			return $users[0];
 		}
 
-		/**
-		 *
-		 * @param User $wpo_usr
-		 *
-		 * @return WP_User|null
-		 */
+				/**
+				 *
+				 * @param User $wpo_usr
+				 *
+				 * @return WP_User|null
+				 */
 		public static function get_user_by_upn( $wpo_usr ) {
 			if ( empty( $wpo_usr ) || empty( $wpo_usr->upn ) ) {
 				return null;
@@ -836,13 +859,13 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			return $users[0];
 		}
 
-		/**
-		 * Simple helper to the User from current request context.
-		 *
-		 * @since 33.2
-		 *
-		 * @return User|false
-		 */
+				/**
+				 * Simple helper to the User from current request context.
+				 *
+				 * @since 33.2
+				 *
+				 * @return User|false
+				 */
 		public static function get_wpo_user_from_context() {
 			$request_service = Request_Service::get_instance();
 			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );

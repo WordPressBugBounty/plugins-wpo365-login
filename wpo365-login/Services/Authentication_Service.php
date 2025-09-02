@@ -852,9 +852,18 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			// Check if current page is homepage and can be skipped
 			$public_homepage = Options_Service::get_global_boolean_var( 'public_homepage' );
 
-			if ( $public_homepage === true && ( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] === $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] ) ) {
-				Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Cancelling session validation for home page because public homepage is selected' );
-				return true;
+			if ( $public_homepage === true && ! empty( $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] ) ) {
+				$cleaned = explode( '?', $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] )[0];
+
+				// Ensure trailing slash
+				if ( substr( $cleaned, -1 ) !== '/' ) {
+					$cleaned .= '/';
+				}
+
+				if ( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] === $cleaned ) {
+					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Cancelling session validation for home page because public homepage is selected' );
+					return true;
+				}
 			}
 
 			// Check if current page is blacklisted and can be skipped

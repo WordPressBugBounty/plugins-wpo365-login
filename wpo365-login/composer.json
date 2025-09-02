@@ -24,6 +24,7 @@
       "Wpo\\Core\\": "Core",
       "Wpo\\Firebase\\": "Firebase/JWT",
       "Wpo\\Graph\\": "Graph",
+      "Wpo\\Insights\\": "Insights",
       "Wpo\\Mail\\": "Mail",
       "Wpo\\Pages\\": "Pages",
       "Wpo\\Services\\": "Services",

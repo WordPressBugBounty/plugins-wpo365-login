@@ -9,7 +9,6 @@ use Wpo\Core\Request;
 use Wpo\Core\Wpmu_Helpers;
 use Wpo\Services\Access_Token_Service;
 use Wpo\Services\Options_Service;
-use Wpo\Services\User_Service;
 use Wpo\Services\Router_Service;
 
 if ( ! class_exists( '\Wpo\Services\Request_Service' ) ) {
@@ -38,7 +37,7 @@ if ( ! class_exists( '\Wpo\Services\Request_Service' ) ) {
 					$request->set_item( 'idp_id', $idp_id );
 				}
 
-                $is_oidc_response = ! empty( $_REQUEST['state'] ) && ( ! empty( $_REQUEST['id_token'] ) || ! empty( $_REQUEST['code'] ) || ! empty( $_REQUEST['error'] ) ); // phpcs:ignore
+        $is_oidc_response = ! empty( $_REQUEST['state'] ) && ( ! empty( $_REQUEST['id_token'] ) || ! empty( $_REQUEST['code'] ) || ! empty( $_REQUEST['error'] ) ); // phpcs:ignore
 
 				if ( ! empty( $is_oidc_response ) ) {
 					$state = Router_Service::process_state_url( $_REQUEST['state'], $request ); // phpcs:ignore
@@ -65,7 +64,7 @@ if ( ! class_exists( '\Wpo\Services\Request_Service' ) ) {
 					}
 				}
 
-                $is_saml_response = ! empty( $_POST['RelayState'] ) && ! empty( $_REQUEST['SAMLResponse'] ); // phpcs:ignore
+        $is_saml_response = ! empty( $_POST['RelayState'] ) && ! empty( $_REQUEST['SAMLResponse'] ); // phpcs:ignore
 
 				if ( ! empty( $is_saml_response ) ) {
 					$relay_state = Router_Service::process_state_url( $_POST['RelayState'], $request ); // phpcs:ignore
@@ -139,8 +138,8 @@ if ( ! class_exists( '\Wpo\Services\Request_Service' ) ) {
 
 			$idp_id = $request->get_item( 'idp_id' );
 
-			if ( ! empty( $idp_id ) ) {
-				User_Service::save_user_idp_id( $idp_id );
+			if ( ! empty( $idp_id ) && method_exists( '\Wpo\Services\User_Service', 'save_user_idp_id' ) ) {
+				\Wpo\Services\User_Service::save_user_idp_id( $idp_id );
 			}
 
 			/**
@@ -174,8 +173,8 @@ if ( ! class_exists( '\Wpo\Services\Request_Service' ) ) {
 
 			Log_Service::flush_log();
 
-			if ( method_exists( '\Wpo\Services\Event_Service', 'flush_events' ) ) {
-				\Wpo\Services\Event_Service::flush_events();
+			if ( method_exists( '\Wpo\Insights\Event_Service', 'flush_events' ) ) {
+				\Wpo\Insights\Event_Service::flush_events();
 			}
 
 			$request->clear();

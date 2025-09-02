@@ -126,11 +126,13 @@ if ( ! class_exists( '\Wpo\Services\User_Create_Service' ) ) {
 			}
 
 			if ( is_wp_error( $wp_usr_id ) ) {
-				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Could not create wp user. See next line for error information.' );
-				Log_Service::write_log( 'ERROR', $wp_usr_id );
+				$log_message = sprintf( '%s -> Could not create wp user. [error: %s]', __METHOD__, $wp_usr_id->get_error_message() );
+				Log_Service::write_log( 'ERROR', $log_message );
 
 				if ( $exit_on_error ) {
 					Authentication_Service::goodbye( Error_Service::CHECK_LOG, false );
+				} else {
+					do_action( 'wpo365/user/created/fail', $log_message );
 				}
 
 				return 0;

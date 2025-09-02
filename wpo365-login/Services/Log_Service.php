@@ -36,7 +36,17 @@ if ( ! class_exists( '\Wpo\Services\Log_Service' ) ) {
 			$request_id      = $request->current_request_id();
 			$request_log     = $request->get_item( 'request_log' );
 
-			if ( $level === 'DEBUG' && $request_log['debug_log'] === false ) {
+			if ( ! $request_log ) {
+
+				if ( $level === 'ERROR' ) {
+					$body = is_array( $log ) || is_object( $log ) ? print_r( $log, true ) : $log; // phpcs:ignore
+					error_log( '[WPO365] Attempting to write to log before it has been initialized: ' . $body ); // phpcs:ignore
+				}
+
+				return;
+			}
+
+			if ( $level === 'DEBUG' && ( ! $request_log || $request_log['debug_log'] === false ) ) {
 				return;
 			}
 

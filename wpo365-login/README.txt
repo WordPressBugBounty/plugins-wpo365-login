@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 37.2
+Stable tag: 38.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -61,6 +61,10 @@ WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital 
 = EMPLOYEE DIRECTORY =
 
 - Embed an intuitve Azure AD / Microsoft Graph based **Employee Directory** into a front-end post or page [more](https://www.wpo365.com/feature/employee-directory/)
+
+= WPO365 INSIGHTS =
+
+- **See what matters, when it happens** Track key WPO365 events like logins, sent emails and user creation and updates with WPO365 Insights [more](https://docs.wpo365.com/article/210-wpo365-insights)
 
 = WORDPRESS MULTISITE =
 
@@ -150,6 +154,10 @@ The features below can be unlocked with [premium addOns and bundles](https://www
 - Embedded B2C login [more](https://www.wpo365.com/feature/advanced-login-options/)
 - Custom new User email [more](https://www.wpo365.com/feature/advanced-login-options/)
 
+= WPO365 INSIGHTS =
+
+- Get **WPO365 Alerts** in your inbox when a critical WPO365 event occurs [more](https://docs.wpo365.com/article/210-wpo365-insights)
+
 = AVATAR =
 
 - M365 Profile Picture as WordPress / BuddyPress Avatar [more](https://www.wpo365.com/feature/avatar/)
@@ -209,6 +217,17 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v38.0 =
+* Feature: **See what matters, when it happens** Track key WPO365 events like logins, sent emails and user creation and updates with **WPO365 Insights** and get alerted when when a critical WPO365 event occurs. Consult the [updated documentation](https://docs.wpo365.com/article/210-wpo365-insights) for instructions how to configure WPO365 Alerts. [ALL PREMIUM]
+* Improvement: A new **Daily WPO365 Insights** widget has been added to the WP Admin Dashboard, informing administrator about key WPO365 events like logins, sent emails and user creation and updates. Refer to the [update documentation](https://docs.wpo365.com/article/210-wpo365-insights) for further details or how to hide the widget. [ALL]
+* Improvement: Links found in the SharePoint Library will now open the linked document directly when clicked. [ALL]
+* Improvement: Custom user metadata that is collected during user registration is now be available when the plugin creates a new user in Azure AD B2C / Entra Ext. ID. [CUSTOMERS]
+* Fix: If the "Public hompage" option is enabled, WPO365 will now also allow more complex requests containing query parameters. [ALL PREMIUM]
+* Fix: The plugin checks whether the request parameter with the key idp_id was added by WPO365, and ignores it if not. [ALL PREMIUM]
+* Fix: WPO365 will now use a regular WordPress site option (instead of a transient option) to temporarily save the pre-authenticated link to retrieve the next batch of users during user synchronization. [INTEGRATE, CUSTOMERS (SYNC, INTRANET)]
+* Fix: The plugin will now overwrite user identifiers saved as usermeta such as the Entra Tenant ID, Object ID and UPN whenever a user is updated, to make it easier to migrate from one directory to another e.g. AAD B2C to Entra Ext. ID. [CUSTOMERS]
+* Fix: Addressed various technical problems to enhance plugin reliability. [ALL]
 
 = v37.2 =
 * Fix: WPO365 will avoid using "wp_print_inline_script_tag" and instead create a <script> tag itself, if the active WordPress theme does not declare support for the 'html5' and 'script' features. [ALL]

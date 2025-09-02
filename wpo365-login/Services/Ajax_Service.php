@@ -5,10 +5,9 @@ namespace Wpo\Services;
 use Wpo\Core\Permissions_Helpers;
 use Wpo\Core\WordPress_Helpers;
 use Wpo\Core\Wpmu_Helpers;
-
+use Wpo\Insights\Event_Service;
 use Wpo\Mail\Mail_Authorization_Helpers;
 use Wpo\Mail\Mailer;
-
 use Wpo\Services\Access_Token_Service;
 use Wpo\Services\Log_Service;
 use Wpo\Services\Options_Service;
@@ -310,11 +309,13 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 				wp_die();
 			}
 
-			self::verify_posted_data( array( 'period', 'key', 'start_row' ) ); // -> wp_die
+			self::verify_posted_data( array( 'period', 'event_action', 'event_category', 'event_status', 'start_row' ) ); // -> wp_die
 			$period    = sanitize_text_field( $_POST['period'] ); // phpcs:ignore
-			$key       = sanitize_text_field( $_POST['key'] ); // phpcs:ignore
+			$action 	 = sanitize_text_field( $_POST['event_action'] ); // phpcs:ignore
+			$category  = sanitize_text_field( $_POST['event_category'] ); // phpcs:ignore
+			$status 	 = sanitize_text_field( $_POST['event_status'] ); // phpcs:ignore
 			$start_row = intval( sanitize_text_field( $_POST['start_row'] ) ); // phpcs:ignore
-			$insights  = Event_Service::get_insights( $key, $period, $start_row );
+			$insights  = Event_Service::get_insights( $action, $category, $status, $period, $start_row );
 
 			if ( is_wp_error( $insights ) ) {
 				self::ajax_response( 'NOK', $insights->get_error_code(), $insights->get_error_message(), null );
@@ -433,6 +434,39 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 			if ( is_wp_error( $truncate_result ) ) {
 				self::ajax_response( 'NOK', $truncate_result->get_error_code(), $truncate_result->get_error_message(), null );
 			}
+
+			self::ajax_response( 'OK', '', '', null );
+		}
+
+		/**
+		 * Sends a test alert to insights.wpo365.com.
+		 *
+		 * @since 38.0
+		 *
+		 * @return void
+		 */
+		public static function send_test_alert() {
+
+			if ( ! class_exists( '\Wpo\Insights\Event_Notify_Service' ) ) {
+				Log_Service::write_log( 'WARN', __METHOD__ . ' -> Cannot send test alert because a premium WPO365 plugin - version 38.0 or later - is not installed' );
+				self::ajax_response( 'NOK', '', 'To send alerts, make sure you are using a premium WPO365 plugin - version 38.0 or later.', null );
+			}
+
+			// Verify AJAX request
+			$current_user = self::verify_ajax_request( 'to send a test alert' );
+
+			if ( Permissions_Helpers::user_is_admin( $current_user ) === false ) {
+				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> User has no permission to send a test alert from AJAX service' );
+				wp_die();
+			}
+
+			$message = array(
+				'You are receiving this "WPO365 Alert" in response to your request to test this functionality.',
+				'To ensure successful delivery of future alerts, please add "insights@wpo365.com" to your allow list and verify that messages from this address are not marked as spam.',
+			);
+
+			$notifications = new \Wpo\Insights\Event_Notify_Service();
+			$notifications->notify( implode( ' ', $message ), 'ALERT' );
 
 			self::ajax_response( 'OK', '', '', null );
 		}

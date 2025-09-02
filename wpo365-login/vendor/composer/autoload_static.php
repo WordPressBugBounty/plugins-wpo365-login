@@ -22,6 +22,7 @@ class ComposerStaticInitab381cd2ee9218b9c4a75bec3cdd3073
             'Wpo\\Services\\' => 13,
             'Wpo\\Pages\\' => 10,
             'Wpo\\Mail\\' => 9,
+            'Wpo\\Insights\\' => 13,
             'Wpo\\Graph\\' => 10,
             'Wpo\\Firebase\\' => 13,
             'Wpo\\Core\\' => 9,
@@ -58,6 +59,10 @@ class ComposerStaticInitab381cd2ee9218b9c4a75bec3cdd3073
         'Wpo\\Mail\\' => 
         array (
             0 => __DIR__ . '/../..' . '/Mail',
+        ),
+        'Wpo\\Insights\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Insights',
         ),
         'Wpo\\Graph\\' => 
         array (

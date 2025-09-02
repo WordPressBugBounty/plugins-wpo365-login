@@ -12,6 +12,7 @@ return array(
     'Wpo\\Services\\' => array($baseDir . '/Services'),
     'Wpo\\Pages\\' => array($baseDir . '/Pages'),
     'Wpo\\Mail\\' => array($baseDir . '/Mail'),
+    'Wpo\\Insights\\' => array($baseDir . '/Insights'),
     'Wpo\\Graph\\' => array($baseDir . '/Graph'),
     'Wpo\\Firebase\\' => array($baseDir . '/Firebase/JWT'),
     'Wpo\\Core\\' => array($baseDir . '/Core'),
