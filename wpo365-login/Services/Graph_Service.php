@@ -78,7 +78,7 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 			$user_has_delegated_access = Access_Token_Service::user_has_delegated_access( get_current_user_id() );
 
 			if ( ! $user_has_delegated_access && ! $use_app_only ) {
-				$warning = 'Could not retrieve an access token for (scope|query) ' . $scope . '|' . $query . '.  Error details: The current user is either not logged in or did not sign in with Microsoft and the use of application-level API permissions is not configured).';
+				$warning = 'Could not retrieve an access token for (scope|query) ' . $scope . '|' . $query . '.  Error details: The current user is either not logged in, did not sign in using OpenID Connect Single Sign-On (SSO), or WPO365 does not have the necessary permissions to access data on behalf of the organization. Please review the "Application Access" settings on the plugin\'s "Integration" configuration page.';
 			}
 
 			if ( $use_delegated && $no_sso ) {

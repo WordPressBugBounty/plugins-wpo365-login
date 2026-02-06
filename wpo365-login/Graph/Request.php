@@ -49,13 +49,13 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 				return $endpoint_config;
 			}
 
-			$use_delegated = Permissions_Helpers::must_use_delegate_access_for_scope( $body['scope'] ) || $endpoint_config === false;
+			$scope         = sanitize_text_field( urldecode( $body['scope'] ) );
+			$use_delegated = Permissions_Helpers::must_use_delegate_access_for_scope( $scope ) || $endpoint_config === false;
 			$binary        = ! empty( $body['binary'] ) ? true : false;
 			$data          = ! empty( $body['data'] ) ? $body['data'] : '';
 			$headers       = ! empty( $body['headers'] ) ? $body['headers'] : array();
-			$method        = ! empty( $body['method'] ) ? \strtoupper( $body['method'] ) : 'GET';
-			$query         = $endpoint . Url_Helpers::leadingslashit( $body['query'] );
-			$scope         = $body['scope'];
+			$method        = ! empty( $body['method'] ) ? \strtoupper( sanitize_key( $body['method'] ) ) : 'GET';
+			$query         = $endpoint . Url_Helpers::leadingslashit( sanitize_text_field( urldecode( $body['query'] ) ) );
 
 			$result = Graph_Service::fetch( $query, $method, $binary, $headers, $use_delegated, false, $data, $scope );
 
@@ -98,7 +98,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 				return new \WP_Error( 'InvalidArgumentException', 'Body is malformed JSON or the request header did not define the Content-type as application/json.' );
 			}
 
-			$url             = ! empty( $body['url'] ) ? $body['url'] : '';
+			$url             = ! empty( $body['url'] ) ? sanitize_text_field( urldecode( $body['url'] ) ) : '';
 			$endpoint_config = self::validate_endpoint( $url );
 
 			if ( is_wp_error( $endpoint_config ) ) {
@@ -106,7 +106,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 				return $endpoint_config;
 			}
 
-			$scope = $body['scope'];
+			$scope = sanitize_text_field( urldecode( $body['scope'] ) );
 			$data  = array_key_exists( 'data', $body ) && ! empty( $body['data'] ) ? $body['data'] : '';
 
 			if ( WordPress_Helpers::stripos( $scope, 'https://analysis.windows.net/powerbi/api/.default' ) === 0 ) {
@@ -126,6 +126,17 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 							$key                                  = str_replace( 'meta_', '', $data['identities'][ $i ]['username'] );
 							$username                             = get_user_meta( $wp_usr->ID, $key, true );
 							$data['identities'][ $i ]['username'] = ! empty( $username ) ? $username : '';
+						}
+
+						if ( ! empty( $data['identities'][ $i ]['customData'] ) && WordPress_Helpers::stripos( $data['identities'][ $i ]['customData'], 'wp_' ) === 0 ) {
+							$key                                    = str_replace( 'wp_', '', $data['identities'][ $i ]['customData'] );
+							$data['identities'][ $i ]['customData'] = $wp_usr->{$key};
+						}
+
+						if ( ! empty( $data['identities'][ $i ]['customData'] ) && WordPress_Helpers::stripos( $data['identities'][ $i ]['customData'], 'meta_' ) === 0 ) {
+							$key                                    = str_replace( 'meta_', '', $data['identities'][ $i ]['customData'] );
+							$custom_data                            = get_user_meta( $wp_usr->ID, $key, true );
+							$data['identities'][ $i ]['customData'] = ! empty( $custom_data ) ? $custom_data : '';
 						}
 
 						if ( ! empty( $data['identities'][ $i ]['roles'] ) && is_string( $data['identities'][ $i ]['roles'] ) && WordPress_Helpers::stripos( $data['identities'][ $i ]['roles'], 'meta_' ) === 0 ) {
@@ -201,8 +212,16 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$status = wp_remote_retrieve_response_code( $response );
 
 			if ( $status < 200 || $status > 299 ) {
-				Log_Service::write_log( 'WARN', sprintf( '%s -> Error occured whilst fetching from Microsoft Graph: HTTP STATUS %d', __METHOD__, intval( $status ) ) );
-				return new \WP_Error( 'ProxyFetchError', sprintf( 'Error occurred whilst fetching from Microsoft Graph: HTTP STATUS %d', intval( $status ) ) );
+				$warning = sprintf(
+					'Error occured whilst fetching from Microsoft Graph: HTTP STATUS %d%s',
+					intval( $status ),
+					! empty( $body ) ? " [$body]" : ''
+				);
+				Log_Service::write_log(
+					'WARN',
+					sprintf( '%s -> %s', __METHOD__, $warning )
+				);
+				return new \WP_Error( 'ProxyFetchError', $warning );
 			}
 
 			if ( $binary ) {
@@ -238,7 +257,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 				return new \WP_Error( 'InvalidArgumentException', 'Body is malformed JSON or the request header did not define the Content-type as application/json.' );
 			}
 
-			$scope = $body['scope'];
+			$scope = sanitize_text_field( urldecode( $body['scope'] ) );
 
 			// Currently application level permissions are not supported for proxy requests
 			$access_token = Access_Token_Service::get_access_token( $scope );

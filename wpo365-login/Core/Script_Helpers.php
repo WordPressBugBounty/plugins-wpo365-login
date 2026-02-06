@@ -62,8 +62,7 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 			global $wp_roles;
 
 			$extensions = array();
-			delete_site_option( 'wpo365_active_extensions' );
-			$addons = Extensions_Helpers::get_active_extensions(); // All activated extensions
+			$addons     = Extensions_Helpers::get_active_extensions(); // All activated extensions
 
 			$add_extension = function ( $slug, $extension ) use ( &$extensions, $addons ) {
 
@@ -160,16 +159,20 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 		/**
 		 * Helper to load the pintraredirectjs script asynchronously.
 		 *
-		 * @since   18.0
+		 * @since   39.0
 		 *
 		 * @param mixed $tag
 		 * @param mixed $handle
 		 * @param mixed $src
 		 * @return mixed
 		 */
-		public static function enqueue_script_asynchronously( $tag, $handle, $src ) { // phpcs:ignore
+		public static function custom_script_loading( $tag, $handle, $src ) { // phpcs:ignore
 			if ( $handle === 'pintraredirectjs' ) {
 				$tag = str_replace( '></script>', ' async></script>', $tag );
+			}
+
+			if ( $handle === 'newuserjs' ) {
+				$tag = str_replace( '></script>', ' type="module"></script>', $tag );
 			}
 
 			return $tag;

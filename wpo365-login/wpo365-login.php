@@ -2,8 +2,8 @@
 /**
  *  Plugin Name: WPO365 | LOGIN
  *  Plugin URI: https://wordpress.org/plugins/wpo365-login
- *  Description: With WPO365 | LOGIN users can sign in with their corporate or school (Azure AD / Microsoft Office 365) account to access your WordPress website: No username or password required (OIDC or SAML 2.0 based SSO). Plus you can send email using Microsoft Graph instead of SMTP from your WordPress website.
- *  Version: 38.0
+ *  Description: WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI.
+ *  Version: 40.2
  *  Author: marco@wpo365.com
  *  Author URI: https://www.wpo365.com
  *  License: GPL2+
@@ -103,16 +103,6 @@ if ( ! class_exists( '\Wpo\Login' ) ) {
 		}
 
 		private function deactivation_hooks() {
-
-			if ( \class_exists( '\Wpo\Sync\Sync_Manager' ) ) {
-				// Delete possible cron jobs
-				register_deactivation_hook(
-					__FILE__,
-					function () {
-						\Wpo\Sync\Sync_Manager::get_scheduled_events( true );
-					}
-				);
-			}
 
 			if ( \class_exists( '\Wpo\Sync\Sync_Helpers' ) ) {
 				// Delete possible cron jobs

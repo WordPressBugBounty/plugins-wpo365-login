@@ -35,7 +35,7 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 			}
 
 			// Collect information about all activated extensions
-			self::$extensions = Extensions_Helpers::get_active_extensions();
+			self::$extensions = Extensions_Helpers::get_active_extensions( false, 'network' );
 
 			// No extensions so no need to add the license page
 			if ( empty( self::$extensions ) ) {
@@ -478,6 +478,8 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 						<td>
 							<form method="POST" action="<?php echo admin_url( 'admin-post.php' ); ?>" enctype="multipart/form-data">
 								<input type="hidden" name="action" value="wpo365_force_check_for_plugin_updates">
+								<input type="hidden" name="request_url" value="<?php echo $_SERVER['REQUEST_URI'] ?>">
+								<input type="hidden" name="is_network_admin" value="<?php echo is_network_admin() ? "1" : "0" ?>">
 								<?php wp_nonce_field( 'wpo365_force_check_for_plugin_updates', 'wpo365_force_check_for_plugin_updates_nonce' ); ?>
 								<input type="submit" class="button-secondary" value="<?php _e( 'Verify license and check for plugin updates' ); ?>" />
 							</form>

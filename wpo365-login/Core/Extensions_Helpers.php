@@ -15,35 +15,73 @@ if ( ! class_exists( '\Wpo\Core\Extensions_Helpers' ) ) {
 		/**
 		 * Caches the activated WPO365 extensions. The cache is updated whenever a plugin is (de)activated.
 		 *
-		 * @param string $plugin
-		 * @param bool   $deactivated
+		 * @param bool   $reset
+		 * @param string $scope         site, network or both.
+		 * @param string $plugin        Path inside the plugins folder for the plugin file.
+		 * @param bool   $deactivated   True if $plugin has just been deactivated.
+		 *
 		 * @return array
 		 */
-		public static function get_active_extensions( $plugin = null, $deactivated = false ) {
-			$active_extensions = get_site_option( 'wpo365_active_extensions' );
+		public static function get_active_extensions( $reset = false, $scope = 'site', $plugin = '', $deactivated = false ) {
+			$active_extensions = false;
 
-			if ( $active_extensions === false || ! empty( $plugin ) ) {
+			// Overwrite $scope for single-site installations.
+			if ( ! is_multisite() ) {
+				$scope = 'site';
+			}
+
+			if ( $scope === 'site' ) {
+				$active_extensions = get_option( 'wpo365_active_extensions' );
+			} else {
+				$active_extensions = get_site_option( 'wpo365_active_extensions' );
+			}
+
+			if ( $active_extensions === false || $reset ) {
 				$active_extensions = self::get_extensions();
-
 				$active_extensions = array_filter(
 					$active_extensions,
-					function ( $value, $key ) use ( $plugin, $deactivated ) {
+					function ( $plugin_file ) use ( $scope, $plugin, $deactivated ) {
 
 						if ( ! empty( $plugin ) ) {
-							$key    = str_replace( '\\', '/', $key );
-							$plugin = str_replace( '\\', '/', $plugin );
+							$normalized_plugin = str_replace( '\\', '/', $plugin );
 
-							if ( $deactivated && strcasecmp( $key, $plugin ) === 0 ) {
-								return false;
+							if ( strcasecmp( $normalized_plugin, $plugin_file ) === 0 ) {
+								return $deactivated ? false : true;
 							}
 						}
 
-						return $value['activated'] === true;
+						require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+						if ( $scope === 'site' ) {
+							return is_plugin_active( $plugin_file );
+						}
+
+						if ( is_plugin_active_for_network( $plugin_file ) ) {
+							return true;
+						}
+
+						$sites = get_sites( array( 'fields' => 'ids' ) );
+
+						foreach ( $sites as $site_id ) {
+							switch_to_blog( $site_id );
+							$active = is_plugin_active( $plugin_file );
+							restore_current_blog();
+
+							if ( $active ) {
+								return true;
+							}
+						}
+
+						return false;
 					},
-					ARRAY_FILTER_USE_BOTH
+					ARRAY_FILTER_USE_KEY
 				);
 
-				update_site_option( 'wpo365_active_extensions', $active_extensions );
+				if ( $scope === 'site' ) {
+					update_option( 'wpo365_active_extensions', $active_extensions );
+				} else {
+					update_site_option( 'wpo365_active_extensions', $active_extensions );
+				}
 			}
 
 			return $active_extensions;
@@ -57,7 +95,12 @@ if ( ! class_exists( '\Wpo\Core\Extensions_Helpers' ) ) {
 		 */
 		public static function plugin_updated( $upgrader_object, $options ) {
 			if ( $options['type'] === 'plugin' && ( $options['action'] === 'update' || $options['action'] === 'install' ) ) {
-				delete_site_option( 'wpo365_active_extensions' );
+
+				if ( is_multisite() ) {
+					delete_site_option( 'wpo365_active_extensions' );
+				}
+
+				delete_option( 'wpo365_active_extensions' );
 			}
 		}
 
@@ -68,8 +111,14 @@ if ( ! class_exists( '\Wpo\Core\Extensions_Helpers' ) ) {
 		 * @return void
 		 */
 		public static function plugin_activated( $plugin, $network_wide ) { // phpcs:ignore
-			self::get_active_extensions( $plugin );
-			Plugin_Helpers::check_licenses();
+
+			if ( is_multisite() ) {
+				self::get_active_extensions( true, 'network', $plugin );
+			}
+
+			self::get_active_extensions( true, 'site', $plugin );
+
+			Plugin_Helpers::check_licenses( false );
 		}
 
 		/**
@@ -79,8 +128,14 @@ if ( ! class_exists( '\Wpo\Core\Extensions_Helpers' ) ) {
 		 * @return void
 		 */
 		public static function plugin_deactivated( $plugin, $network_wide ) { // phpcs:ignore
-			self::get_active_extensions( $plugin, true );
-			Plugin_Helpers::check_licenses();
+
+			if ( is_multisite() ) {
+				self::get_active_extensions( true, 'network', $plugin, true );
+			}
+
+			self::get_active_extensions( true, 'site', $plugin, true );
+
+			Plugin_Helpers::check_licenses( false );
 		}
 
 		/**

@@ -324,7 +324,7 @@ if ( ! class_exists( '\Wpo\Insights\Event_Service' ) ) {
 			foreach ( $events as $event ) {
 
 				if ( is_array( $event->data ) && ! empty( $event->data['id'] ) ) {
-					$like = '%|' . $wpdb->esc_like( $event->data['id'] ) . '|%';
+					$like = '%' . $wpdb->esc_like( $event->data['id'] ) . '%';
 
 					$record_id_var = $wpdb->get_var( // phpcs:ignore
 						"SELECT `id` FROM `$table_name` WHERE `event_data` LIKE '$like' LIMIT 1" // phpcs:ignore

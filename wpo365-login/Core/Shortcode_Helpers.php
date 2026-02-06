@@ -62,6 +62,11 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 					$result[ \substr( $prop_kv_pair, 0, $first_separator ) ] = \substr( $prop_kv_pair, $first_separator + 1 );
 				}
 
+				/**
+				 * @since 39.0  Adding the user ID.
+				 */
+				$result['wpUserId'] = get_current_user_id();
+
 				$props = wp_json_encode( $result );
 			}
 
@@ -243,7 +248,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 		 *
 		 * @since 7.8
 		 *
-		 * @param array $atts Shortcode parameters according to WordPress codex.
+		 * @param array  $atts Shortcode parameters according to WordPress codex.
 		 * @param string $content Found in between the short code start and end tag.
 		 * @param string $tag Text domain.
 		 */
@@ -282,7 +287,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 		 *
 		 * @since 33.0
 		 *
-		 * @param array $atts Shortcode parameters according to WordPress codex.
+		 * @param array  $atts Shortcode parameters according to WordPress codex.
 		 * @param string $content Found in between the short code start and end tag.
 		 * @param string $tag Text domain.
 		 */
@@ -311,7 +316,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 		 *
 		 * @since 33.0
 		 *
-		 * @param array $params Shortcode parameters according to WordPress codex.
+		 * @param array  $params Shortcode parameters according to WordPress codex.
 		 * @param string $content Found in between the short code start and end tag.
 		 * @param string $tag Text domain.
 		 */

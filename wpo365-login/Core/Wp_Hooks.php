@@ -76,14 +76,24 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 					}
 				}
 
+				// New User Service
+
+				if ( class_exists( '\Wpo\Services\New_User_Service' ) && ! Options_Service::get_global_boolean_var( 'hide_new_user_app', false ) ) {
+					add_action( 'admin_footer', '\Wpo\Services\New_User_Service::enqueue_newuser_script', 10, 0 );
+					add_action( 'wp_ajax_wpo365_lookup_user', '\Wpo\Services\New_User_Service::lookup_user' );
+					add_action( 'wp_ajax_wpo365_save_newuser_config', '\Wpo\Services\New_User_Service::save_newuser_config' );
+					add_action( 'wp_ajax_wpo365_get_newuser_config', '\Wpo\Services\New_User_Service::get_newuser_config' );
+				}
+
+				// Block Direct Media Access
+
+				if ( class_exists( '\Wpo\Services\Secure_Download_Service' ) ) {
+					add_action( 'wp_ajax_wpo365_block_direct_media_access', '\Wpo\Services\Secure_Download_Service::block_direct_media_access' );
+				}
+
 				// User sync
 
 				if ( Options_Service::get_global_boolean_var( 'enable_user_sync', false ) ) {
-
-					if ( class_exists( '\Wpo\Sync\Sync_Admin_Page' ) ) {
-						add_action( 'admin_menu', '\Wpo\Sync\Sync_Admin_Page::add_plugin_page', 10 );
-						add_action( 'init', '\Wpo\Sync\Sync_Admin_Page::init', 10, 0 );
-					}
 
 					if ( class_exists( '\Wpo\Sync\SyncV2_Service' ) ) {
 
@@ -180,12 +190,6 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 					add_filter( 'wpo365_skip_authentication', '\Wpo\Services\Auth_Only_Service::validate_auth_cookie', 10 );
 					add_filter( 'wpo365/cookie/remove/url', '\Wpo\Services\Auth_Only_Service::remove_cookie_from_url', 10, 1 );
 				}
-			}
-
-			// Hooks used by cron jobs to schedule user synchronization events
-			if ( class_exists( '\Wpo\Sync\Sync_Manager' ) ) {
-				add_action( 'wpo_sync_users', '\Wpo\Sync\Sync_Manager::fetch_users', 10, 3 );
-				add_action( 'wpo_sync_users_start', '\Wpo\Sync\Sync_Manager::fetch_users', 10, 2 );
 			}
 
 			// Hooks used by cron jobs to schedule user synchronization events
@@ -309,7 +313,7 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 
 			add_action( 'login_enqueue_scripts', '\Wpo\Core\Script_Helpers::enqueue_pintra_redirect', 10, 0 );
 			add_action( 'admin_enqueue_scripts', '\Wpo\Core\Script_Helpers::enqueue_wizard', 10, 0 );
-			add_filter( 'script_loader_tag', '\Wpo\Core\Script_Helpers::enqueue_script_asynchronously', 10, 3 );
+			add_filter( 'script_loader_tag', '\Wpo\Core\Script_Helpers::custom_script_loading', 10, 3 );
 
 			// Add safe style css
 			add_filter( 'safe_style_css', '\Wpo\Core\WordPress_Helpers::safe_css', 10, 1 );

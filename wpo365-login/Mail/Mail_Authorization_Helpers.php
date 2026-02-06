@@ -63,7 +63,7 @@ if ( ! class_exists( '\Wpo\Mail\Mail_Authorization_Helpers' ) ) {
 				$params['login_hint'] = $mail_from;
 			}
 
-			$tld = Options_Service::get_aad_option( 'tld' );
+			$tld = Options_Service::get_mail_option( 'mail_tld' );
 			$tld = ! empty( $tld ) ? $tld : '.com';
 
 			/**
@@ -302,7 +302,7 @@ if ( ! class_exists( '\Wpo\Mail\Mail_Authorization_Helpers' ) ) {
 			$mail_auth = empty( $mail_auth_value ) ? null : json_decode( $mail_auth_value );
 
 			if ( ! empty( $mail_auth ) && property_exists( $mail_auth, 'access_token' ) ) {
-				$tld                                      = Options_Service::get_aad_option( 'tld' );
+				$tld                                      = Options_Service::get_mail_option( 'mail_tld' );
 				$tld                                      = ! empty( $tld ) ? $tld : '.com';
 				$scope                                    = explode( ' ', $mail_auth->access_token->scope );
 				$scope                                    = array_map(
@@ -553,7 +553,7 @@ if ( ! class_exists( '\Wpo\Mail\Mail_Authorization_Helpers' ) ) {
 				$directory_id = 'common';
 			}
 
-			$tld             = Options_Service::get_aad_option( 'tld' );
+			$tld             = Options_Service::get_mail_option( 'mail_tld' );
 			$tld             = ! empty( $tld ) ? $tld : '.com';
 			$authorize_url   = sprintf(
 				'https://login.microsoftonline%s/%s/oauth2/v2.0/token',

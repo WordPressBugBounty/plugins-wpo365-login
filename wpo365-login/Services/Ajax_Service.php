@@ -175,6 +175,7 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 
 			delete_site_option( 'wpo365_msft_key' );
 			delete_site_option( 'wpo365_active_extensions' );
+			delete_option( 'wpo365_active_extensions' );
 			delete_site_option( 'wpo365_x509_certificates' );
 
 			if ( Options_Service::mu_use_subsite_options() && ! Wpmu_Helpers::mu_is_network_admin() ) {
@@ -484,7 +485,31 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 			$current_user = self::verify_ajax_request( 'to proxy a request' );
 
 			self::verify_posted_data( array( 'url', 'method', 'bearer', 'accept', 'binary' ) ); // -> wp_die
-			$url     = \esc_url_raw( $_POST['url'] ); // phpcs:ignore
+			$url = \esc_url_raw( $_POST['url'] ); // phpcs:ignore
+			$url = str_replace( '/v1.0/', '/_/', $url );
+			$url = str_replace( '/beta/', '/_/', $url );
+
+			$allowed_endpoints_and_permissions = Options_Service::get_global_list_var( 'graph_allowed_endpoints' );
+			$proxy_endpoint_valid              = false;
+
+			foreach ( $allowed_endpoints_and_permissions as $allowed_endpoint_config ) {
+
+				$allowed_endpoint = $allowed_endpoint_config['key'];
+				$allowed_endpoint = str_replace( '/v1.0/', '/_/', $allowed_endpoint );
+				$allowed_endpoint = str_replace( '/beta/', '/_/', $allowed_endpoint );
+
+				if ( WordPress_Helpers::stripos( $url, $allowed_endpoint ) === 0 ) {
+					$proxy_endpoint_valid = true;
+					break;
+				}
+			}
+
+			if ( ! $proxy_endpoint_valid ) {
+				$message = sprintf( '%s -> Error occured whilst fetching from %s:  Endpoint not allowed.', __METHOD__, $url );
+				Log_Service::write_log( 'WARN', $message );
+				self::ajax_response( 'NOK', '', $message, null ); // -> wp_die
+			}
+
 			$method  = sanitize_text_field( $_POST['method'] ); // phpcs:ignore
 			$headers = array(
 				'Authorization' => sprintf( 'Bearer %s', $_POST['bearer'] ), // phpcs:ignore

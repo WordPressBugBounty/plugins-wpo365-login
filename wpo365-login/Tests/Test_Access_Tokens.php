@@ -620,7 +620,37 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 		public function test_roles_access_delegated() {
 
 			// Skip if using SAML
-			if ( $this->no_sso || $this->use_saml || $this->use_b2c ) {
+			if ( $this->no_sso || $this->use_b2c ) {
+				return;
+			}
+
+			$test_result      = new Test_Result( "Authentication response (ID token or SAML response) contains 'groups' claim - Therefore not testing to get Azure AD group memberships from Microsoft Graph using <em>delegated</em> permissions.", Test_Result::CAPABILITY_ROLES_ACCESS, Test_Result::SEVERITY_LOW );
+			$is_oidc_response = filter_var( $this->request->get_item( 'is_oidc_response' ), FILTER_VALIDATE_BOOLEAN );
+			$is_saml_response = filter_var( $this->request->get_item( 'is_saml_response' ), FILTER_VALIDATE_BOOLEAN );
+
+			if ( $is_oidc_response ) {
+				$id_token = $this->request->get_item( 'id_token' );
+
+				if ( ! empty( $id_token ) && isset( $id_token->groups ) ) {
+					$test_result->passed = true;
+					$test_result->data   = $id_token->groups;
+				}
+			}
+
+			if ( $is_saml_response ) {
+				$saml_attributes = $this->request->get_item( 'saml_attributes' );
+
+				if ( isset( $saml_attributes['http://schemas.microsoft.com/ws/2008/06/identity/claims/groups'] ) ) {
+					$test_result->passed = true;
+					$test_result->data   = $saml_attributes['http://schemas.microsoft.com/ws/2008/06/identity/claims/groups'];
+				}
+			}
+
+			if ( $test_result->passed ) {
+				return $test_result;
+			}
+
+			if ( $this->use_saml ) {
 				return;
 			}
 

@@ -71,7 +71,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 					exit();
 				}
 
-				Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> User is not logged in and therefore sending the user to Microsoft to sign in' );
+				Log_Service::write_log( 'DEBUG', sprintf( ' %s -> User requesting %s is not logged in and therefore sending the user to Microsoft to sign in', __METHOD__, $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] ) );
 				$login_hint = isset( $_REQUEST['login_hint'] ) // phpcs:ignore
 				? \sanitize_text_field( $_REQUEST['login_hint'] ) // phpcs:ignore
 				: null;
@@ -275,6 +275,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			$saml_attributes = $auth->getAttributes();
 			$saml_name_id    = $auth->getNameId();
 			$wpo_usr         = User_Service::user_from_saml_response( $saml_name_id, $saml_attributes );
+
+			$request->set_item( 'saml_attributes', $saml_attributes );
 
 			self::user_in_group( $wpo_usr );
 

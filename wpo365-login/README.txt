@@ -2,17 +2,17 @@
 Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
-Tested up to: 6.8
-Stable tag: 38.0
+Tested up to: 6.9
+Stable tag: 40.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI ...
+WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI.
 
 == Description ==
 
-WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI ...
+WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI.
 
 = SINGLE SIGN-ON (SSO) =
 
@@ -91,6 +91,7 @@ The features below can be unlocked with [premium addOns and bundles](https://www
 - **Create** new WP Users
 - **Update** existing WP Users
 - (Soft) **Delete** existing WP Users
+- Lookup / Add a user in Entra ID (Azure Active Directory) on WordPress's built-in **Add New User page**. [more](https://docs.wpo365.com/article/228-add-new-wordpress-user-from-entra-aad)
 
 *WP User Roles, Profiles and Avatars will be updated and other rules e.g. LearnDash Enrollments will be applied*
 
@@ -103,6 +104,10 @@ The features below can be unlocked with [premium addOns and bundles](https://www
 - **Map User Attributes** beyond name and email and store as WordPress user meta
 
 *WP User Roles, Profiles and Avatars will be updated and other rules e.g. LearnDash Enrollments will be applied*
+
+= INTRANET =
+
+- Block Direct Access to the Media Library [more](https://docs.wpo365.com/article/229-require-login-for-the-wordpress-media-folder)
 
 = ROLES + ACCESS =
 
@@ -217,6 +222,40 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v40.2 =
+* Security Fix: An XSS vulnerability has been patched. [ALL]
+
+= v40.1 =
+* Fix: Two free / basic apps for embedding Microsoft 365 services — SharePoint Online Search and Employee Directory — failed to perform their search functionality. [LOGIN]
+
+= v40.0 =
+* Security Fix: A Server Side Request Forgery (SSRF) vulnerability has been patched. [ALL]
+* (Breaking) Change: The long-term deprecated version of WPO365 User Synchronization has now been removed. [INTEGRATE (SYNC, INTRANET)]
+* Improvement: When an administrator enables WPO365's "shared" WPMU-mode, WPO365 can now be configured to update the user’s WordPress role(s) based on your Entra group-to-WP-role mappings not only for the current site, but also for all subsites where the user is a member. See the [online documentation](https://docs.wpo365.com/article/230-synchronize-wp-roles-across-all-sub-sites) for details. [ROLES + ACCESS, PROFESSIONAL, INTEGRATE, CUSTOMERS (SYNC, INTRANET)]
+* Improvement: This version introduces a number of enhancements when embedding an Outlook / Exchange Online calendar in WordPress:
+  * The free version now supports clickable items to pop up a dialog with the event's details.
+  * Premium versions can now also use a Shared Calendar as their source.
+  * The event's HTML content will now be rendered in an iframe.
+  * Event details will now list the event start and end date, location and a clickable link in case of an online meeting.
+  * By default will (new) calendars show an extra column for the event's end date.
+  * Multi-day events are now easily identifiable by a dedicated icon.
+  * See the updated [feature documentation](https://www.wpo365.com/feature/add-outlook-or-exchange-calendars-to-wordpress/).
+* Improvement: Confirms support for WordPress 6.9. [ALL]
+* Improvement: When embedding Power BI content in WordPress for customers, WPO365 will now also update dynamic tokens found in an Effective Identity's customData property. The [online documentation](https://tutorials.wpo365.com/courses/embed-power-bi-content-in-wordpress/lessons/advanced-row-level-security-rls/) has been updated to reflect this. [APPS, INTEGRATE (INTRANET)]
+* Improvement: Direct Access to the Media Library now uses a cookie, to prevent 429 Too Many Requests errors and to reduce the server load. The [online documentation](https://docs.wpo365.com/article/229-require-login-for-the-wordpress-media-folder) has been updated accordingly. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: When WPO365 User Synchronization is triggered via an external link, WPO365 now waits for WordPress to fully initialize, ensuring that all hooks (filters and actions) are properly attached. [INTEGRATE (SYNC, INTRANET)]
+
+= v39.0 =
+* Feature: Direct Access to the Media Library can now be blocked, when the selected "Authentication scenario" is "Intranet". Refer to the [implementation guide](https://docs.wpo365.com/article/229-require-login-for-the-wordpress-media-folder) for instructions and restrictions. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Feature: Manually add a new WordPress user by performing a lookup in Entra ID (Azure Active Directory), directly from WordPress's built-in 'Add New User' page. Checkout the [implementation guide](https://docs.wpo365.com/article/228-add-new-wordpress-user-from-entra-aad). [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Improvement: Embed **Paginated Reports** from Power BI in WordPress. Consult the all new [Power BI / WordPress integration tutorial](https://tutorials.wpo365.com/courses/embed-power-bi-content-in-wordpress/). [M365 APPS, INTEGRATE (INTRANET)]
+* Improvement: When emails are successfully sent during a retry, the corresponding error message is removed, and the error count on the WPO365 | INSIGHTS Dashboard is updated accordingly. [ALL]
+* Improvement: Sending WordPress emails via Microsoft Graph is now supported for **GCC High tenants**. [ALL]
+* Fix: SCIM options are now available (again) when the INTRANET premium plugin is detected. [INTRANET]
+* Fix: The availability of WPO365 configuration pages—and optionally the license management page—at the network admin level in WordPress Multisite has been reviewed and improved. [ALL]
+* Fix: Usability of the Feature status and toggle on the WPO365 Dashboard page has been reviewed and improved. [ALL]
+* Fix: The Plugin Self-Test now recognizes if a "groups" claim was received as part of the ID token / SAML response. [ROLES + ACCESS, PROFESSIONAL, INTEGRATE (SYNC, INTRANET)]
 
 = v38.0 =
 * Feature: **See what matters, when it happens** Track key WPO365 events like logins, sent emails and user creation and updates with **WPO365 Insights** and get alerted when when a critical WPO365 event occurs. Consult the [updated documentation](https://docs.wpo365.com/article/210-wpo365-insights) for instructions how to configure WPO365 Alerts. [ALL PREMIUM]

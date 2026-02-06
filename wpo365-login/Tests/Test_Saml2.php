@@ -20,6 +20,11 @@ if ( ! class_exists( '\Wpo\Tests\Test_Saml2' ) ) {
 		private $wpo_usr     = null;
 		private $request     = null;
 
+		public function __construct() {
+			$request_service = Request_Service::get_instance();
+			$this->request   = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+		}
+
 		public function test_saml2_settings() {
 
 			$test_result         = new Test_Result( 'All mandatory SAML settings are configured', Test_Result::CAPABILITY_SAML_SSO, Test_Result::SEVERITY_BLOCKING );
@@ -76,7 +81,9 @@ if ( ! class_exists( '\Wpo\Tests\Test_Saml2' ) ) {
 				return $test_result;
 			}
 
-			$test_result->data = $this->auth->getAttributes();
+			$saml_attributes   = $this->auth->getAttributes();
+			$test_result->data = $saml_attributes;
+			$this->request->set_item( 'saml_attributes', $saml_attributes );
 			return $test_result;
 		}
 
@@ -178,12 +185,13 @@ if ( ! class_exists( '\Wpo\Tests\Test_Saml2' ) ) {
 		public function test_saml_response_contains_groups() {
 			$test_result         = new Test_Result( "SAML response contains 'groups' claim", Test_Result::CAPABILITY_SAML_SSO, Test_Result::SEVERITY_LOW );
 			$test_result->passed = true;
+			$saml_attributes     = $this->request->get_item( 'saml_attributes' );
 
 			if ( empty( $this->wpo_usr ) ) {
 				$test_result->passed    = false;
 				$test_result->message   = 'SAML response could not be processed -> test skipped';
 				$test_result->more_info = '';
-			} elseif ( empty( $this->wpo_usr->groups ) ) {
+			} elseif ( ! isset( $saml_attributes['http://schemas.microsoft.com/ws/2008/06/identity/claims/groups'] ) ) {
 				$test_result->passed    = false;
 				$test_result->message   = "SAML response does not contain a 'groups' claim";
 				$test_result->more_info = 'https://docs.wpo365.com/article/100-configure-single-sign-on-with-saml-2-0';
@@ -193,8 +201,6 @@ if ( ! class_exists( '\Wpo\Tests\Test_Saml2' ) ) {
 		}
 
 		public function test_end() {
-			$request_service = Request_Service::get_instance();
-			$this->request   = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 			$this->request->set_item( 'wpo_usr', $this->wpo_usr );
 		}
 	}

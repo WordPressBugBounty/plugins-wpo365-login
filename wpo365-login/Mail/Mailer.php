@@ -354,6 +354,16 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 
 			if ( $message_sent_result['response_code'] < 200 || $message_sent_result['response_code'] > 299 ) {
 
+				if ( $message_sent_result['response_code'] === 429 ) {
+					$log_message = sprintf(
+						'%s [Error: %s]',
+						$error_message,
+						'Microsoft Graph throttled the request due to rate limits. If the (premium) auto-retry feature is enabled on the plugin\'s "Mail" configuration page, WPO365 will retry sending your email automatically. Use the (premium) "Mail Audit Log" or "WPO365 Insights" to monitor the status of sent messages.'
+					);
+					self::update_mail_log( $log_message, false, 'ERROR', true );
+					return false;
+				}
+
 				// Retry after 403 when using application-type permissions
 
 				if ( isset( $access_token['type'] ) && $access_token['type'] === 'application' && $message_sent_result['response_code'] === 403 && $retry_error_code === 0 ) {
@@ -371,7 +381,7 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 				}
 
 				if ( is_array( $message_sent_result ) && isset( $message_sent_result['payload'] ) && isset( $message_sent_result['payload']['error'] ) && isset( $message_sent_result['payload']['error']['message'] ) ) {
-					$error_code  = isset( $message_sent_result['payload']['error']['code'] ) ? sprintf( ' | %s', $message_sent_result['payload']['error']['code'] ) : '';
+					$error_code  = isset( $message_sent_result['payload']['error']['code'] ) ? sprintf( ' | %s | %d', $message_sent_result['payload']['error']['code'], $message_sent_result['response_code'] ) : sprintf( ' | %d', $message_sent_result['response_code'] );
 					$log_message = sprintf(
 						'%s [Error: %s%s]',
 						$error_message,
@@ -382,7 +392,7 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 					return false;
 				}
 
-				$log_message = sprintf( '%s [See debug log for details]', $error_message );
+				$log_message = sprintf( '%s [See debug log for details | %d]', $error_message, $message_sent_result['response_code'] );
 				self::update_mail_log( $log_message, false, 'ERROR', true );
 				Log_Service::write_log( 'WARN', $message_sent_result );
 				return false;
@@ -544,7 +554,7 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 				? 'v1.0'
 				: 'beta';
 
-			$tld = Options_Service::get_aad_option( 'tld' );
+			$tld = Options_Service::get_mail_option( 'mail_tld' );
 			$url = WordPress_Helpers::stripos( $query, 'https://' ) === 0
 				? $query
 				: sprintf(
@@ -614,6 +624,8 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 		public static function update_mail_log( $log_message, $success, $log_level, $count_attempt ) {
 			$request_service = Request_Service::get_instance();
 			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+			$mail_log_id     = $request->get_item( 'mail_log_id' );
+			$log_message     = sprintf( 'ID #%s | %s', $mail_log_id, $log_message );
 
 			if ( $count_attempt ) {
 
@@ -642,6 +654,27 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 			// if the attempt counts then now it is time to clean up
 			if ( $count_attempt ) {
 				$request->remove_item( 'mail_log_id' );
+			}
+
+			// if an email was sent successfully then remove any errors related to it.
+			if ( $count_attempt && $success ) {
+				$errors = Wpmu_Helpers::mu_get_transient( 'wpo365_errors' );
+
+				if ( is_array( $errors ) ) {
+					$mail_log_id_string = "ID #$mail_log_id |";
+					$filtered_errors    = array_filter(
+						$errors,
+						function ( $error ) use ( $mail_log_id_string ) {
+							return isset( $error['body'] ) && WordPress_Helpers::stripos( $error['body'], $mail_log_id_string ) === false;
+						}
+					);
+
+					$filtered_errors = array_values( $filtered_errors );
+
+					if ( count( $errors ) !== count( $filtered_errors ) ) {
+						Wpmu_Helpers::mu_set_transient( 'wpo365_errors', $filtered_errors, 259200 );
+					}
+				}
 			}
 		}
 

@@ -236,7 +236,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 			$access_token = self::validate_access_token( $access_token );
 
 			if ( is_wp_error( $access_token ) ) {
-				$warning = 'Access token for ' . $scope . ' is not valid: ' . $access_token->get_error_message();
+				$warning = 'Access token for ' . $scope . ' (delegated) is not valid: ' . $access_token->get_error_message();
 				Log_Service::write_log( 'WARN', __METHOD__ . " -> $warning" );
 
 				$access_token_errors     = $request->get_item( 'access_token_errors' );

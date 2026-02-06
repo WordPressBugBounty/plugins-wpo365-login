@@ -183,7 +183,7 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			$body = $request->get_json_params();
 
 			if ( $check_proxy && ! Options_Service::get_global_boolean_var( 'enable_graph_proxy' ) ) {
-				$url = ! empty( $body['url'] ) ? $body['url'] : '';
+				$url = ! empty( $body['url'] ) ? sanitize_text_field( urldecode( $body['url'] ) ) : '';
 				return new \WP_Error( 'ForbiddenException', sprintf( 'This type of request is not allowed [proxy request for %s]. Go to WP Admin > WPO365 > Integration and \'Allow Microsoft Graph proxy-type requests\'.', $url ), array( 'status' => 403 ) );
 			}
 
@@ -193,7 +193,7 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			}
 
 			$wp_usr_id              = \get_current_user_id();
-			$graph_permission_level = self::get_graph_permission_level( $body['scope'] );
+			$graph_permission_level = self::get_graph_permission_level( sanitize_text_field( urldecode( $body['scope'] ) ) );
 
 			if ( $graph_permission_level === 'signedInWithMicrosoft' ) {
 

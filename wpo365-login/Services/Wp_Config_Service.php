@@ -554,6 +554,7 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 				'mail_application_id',
 				'mail_application_secret',
 				'mail_redirect_url',
+				'mail_tld',
 			);
 		}
 

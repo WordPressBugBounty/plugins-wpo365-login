@@ -20,20 +20,33 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 			Log_Service::write_log( 'WARN', sprintf( '%s -> Method is deprecated - Please update all your WPO365 plugins to version 27.0 or later', __METHOD__ ) );
 
 			if ( empty( $slug ) ) {
-				$extensions = Extensions_Helpers::get_extensions();
+				$extensions = Extensions_Helpers::get_active_extensions();
+				return count( $extensions ) > 0;
+			}
 
-				foreach ( $extensions as $slug => $extension ) {
+			if ( function_exists( 'is_plugin_active' ) === false ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
 
-					if ( $extension['activated'] === true ) {
+			if ( is_multisite() ) {
+
+				if ( is_plugin_active_for_network( $plugin_file ) ) {
+					return true;
+				}
+
+				$sites = get_sites( array( 'fields' => 'ids' ) );
+
+				foreach ( $sites as $site_id ) {
+					switch_to_blog( $site_id );
+					$active = is_plugin_active( $plugin_file );
+					restore_current_blog();
+
+					if ( $active ) {
 						return true;
 					}
 				}
 
 				return false;
-			}
-
-			if ( function_exists( 'is_plugin_active' ) === false ) {
-				require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			}
 
 			return \is_plugin_active( $slug );
@@ -99,17 +112,13 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 			return $check_for_updates_data;
 		}
 
-		public static function check_licenses() {
-
+		public static function check_licenses( $reset = true ) {
 			Wpmu_Helpers::mu_delete_transient( 'wpo365_lic_notices' );
-			$extensions = Extensions_Helpers::get_active_extensions();
+			$extensions = Extensions_Helpers::get_active_extensions( $reset, 'network' );
 
 			foreach ( $extensions as $slug => $extension ) {
 				list($license_key, $url) = self::get_plugin_license_key( $extension );
-
-				if ( $extension['activated'] === true ) {
-					self::check_license( $extension, $license_key, $url );
-				}
+				self::check_license( $extension, $license_key, $url );
 			}
 		}
 
@@ -267,9 +276,19 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 				wp_die( 'Forbidden', '403 Forbidden', array( 'response' => 403 ) );
 			}
 
+			// Force a fresh iteration of all WPO365 extensions.
+
+			if ( isset( $_REQUEST['is_network_admin'] ) && $_REQUEST['is_network_admin'] === '1' ) {
+				delete_site_option( 'wpo365_active_extensions' );
+			} else {
+				delete_option( 'wpo365_active_extensions' );
+			}
+
+			// Force getting fresh data from the WPO365.com server.
 			delete_site_transient( 'wpo365_plugins_updated' );
 			wp_clean_plugins_cache( true );
-			$goto_after = admin_url( 'plugins.php' );
+
+			$goto_after = isset( $_REQUEST['request_url'] ) ? $_REQUEST['request_url'] : ( is_network_admin() ? network_admin_url( 'plugins.php' ) : admin_url( 'plugins.php' ) ); // phpcs:ignore
 			wp_safe_redirect( $goto_after );
 			die();
 		}
@@ -298,7 +317,7 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 			$path = isset( $parsed_url['path'] ) ? strtolower( $parsed_url['path'] ) : '';
 
 			// Keywords and TLDs that indicate non-productive environments.
-			$non_prod_keywords = array( 'dev', 'test', 'staging', 'stage', 'preprod', 'pre-prod,', 'uat', 'quality' );
+			$non_prod_keywords = array( 'dev', 'test', 'staging', 'stage', 'preprod', 'pre-prod,', 'uat', 'quality', 'qa-' );
 			$non_prod_tlds     = array( 'lan' );
 
 			// Check for localhost or loopback.
