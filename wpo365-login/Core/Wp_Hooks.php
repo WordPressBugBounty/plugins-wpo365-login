@@ -574,6 +574,21 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 
 			// Set a user's primary blog if a new user is added to a blog
 			add_action( 'wpo365/user/created', '\Wpo\Core\Wpmu_Helpers::set_user_primary_blog', 10, 1 );
+
+			// Set Media Library Direct Access cookie.
+			if ( Options_Service::get_global_boolean_var( 'block_direct_media_access' ) && class_exists( '\Wpo\Services\Secure_Download_Service' ) ) {
+				$set_mlda_cookie = function () {
+					$service = new \Wpo\Services\Secure_Download_Service();
+
+					if ( is_callable( array( $service, 'set_cookie' ) ) ) {
+						$service->set_cookie( true );
+					}
+				};
+
+				add_action( 'wpo365/oidc/authenticated_only', $set_mlda_cookie );
+				add_action( 'wpo365/oidc/authenticated', $set_mlda_cookie );
+				add_action( 'wpo365/saml/authenticated', $set_mlda_cookie );
+			}
 		}
 
 		public static function add_wp_cli_commands() {

@@ -19,35 +19,35 @@ if ( ! class_exists( '\Wpo\Tests\Test_Extensions' ) ) {
 		}
 
 		public function test_wpo365_premium() {
-			return $this->get_test_result_for_extensions( 'wpo365-login-premium/wpo365-login.php', 'WPO365 | SYNC', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-login-premium/wpo365-login.php', 'WPO365 | SYNC', 40.1 );
 		}
 
 		public function test_wpo365_sync_5y() {
-			return $this->get_test_result_for_extensions( 'wpo365-sync-5y/wpo365-sync-5y.php', 'WPO365 | SYNC | 5Y', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-sync-5y/wpo365-sync-5y.php', 'WPO365 | SYNC | 5Y', 40.1 );
 		}
 
 		public function test_wpo365_intranet_5y() {
-			return $this->get_test_result_for_extensions( 'wpo365-intranet-5y/wpo365-intranet-5y.php', 'WPO365 | INTRANET | 5Y', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-intranet-5y/wpo365-intranet-5y.php', 'WPO365 | INTRANET | 5Y', 40.1 );
 		}
 
 		public function test_wpo365_integrate() {
-			return $this->get_test_result_for_extensions( 'wpo365-integrate/wpo365-integrate.php', 'WPO365 | INTEGRATE', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-integrate/wpo365-integrate.php', 'WPO365 | INTEGRATE', 40.1 );
 		}
 
 		public function test_wpo365_pro() {
-			return $this->get_test_result_for_extensions( 'wpo365-pro/wpo365-pro.php', 'WPO365 | PROFESSIONAL', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-pro/wpo365-pro.php', 'WPO365 | PROFESSIONAL', 40.1 );
 		}
 
 		public function test_wpo365_essentials() {
-			return $this->get_test_result_for_extensions( 'wpo365-essentials/wpo365-essentials.php', 'WPO365 | ESSENTIALS', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-essentials/wpo365-essentials.php', 'WPO365 | ESSENTIALS', 40.1 );
 		}
 
 		public function test_wpo365_customers() {
-			return $this->get_test_result_for_extensions( 'wpo365-customers/wpo365-customers.php', 'WPO365 | CUSTOMERS', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-customers/wpo365-customers.php', 'WPO365 | CUSTOMERS', 40.1 );
 		}
 
 		public function test_wpo365_intranet() {
-			return $this->get_test_result_for_extensions( 'wpo365-login-intranet/wpo365-login.php', 'WPO365 | INTRANET', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-login-intranet/wpo365-login.php', 'WPO365 | INTRANET', 40.1 );
 		}
 
 		public function test_wpo365_profile_plus() {
@@ -59,7 +59,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Extensions' ) ) {
 		}
 
 		public function test_wpo365_login_plus() {
-			return $this->get_test_result_for_extensions( 'wpo365-login-professional/wpo365-login.php', 'WPO365 | LOGIN+', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-login-professional/wpo365-login.php', 'WPO365 | LOGIN+', 40.1 );
 		}
 
 		public function test_wpo365_avatar() {
@@ -83,11 +83,11 @@ if ( ! class_exists( '\Wpo\Tests\Test_Extensions' ) ) {
 		}
 
 		public function test_wpo365_roles_access() {
-			return $this->get_test_result_for_extensions( 'wpo365-roles-access/wpo365-roles-access.php', 'WPO365 | ROLES + ACCESS', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-roles-access/wpo365-roles-access.php', 'WPO365 | ROLES + ACCESS', 40.1 );
 		}
 
 		public function test_wpo365_scim() {
-			return $this->get_test_result_for_extensions( 'wpo365-scim/wpo365-scim.php', 'WPO365 | SCIM', 40.0 );
+			return $this->get_test_result_for_extensions( 'wpo365-scim/wpo365-scim.php', 'WPO365 | SCIM', 40.1 );
 		}
 
 		public function test_basic_plugins() {

@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.9
-Stable tag: 40.2
+Stable tag: 40.3
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -222,6 +222,14 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v40.3 =
+* Improvement: Protecting the Media Library by restricting access to logged-in users is now also supported for Auth.-Only authentication scenarios. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC INTRANET)] 
+* Improvement: When protection of the Media Library is enabled, WPO365 will award a cookie when a user signs in with SSO, further optimizing the performance. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC INTRANET)]
+* Fix: When a cookie granting access to the Media Library is not found, WordPress will now loaded in an isolated function to prevent conflicts with other variables. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC INTRANET)]
+* Fix: The exported SAML 2.0 service provider XML configuration file is now "well-formed". [LOGIN]
+* Fix: The ROLES + ACCESS (premium) plugin now includes the mapping tool for itthinx Groups. [ROLES + ACCESS]
+* Fix: The SCIM (premium) plugin now unlocks the "custom field mapping tool" on the plugin's "User Sync" configuration page. [SCIM]
 
 = v40.2 =
 * Security Fix: An XSS vulnerability has been patched. [ALL]

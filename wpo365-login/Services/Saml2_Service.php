@@ -430,7 +430,7 @@ if ( ! class_exists( '\Wpo\Services\Saml2_Service' ) ) {
 			$sp_sls_url = Options_Service::get_aad_option( 'saml_sp_sls_url' );
 
 			if ( empty( $sp_sls_url ) ) {
-				$sp_sls_url = sprintf( '%swp-login.php&action=loggedout', $base_url );
+				$sp_sls_url = sprintf( '%swp-login.php?action=loggedout', $base_url );
 				Options_Service::add_update_option( 'saml_sp_sls_url', $sp_sls_url );
 			}
 
