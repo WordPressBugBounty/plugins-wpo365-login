@@ -6,7 +6,7 @@ use Wpo\Core\WordPress_Helpers;
 use Wpo\Services\Options_Service;
 
 // Prevent public access to this script
-defined( 'ABSPATH' ) or die();
+defined( 'ABSPATH' ) || die();
 
 if ( ! class_exists( '\Wpo\Pages\Wizard_Page' ) ) {
 
@@ -51,7 +51,7 @@ if ( ! class_exists( '\Wpo\Pages\Wizard_Page' ) ) {
 			if (
 				is_multisite()
 				&& ! is_network_admin()
-				&& false === Options_Service::mu_use_subsite_options()
+				&& Options_Service::mu_use_subsite_options() === false
 			) {
 				return;
 			}
@@ -65,9 +65,6 @@ if ( ! class_exists( '\Wpo\Pages\Wizard_Page' ) ) {
 			);
 		}
 
-		/**
-		 *
-		 */
 		public static function wpo365_wizard_page() {
 			ob_start();
 			include $GLOBALS['WPO_CONFIG']['plugin_dir'] . '/templates/wizard.php';

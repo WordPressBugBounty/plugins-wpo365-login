@@ -2,9 +2,11 @@
 
 namespace Wpo\Core;
 
+use Wpo\Core\Compatibility_Helpers;
 use Wpo\Core\Extensions_Helpers;
 use Wpo\Core\WordPress_Helpers;
 use Wpo\Core\Script_Helpers;
+use Wpo\Graph\Apps_Db;
 use Wpo\Services\Options_Service;
 use Wpo\Services\Error_Service;
 use Wpo\Services\Log_Service;
@@ -16,6 +18,134 @@ defined( 'ABSPATH' ) || die();
 if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 
 	class Shortcode_Helpers {
+
+		public static function add_app_short_code() {
+
+			if ( ! shortcode_exists( 'wpo365-app' ) ) {
+				add_shortcode(
+					'wpo365-app',
+					// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
+					function ( $atts = array(), $content = null, $tag = '' ) {
+						$atts = array_change_key_case( (array) $atts, CASE_LOWER );
+
+						if ( ! empty( $atts['id'] ) && is_numeric( $atts['id'] ) ) {
+							$id           = (int) $atts['id'];
+							$app_instance = Apps_Db::get_app_instance( $id, true );
+
+							if ( is_wp_error( $app_instance ) ) {
+								return sprintf( '<div>Could not retrieve WPO365 app. [Error: %s]</div>', $app_instance->get_error_message() );
+							}
+
+							if ( empty( $app_instance ) ) {
+								return '<div>Could not retrieve WPO365 app. [Error: not found]</div>';
+							}
+
+							$active_extensions = Extensions_Helpers::get_active_extensions();
+							$premium_with_apps = array( 'intranet', 'integrate', 'apps' );
+							$is_premium        = false;
+
+							foreach ( $active_extensions as $slug => $data ) {
+
+								foreach ( $premium_with_apps as $lookup_term ) {
+
+									if ( stripos( $slug, $lookup_term ) !== false ) {
+
+										if ( $active_extensions[ $slug ]['version'] < 41 ) {
+											$deprecated_message = 'A deprecated version of a Microsoft 365 (Embed) App has been detected. To ensure continued compatibility with future updates, please update your premium WPO365 plugin(s) as soon as possible.';
+											Compatibility_Helpers::compat_warning(
+												sprintf(
+													'%s -> %s',
+													__METHOD__,
+													$deprecated_message
+												)
+											);
+
+											return sprintf( '<div>%s</div>', $deprecated_message );
+										}
+
+										$plugin_folder = $active_extensions[ $slug ]['plugin_folder'];
+										$is_premium    = true;
+										break 2;
+									}
+								}
+							}
+
+							if ( empty( $plugin_folder ) ) {
+								$plugin_folder = 'wpo365-login';
+							}
+
+							$app_type = $app_instance->appType; // phpcs:ignore
+							$elem_id  = uniqid();
+
+							switch ( $app_type ) {
+								case 'lib':
+									$app_file = $is_premium ? 'list.js' : 'listBasic.js';
+									break;
+								case 'one':
+									$app_file = $is_premium ? 'list.js' : 'listBasic.js';
+									break;
+								case 'lis':
+									$app_file = $is_premium ? 'list.js' : 'listBasic.js';
+									break;
+								case 'rec':
+									$app_file = $is_premium ? 'list.js' : 'listBasic.js';
+									break;
+								case 'pbi':
+									$app_file = $is_premium ? 'pbi.js' : 'pbiBasic.js';
+									break;
+								case 'emp':
+									$app_file = $is_premium ? 'ed.js' : 'edBasic.js';
+									break;
+								case 'con':
+									$app_file = $is_premium ? 'contacts.js' : '';
+									break;
+								case 'yam':
+									$app_file = $is_premium ? 'yammer.js' : '';
+									break;
+								case 'cal':
+									$app_file = $is_premium ? 'calendar.js' : 'calendarBasic.js';
+									break;
+								case 'sea':
+									$app_file = $is_premium ? 'cbs.js' : 'cbsBasic.js';
+									break;
+								default:
+									$app_file = '';
+							}
+
+							$script_url = trailingslashit( plugins_url( $plugin_folder ) ) . 'apps/dist/' . $app_file;
+							$script_url = add_query_arg( 'rootId', $elem_id, $script_url );
+							$script_url = add_query_arg( 'appId', $id, $script_url );
+
+							$script_handle = sprintf( 'wpo365-app-%d', $id );
+
+							wp_enqueue_script( $script_handle, $script_url, array(), $GLOBALS['WPO_CONFIG']['version'] ); // phpcs:ignore
+
+							wp_add_inline_script(
+								$script_handle,
+								'window.wpo365 = window.wpo365 || {};' .
+								'window.wpo365.wpUid = ' . get_current_user_id() . ';' .
+								'window.wpo365.appConfigs = window.wpo365.appConfigs || {};' .
+								"window.wpo365.appConfigs._$id = {" .
+									'config: ' . wp_json_encode( $app_instance->config ) . ',' .
+									'userRequirements: ' . wp_json_encode( $app_instance->appliedRequirements->userRequirements ) . ',' . // phpcs:ignore
+									"nonce: '" . wp_create_nonce( 'wpo365_fx_nonce' ) . "'," .
+									"wpAjaxAdminUrl: '" . admin_url( 'admin-ajax.php' ) . "'," .
+								'};' .
+								'window.wpo365.blocks = ' . wp_json_encode(
+									array(
+										'nonce'  => \wp_create_nonce( 'wp_rest' ),
+										'apiUrl' => esc_url_raw( \trailingslashit( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'] ) ) . 'wp-json/wpo365/v1/graph/',
+									)
+								) . ';',
+								'before'
+							);
+
+							return sprintf( '<div id="%s" class="wpo365Apps"></div>', $elem_id );
+						}
+					}
+				);
+			}
+		}
 
 
 		/**
@@ -41,6 +171,9 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 		 * @param string $tag Text domain.
 		 */
 		public static function add_pintra_shortcode( $atts = array(), $content = null, $tag = '' ) { // phpcs:ignore
+			// Buffer all output instead of echoing it.
+			ob_start();
+
 			$atts  = array_change_key_case( (array) $atts, CASE_LOWER );
 			$props = '[]';
 
@@ -66,8 +199,6 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 				 * @since 39.0  Adding the user ID.
 				 */
 				$result['wpUserId'] = get_current_user_id();
-
-				$props = wp_json_encode( $result );
 			}
 
 			/**
@@ -77,8 +208,145 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 			$script_url = ! empty( $atts['script_url'] ) ? html_entity_decode( $atts['script_url'] ) : '';
 			$script_url = self::validate_script_url( $script_url );
 
-			ob_start();
-			include $GLOBALS['WPO_CONFIG']['plugin_dir'] . '/templates/pintra.php';
+			/**
+			 * @since 39.x  Deprecated apps will bootstrap using the builtin app-launcher. An app is deemed deprecated
+			 *              if the common Toast component is not found in the root of the "apps//dist" folder.
+			 */
+
+			$base_url  = site_url();
+			$base_path = ABSPATH;
+
+			if ( stripos( $script_url, $base_url ) === 0 ) {
+				$clean_url         = explode( '?', $script_url )[0];
+				$relative_path     = dirname( str_replace( $base_url, '', $clean_url ) );
+				$file_path_pattern = $base_path . rtrim( ltrim( $relative_path, '/' ), '/' ) . '/Toast.*';
+				$files             = glob( $file_path_pattern );
+				$is_vite_app       = ! empty( $files ); // The Toast component was first introduced when apps were built with vite.
+
+				if ( ! $is_vite_app ) {
+					Compatibility_Helpers::compat_warning(
+						sprintf(
+							'%s -> A deprecated version of a Microsoft 365 (Embed) App has been detected. To ensure continued compatibility with future updates, please update your premium WPO365 plugin(s) as soon as possible.',
+							__METHOD__
+						)
+					);
+				}
+			}
+
+			/**
+			 * @since 39.x  Modern apps will be bootstrapped without pintra-fx. But for apps that are not yet upgraded, we
+			 *              must determine the (modern) app type.
+			 */
+
+			$app_type = '';
+
+			if ( $is_vite_app ) {
+				// All pintra shortcodes for list, library and onedrive will have a hostname attribute.
+				if ( isset( $result['hostname'] ) ) {
+
+					if ( isset( $result['oneDrive'] ) && filter_var( $result['oneDrive'], FILTER_VALIDATE_BOOLEAN ) ) {
+						$app_type = 'one';
+					} elseif ( isset( $result['recent'] ) && filter_var( $result['recent'], FILTER_VALIDATE_BOOLEAN ) ) {
+						$app_type = 'rec';
+					} elseif ( WordPress_Helpers::stripos( $script_url, 'docs.js' ) > -1 || WordPress_Helpers::stripos( $script_url, 'docsBasic.js' ) > -1 ) {
+						$app_type = 'lib';
+					} else {
+						$app_type = 'lis';
+					}
+
+					// The docs(Basic).js file has been dropped.
+					$script_url = str_replace( 'docs.js', 'list.js', $script_url );
+					$script_url = str_replace( 'docsBasic.js', 'listBasic.js', $script_url );
+				}
+
+				if ( stripos( $script_url, 'ed.js' ) !== false || stripos( $script_url, 'edBasic.js' ) ) {
+					$app_type = 'emp';
+				} elseif ( stripos( $script_url, 'contacts.js' ) !== false ) {
+					$app_type = 'con';
+				} elseif ( stripos( $script_url, 'yammer.js' ) !== false ) {
+					$app_type = 'yam';
+				} elseif ( stripos( $script_url, 'pbi.js' ) !== false || stripos( $script_url, 'pbiBasic.js' ) ) {
+					$app_type = 'pbi';
+				} elseif ( stripos( $script_url, 'calendar.js' ) !== false || stripos( $script_url, 'calendarBasic.js' ) ) {
+					$app_type = 'cal';
+				} elseif ( stripos( $script_url, 'cbs.js' ) !== false || stripos( $script_url, 'cbsBasic.js' ) ) {
+					$app_type = 'sea';
+				}
+
+				// Add the app type so the app can tell one, lib, lis and rec apart.
+				$result['appType'] = $app_type;
+			}
+
+			if ( ! empty( $result ) ) {
+				$props = wp_json_encode( $result );
+			}
+
+			// Vite built apps have with react.
+			if ( ! $is_vite_app ) {
+				$react_urls = Script_Helpers::get_react_urls();
+
+				wp_print_script_tag(
+					array(
+						'crossorigin' => 'anonymous',
+						'src'         => $react_urls['react_url'],
+					)
+				);
+
+				wp_print_script_tag(
+					array(
+						'crossorigin' => 'anonymous',
+						'src'         => $react_urls['react_dom_url'],
+					)
+				);
+			}
+
+			$blocks_js = '' .
+				"window.wpo365 = window.wpo365 || {};\n" .
+				sprintf(
+					"window.wpo365.blocks = %s\n",
+					wp_json_encode(
+						array(
+							'nonce'  => \wp_create_nonce( 'wp_rest' ),
+							'apiUrl' => esc_url_raw( \trailingslashit( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'] ) ) . 'wp-json/wpo365/v1/graph',
+						)
+					)
+				);
+
+			if ( ! current_theme_supports( 'html5', 'script' ) || ! function_exists( 'wp_print_inline_script_tag' ) ) {
+				printf( "<script>%s</script>\n", $blocks_js ); // phpcs:ignore
+			} else {
+				wp_print_inline_script_tag( $blocks_js );
+			}
+
+			$elem_id   = uniqid();
+			$script_id = uniqid();
+			$app_id    = -1;
+
+			echo( '<div>' );
+			printf( '<div id="%s"></div>', sanitize_key( $elem_id ) );
+
+			$url = esc_url( $script_url );
+			$url = add_query_arg( 'scriptId', $script_id, $url );
+			$url = add_query_arg( 'rootId', $elem_id, $url );
+			$url = add_query_arg( 'appId', $app_id, $url );
+
+			$script_tag_atts = array(
+				'src'                 => $url,
+				'data-nonce'          => wp_create_nonce( 'wpo365_fx_nonce' ),
+				'data-wpajaxadminurl' => admin_url( 'admin-ajax.php' ),
+				'data-props'          => htmlspecialchars( $props ),
+				'id'                  => $script_id,
+			);
+
+			// Only apps built with vite are considered modules.
+			if ( $is_vite_app ) {
+				$script_tag_atts['type'] = 'module';
+			}
+
+			wp_print_script_tag( $script_tag_atts );
+
+			echo( '</div>' );
+
 			$content = ob_get_clean();
 			return wp_kses( $content, WordPress_Helpers::get_allowed_html() );
 		}

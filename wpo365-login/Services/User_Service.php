@@ -377,7 +377,7 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 			: $wpo_usr->preferred_username;
 			$wpo_usr->graph_resource = $graph_resource;
 
-			// Enrich -> Azure AD groups
+			// Enrich -> Entra ID groups
 			if ( \class_exists( '\Wpo\Services\User_Aad_Groups_Service' ) && \method_exists( '\Wpo\Services\User_Aad_Groups_Service', 'get_aad_groups' ) ) {
 				\Wpo\Services\User_Aad_Groups_Service::get_aad_groups( $wpo_usr );
 			}
@@ -733,7 +733,7 @@ if ( ! class_exists( '\Wpo\Services\User_Service' ) ) {
 		}
 
 		/**
-		 * Tries to retrieve a user's Azure AD object ID stored as user meta when the user last logged in.
+		 * Tries to retrieve a user's Entra ID object ID stored as user meta when the user last logged in.
 		 *
 		 * @since 12.10
 		 *

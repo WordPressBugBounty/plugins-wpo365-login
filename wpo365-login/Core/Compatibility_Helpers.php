@@ -73,7 +73,7 @@ if ( ! class_exists( '\Wpo\Core\Compatibility_Helpers' ) ) {
 			);
 
 			$compat_warning = sprintf(
-				'%s -> The administrator configured <em>Azure AD user attributes to WordPress user meta mappings</em> on the plugin\'s <strong>User sync</strong> page. These mappings have been recently upgraded to allow administrators to specify their own name for the usermeta key. This new feature, however, breaks existing functionality. To remain compatible you should update your premium WPO365 extension and optionally update the existing mappings.',
+				'%s -> The administrator configured <em>Entra ID user attributes to WordPress user meta mappings</em> on the plugin\'s <strong>User sync</strong> page. These mappings have been recently upgraded to allow administrators to specify their own name for the usermeta key. This new feature, however, breaks existing functionality. To remain compatible you should update your premium WPO365 extension and optionally update the existing mappings.',
 				__METHOD__
 			);
 

@@ -5,6 +5,7 @@ namespace Wpo\Graph;
 // Prevent public access to this script
 defined( 'ABSPATH' ) || die();
 
+use WP_Error;
 use Wpo\Core\Permissions_Helpers;
 use Wpo\Core\Url_Helpers;
 use Wpo\Core\WordPress_Helpers;
@@ -22,7 +23,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 		 * A transparant proxy for https://graph.microsoft.com/.
 		 *
 		 * Supported body parameters are:
-		 * - application (boolean)  -> when an access token emitted by the Azure AD app with static application permissions should be used.
+		 * - application (boolean)  -> when an access token emitted by the Entra ID app with static application permissions should be used.
 		 * - binary (boolean)       -> e.g. when retrieving a user's profile picture. The binary result will be an JSON structure with a "binary" member with a base64 encoded value.
 		 * - data (string)          -> Stringified JSON object (will only be sent if method equals post)
 		 * - headers (array)        -> e.g. {"ConsistencyLevel": "eventual"}
@@ -39,13 +40,13 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$body = $rest_request->get_json_params();
 
 			if ( empty( $endpoint ) || empty( $body ) || ! \is_array( $body ) || empty( $body['query'] ) ) {
-				return new \WP_Error( 'InvalidArgumentException', 'Body is malformed JSON or the request header did not define the Content-type as application/json.' );
+				return new \WP_Error( 'missing_argument', 'Body is malformed JSON or the request header did not define the Content-type as application/json.', array( 'status' => 400 ) );
 			}
 
 			$endpoint_config = self::validate_endpoint( $endpoint );
 
 			if ( is_wp_error( $endpoint_config ) ) {
-				Log_Service::write_log( 'WARN', sprintf( '%s -> Attempt to access %s has been blocked', __METHOD__, $endpoint ) );
+				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $endpoint_config->get_error_message() ) );
 				return $endpoint_config;
 			}
 
@@ -60,18 +61,21 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$result = Graph_Service::fetch( $query, $method, $binary, $headers, $use_delegated, false, $data, $scope );
 
 			if ( \is_wp_error( $result ) ) {
-				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Could not fetch data from Microsoft Graph [' . $result->get_error_message() . '].' );
-				return new \WP_Error( 'GraphFetchError', $result->get_error_message(), array( 'status' => 500 ) );
-			}
-
-			if ( empty( $result ) ) {
-				return new \WP_Error( 'GraphNoContent', 'Your request to Microsoft Graph returned an empty result.', array( 'status' => 204 ) );
+				Log_Service::write_log( 'ERROR', sprintf( '%s -> Failed to fetch from Microsoft Graph. [Error: %s]', __METHOD__, $result->get_error_message() ) );
+				return new \WP_Error( 'fetch_error', $result->get_error_message(), array( 'status' => 500 ) );
 			}
 
 			if ( $result['response_code'] < 200 || $result['response_code'] > 299 ) {
 				$json_encoded_result = wp_json_encode( $result );
-				Log_Service::write_log( 'WARN', __METHOD__ . ' -> Could not fetch data from Microsoft Graph [' . $json_encoded_result . '].' );
-				return new \WP_Error( 'GraphFetchError', 'Your request to Microsoft Graph returned an invalid HTTP response code [' . $json_encoded_result . '].', array( 'status' => $result['response_code'] ) );
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Failed to fetch from Microsoft Graph. [Raw: %s]', __METHOD__, $json_encoded_result ) );
+				return new \WP_Error(
+					'fetch_error',
+					sprintf( 'Failed to fetch from Microsoft Graph. [Status: %d]', $result['response_code'] ),
+					array(
+						'status' => $result['response_code'],
+						'raw'    => $json_encoded_result,
+					)
+				);
 			}
 
 			if ( $binary ) {
@@ -95,14 +99,14 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$body = $rest_request->get_json_params();
 
 			if ( empty( $body ) || ! \is_array( $body ) || empty( $body['url'] ) || empty( $body['scope'] ) ) {
-				return new \WP_Error( 'InvalidArgumentException', 'Body is malformed JSON or the request header did not define the Content-type as application/json.' );
+				return new \WP_Error( 'missing_argument', 'Body is malformed JSON or the request header did not define the Content-type as application/json.', array( 'status' => 400 ) );
 			}
 
 			$url             = ! empty( $body['url'] ) ? sanitize_text_field( urldecode( $body['url'] ) ) : '';
 			$endpoint_config = self::validate_endpoint( $url );
 
 			if ( is_wp_error( $endpoint_config ) ) {
-				Log_Service::write_log( 'WARN', sprintf( '%s -> Attempt to access %s has been blocked', __METHOD__, $url ) );
+				Log_Service::write_log( 'WARN', $endpoint_config->get_error_message() );
 				return $endpoint_config;
 			}
 
@@ -165,9 +169,8 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 				: Access_Token_Service::get_access_token( $scope );
 
 			if ( is_wp_error( $access_token ) ) {
-				$warning = 'Could not retrieve an access token for (scope|url) ' . $scope . '|' . $url . '.  Error details: ' . $access_token->get_error_message();
-				Log_Service::write_log( 'WARN', __METHOD__ . ' -> ' . $warning );
-				return new \WP_Error( 'ProxyFetchError', $warning );
+				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $access_token->get_error_message() ) );
+				return new \WP_Error( 'not_authorized', $access_token->get_error_message(), array( 'status' => 403 ) );
 			}
 
 			$headers['Authorization'] = sprintf( 'Bearer %s', $access_token->access_token );
@@ -178,8 +181,6 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			}
 
 			$skip_ssl_verify = ! Options_Service::get_global_boolean_var( 'skip_host_verification' );
-
-			Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Fetching from ' . $url );
 
 			if ( WordPress_Helpers::stripos( $method, 'GET' ) === 0 ) {
 				$response = wp_remote_get(
@@ -199,46 +200,202 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 					)
 				);
 			} else {
-				return new \WP_Error( 'NotImplementedException', 'Error occured whilst fetching from ' . $url . ':  Method ' . $method . ' not implemented' );
+				return new \WP_Error(
+					'not_implemented',
+					sprintf(
+						'Failed to fetch from %s. [Error: Method %s not implemented]',
+						$url,
+						$method
+					),
+					array( 'status' => 500 )
+				);
 			}
 
 			if ( is_wp_error( $response ) ) {
-				$warning = 'Error occured whilst fetching from ' . $url . ': ' . $response->get_error_message();
-				Log_Service::write_log( 'WARN', __METHOD__ . " -> $warning" );
-				return new \WP_Error( 'ProxyFetchError', $warning );
+				$warning = sprintf(
+					'Failed to fetch from %s. [Error: %s]',
+					$url,
+					$response->get_error_message()
+				);
+				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $warning ) );
+				return new \WP_Error( 'fetch_error', $warning );
 			}
 
 			$body   = wp_remote_retrieve_body( $response );
 			$status = wp_remote_retrieve_response_code( $response );
 
 			if ( $status < 200 || $status > 299 ) {
-				$warning = sprintf(
-					'Error occured whilst fetching from Microsoft Graph: HTTP STATUS %d%s',
-					intval( $status ),
-					! empty( $body ) ? " [$body]" : ''
-				);
+				$warning = sprintf( 'Failed to fetch from Microsoft Graph. [Status: %d]', $status );
 				Log_Service::write_log(
 					'WARN',
 					sprintf( '%s -> %s', __METHOD__, $warning )
 				);
-				return new \WP_Error( 'ProxyFetchError', $warning );
+				return new \WP_Error(
+					'fetch_error',
+					$warning,
+					array(
+						'status' => $status,
+						'raw'    => $body,
+					)
+				);
 			}
 
 			if ( $binary ) {
 				return array( 'binary' => \base64_encode( $body ) ); // phpcs:ignore
 			}
 
-			json_decode( $body );
+			$json       = json_decode( $body );
 			$json_error = json_last_error();
 
 			if ( $json_error === JSON_ERROR_NONE ) {
-				return $body;
+				return $json;
 			}
 
-			Log_Service::write_log( 'WARN', sprintf( '%s -> Error occured whilst converting to JSON: %d [See next line for raw response]', __METHOD__, $json_error ) );
-			Log_Service::write_log( 'DEBUG', $body );
+			Log_Service::write_log( 'WARN', sprintf( '%s -> Failed to convert to JSON: %d', __METHOD__, $json_error ) );
 
-			return new \WP_Error( 'ProxyFetchError', sprintf( 'Error occurred whilst converting to JSON: %d', $json_error ) );
+			return new \WP_Error(
+				'json_error',
+				sprintf( 'Error occurred whilst converting to JSON: %d', $json_error ),
+				array(
+					'status' => 500,
+					'raw'    => $body,
+				)
+			);
+		}
+
+		/**
+		 * Used execute a Microsoft Graph batch-request.
+		 *
+		 * @since 40.0
+		 *
+		 * @return array|WP_Error
+		 */
+		public static function batch( $rest_request ) {
+			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
+
+			$body = $rest_request->get_json_params();
+
+			if ( empty( $body ) || ! \is_array( $body ) || ! isset( $body['data'] ) || ! is_array( $body['data']['requests'] ) || empty( $body['scope'] ) ) {
+				return new \WP_Error( 'missing_argument', 'Body is malformed JSON or the request header did not define the Content-type as application/json.', array( 'status' => 400 ) );
+			}
+
+			$data = array( 'requests' => array() );
+
+			foreach ( $body['data']['requests'] as $batch_request ) {
+				$url             = sanitize_text_field( urldecode( $batch_request['url'] ) );
+				$endpoint_config = self::validate_endpoint( $url );
+
+				if ( is_wp_error( $endpoint_config ) ) {
+					Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $endpoint_config->get_error_message() ) );
+					return $endpoint_config;
+				}
+
+				if ( ! isset( $batch_request['id'] ) || ! isset( $batch_request['method'] ) ) {
+					$message = 'Required batch-request-body properties [id, method] not found.';
+					Log_Service::write_log( 'ERROR', sprintf( '%s -> %s', __METHOD__, $message ) );
+					return new WP_Error( 'missing_argument', $message, array( 'status' => 400 ) );
+				}
+
+				$data['requests'][] = (object) $batch_request;
+			}
+
+			$binary        = ! empty( $body['binary'] ) ? filter_var( $body['binary'], FILTER_VALIDATE_BOOLEAN ) : false;
+			$application   = ! empty( $body['application'] ) ? filter_var( $body['application'], FILTER_VALIDATE_BOOLEAN ) : false;
+			$headers       = ! empty( $body['headers'] ) && \is_array( $body['headers'] ) ? $body['headers'] : array();
+			$scope         = sanitize_text_field( urldecode( $body['scope'] ) );
+			$graph_version = Options_Service::get_global_string_var( 'graph_version' );
+			$graph_version = empty( $graph_version ) || $graph_version === 'current'
+				? 'v1.0'
+				: 'beta';
+			$url           = sprintf( 'https://graph.microsoft.com/%s/$batch', $graph_version );
+
+			if ( $application ) {
+				$scope_host     = WordPress_Helpers::stripos( $scope, 'https://' ) !== false ? wp_parse_url( $scope, PHP_URL_HOST ) : 'graph.microsoft.com';
+				$tld            = Options_Service::get_aad_option( 'tld' );
+				$tld            = ! empty( $tld ) ? $tld : '.com';
+				$scope_host     = str_replace( '.com', $tld, $scope_host );
+				$app_only_scope = "https://$scope_host/.default";
+				$scope_segments = explode( '/', $scope );
+				$role           = array_pop( $scope_segments );
+			}
+
+			$access_token = $application
+				? Access_Token_Service::get_app_only_access_token( $app_only_scope, $role )
+				: Access_Token_Service::get_access_token( $scope );
+
+			if ( is_wp_error( $access_token ) ) {
+				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $access_token->get_error_message() ) );
+				return new \WP_Error( 'not_authorized', $access_token->get_access_token(), array( 'status' => 403 ) );
+			}
+
+			$headers['Authorization'] = sprintf( 'Bearer %s', $access_token->access_token );
+			$headers['Expect']        = '';
+			$headers['Accept']        = 'application/json';
+			$headers['Content-Type']  = 'application/json';
+
+			$skip_ssl_verify = ! Options_Service::get_global_boolean_var( 'skip_host_verification' );
+
+			Log_Service::write_log( 'DEBUG', sprintf( '%s -> Fetching from %s', __METHOD__, $url ) );
+
+			$response = wp_remote_post(
+				$url,
+				array(
+					'body'      => wp_json_encode( $data ),
+					'headers'   => $headers,
+					'sslverify' => $skip_ssl_verify,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				$warning = sprintf(
+					'Failed to fetch from %s. [Error: %s]',
+					$url,
+					$response->get_error_message()
+				);
+				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $warning ) );
+				return new \WP_Error( 'fetch_error', $warning );
+			}
+
+			$body   = wp_remote_retrieve_body( $response );
+			$status = wp_remote_retrieve_response_code( $response );
+
+			if ( $status < 200 || $status > 299 ) {
+				$warning = sprintf( 'Failed to fetch from Microsoft Graph. [Status: %d]', $status );
+				Log_Service::write_log(
+					'WARN',
+					sprintf( '%s -> %s', __METHOD__, $warning )
+				);
+				return new \WP_Error(
+					'fetch_error',
+					$warning,
+					array(
+						'status' => $status,
+						'raw'    => $body,
+					)
+				);
+			}
+
+			if ( $binary ) {
+				return array( 'binary' => \base64_encode( $body ) ); // phpcs:ignore
+			}
+
+			$json       = json_decode( $body, true );
+			$json_error = json_last_error();
+
+			if ( $json_error === JSON_ERROR_NONE && isset( $json['responses'] ) ) {
+				return $json;
+			}
+
+			Log_Service::write_log( 'WARN', sprintf( '%s -> Failed to convert to JSON: %d', __METHOD__, $json_error ) );
+
+			return new \WP_Error(
+				'json_error',
+				sprintf( 'Error occurred whilst converting to JSON: %d', $json_error ),
+				array(
+					'status' => 500,
+					'raw'    => $body,
+				)
+			);
 		}
 
 		/**
@@ -254,7 +411,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$body = $rest_request->get_json_params();
 
 			if ( empty( $body ) || ! \is_array( $body ) || empty( $body['scope'] ) ) {
-				return new \WP_Error( 'InvalidArgumentException', 'Body is malformed JSON or the request header did not define the Content-type as application/json.' );
+				return new \WP_Error( 'missing_argument', 'Body is malformed JSON or the request header did not define the Content-type as application/json.', array( 'status' => 400 ) );
 			}
 
 			$scope = sanitize_text_field( urldecode( $body['scope'] ) );
@@ -263,14 +420,149 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$access_token = Access_Token_Service::get_access_token( $scope );
 
 			if ( is_wp_error( $access_token ) ) {
-				$warning = 'Could not retrieve an access token for (scope) ' . $scope . '; Error details: ' . $access_token->get_error_message();
-				Log_Service::write_log( 'WARN', __METHOD__ . ' -> ' . $warning );
-				return new \WP_Error( 'TokenFetchError', $warning );
+				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $access_token->get_error_message() ) );
+				return new \WP_Error( 'not_authorized', $access_token->get_access_token(), array( 'status' => 403 ) );
 			}
 
 			return array(
 				'access_token' => $access_token->access_token,
 				'scope'        => $scope,
+			);
+		}
+
+		/**
+		 * Upload a file (to SharePoint using Microsoft Graph).
+		 *
+		 * @since 39.0
+		 *
+		 * @return array|WP_Error
+		 */
+		public static function file() {
+			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
+
+			$file = isset( $_FILES['data'] ) ? $_FILES['data'] : null; // phpcs:ignore
+
+			if ( empty( $file ) || $file['error'] !== UPLOAD_ERR_OK ) {
+				return new WP_Error( 'no_file', sprintf( '%s -> No file was uploaded or upload failed.' ), array( 'status' => 400 ) );
+			}
+
+			$max_file_size = 1024 * 1024 * 3; // 3MB
+
+			if ( $file['size'] > $max_file_size ) {
+				return new WP_Error( 'file_size_error', sprintf( '%s -> File exceeds maximum size of 3 MB.' ), array( 'status' => 413 ) );
+			}
+
+			$file_name   = sanitize_file_name( $file['name'] );
+			$file_path   = $file['tmp_name'];
+			$file_type   = isset( $file['type'] ) ? $file['type'] : 'application/octet-stream';
+			$url         = isset( $_POST['url'] ) ? sanitize_text_field( urldecode( $_POST['url'] ) ) : ''; // phpcs:ignore
+			$application = isset( $_POST['application'] ) ? filter_var( wp_unslash( $_POST['application'] ), FILTER_VALIDATE_BOOLEAN ) : false; // phpcs:ignore
+			$scope       = isset( $_POST['scope'] ) ? sanitize_text_field( urldecode( $_POST['scope'] ) ) : ''; // phpcs:ignore
+
+			if ( $application ) {
+				$scope_host     = WordPress_Helpers::stripos( $scope, 'https://' ) !== false ? wp_parse_url( $scope, PHP_URL_HOST ) : 'graph.microsoft.com';
+				$tld            = Options_Service::get_aad_option( 'tld' );
+				$tld            = ! empty( $tld ) ? $tld : '.com';
+				$scope_host     = str_replace( '.com', $tld, $scope_host );
+				$app_only_scope = "https://$scope_host/.default";
+				$scope_segments = explode( '/', $scope );
+				$role           = array_pop( $scope_segments );
+			}
+
+			if ( empty( $file_name ) || empty( $file_path ) || empty( $file_type ) ) {
+				return new \WP_Error( 'missing_argument', 'Cannot upload file. [Error: Mandatory file attributes not found]', array( 'status' => 400 ) );
+			}
+
+			if ( empty( $url ) || empty( $scope ) ) {
+				return new \WP_Error( 'missing_argument', 'Cannot upload file. [Error: Mandatory MS Graph parameters are missing]', array( 'status' => 400 ) );
+			}
+
+			$access_token = $application
+				? Access_Token_Service::get_app_only_access_token( $app_only_scope, $role )
+				: Access_Token_Service::get_access_token( $scope );
+
+			if ( is_wp_error( $access_token ) ) {
+				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $access_token->get_error_message() ) );
+				return new \WP_Error( 'not_authorized', $access_token->get_error_message(), array( 'status' => 403 ) );
+			}
+
+			$headers['Authorization'] = sprintf( 'Bearer %s', $access_token->access_token );
+			$headers['Expect']        = '';
+			$headers['Content-Type']  = $file_type;
+			$skip_ssl_verify          = ! Options_Service::get_global_boolean_var( 'skip_host_verification' );
+
+			if ( ! function_exists( 'WP_Filesystem' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+
+			WP_Filesystem();
+			global $wp_filesystem;
+
+			$upload_file_contents = $wp_filesystem->get_contents( $file_path );
+
+			if ( ! $upload_file_contents ) {
+				$warning = sprintf( '%s -> Uploaded file not found or failed to read. [Path: %s]', __METHOD__, $file_path );
+				Log_Service::write_log( 'ERROR', $warning );
+				return new \WP_Error( 'file_not_found', $warning, array( 'status' => 500 ) );
+			}
+
+			Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Fetching from ' . $url );
+
+			$response = wp_remote_request(
+				$url,
+				array(
+					'method'    => 'PUT',
+					'body'      => $upload_file_contents,
+					'headers'   => $headers,
+					'sslverify' => $skip_ssl_verify,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				$warning = sprintf(
+					'Failed to fetch from %s. [Error: %s]',
+					$url,
+					$response->get_error_message()
+				);
+				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $warning ) );
+				return new \WP_Error( 'fetch_error', $warning );
+			}
+
+			$body   = wp_remote_retrieve_body( $response );
+			$status = wp_remote_retrieve_response_code( $response );
+
+			if ( $status < 200 || $status > 299 ) {
+				$warning = sprintf( 'Failed to fetch from Microsoft Graph. [Status: %d]', $status );
+				Log_Service::write_log(
+					'WARN',
+					sprintf( '%s -> %s', __METHOD__, $warning )
+				);
+				return new \WP_Error(
+					'fetch_error',
+					$warning,
+					array(
+						'status' => $status,
+						'raw'    => $body,
+					)
+				);
+			}
+
+			$json       = json_decode( $body, true );
+			$json_error = json_last_error();
+
+			if ( $json_error === JSON_ERROR_NONE ) {
+				return $json;
+			}
+
+			Log_Service::write_log( 'WARN', sprintf( '%s -> Failed to convert to JSON: %d', __METHOD__, $json_error ) );
+
+			return new \WP_Error(
+				'json_error',
+				sprintf( 'Error occurred whilst converting to JSON: %d', $json_error ),
+				array(
+					'status' => 500,
+					'raw'    => $body,
+				)
 			);
 		}
 
@@ -313,7 +605,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 					}
 				}
 
-				return new \WP_Error( 'ForbiddenException', sprintf( 'This type of request is not allowed [endpoint %s]. Go to WP Admin > WPO365 > Integration and add the endpoint to the list of \'Allowed endpoints\' in the section \'Microsoft 365 Apps\'.', $endpoint ), array( 'status' => 403 ) );
+				return new \WP_Error( 'not_authorized', sprintf( 'The endpoint "%s" is not allow-listed. Go to WP Admin > WPO365 > Integration and add the endpoint to the list of \'Allowed endpoints\' in the section \'Microsoft 365 Apps\'.', $endpoint ), array( 'status' => 403 ) );
 			}
 		}
 	}

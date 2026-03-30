@@ -69,7 +69,7 @@ if ( ! class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
 				}
 
 				$query  = sprintf( '/applications?$filter=appId eq \'%s\'&$select=passwordCredentials', $secret['id'] );
-				$result = Graph_Service::fetch( $query, 'GET', 'false', array(), false, false, '', 'Application.Read.All', 'DEBUG' );
+				$result = Graph_Service::fetch( $query, 'GET', false, array(), false, false, '', 'Application.Read.All', 'DEBUG' );
 
 				if ( \is_wp_error( $result ) ) {
 					$warning = $result->get_error_message();
@@ -82,7 +82,7 @@ if ( ! class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
 
 					if ( WordPress_Helpers::stripos( $warning, 'does not has the role requested' ) ) {
 						$app_only_app_id = Options_Service::get_aad_option( 'app_only_application_id' );
-						Log_Service::write_log( 'WARN', sprintf( '%s -> WPO365 cannot check if secrets for your App registration(s) in Azure Active Directory will expire soon because you did not configure application permissions for Application.Read.All (in Azure AD on the API Permissions page for the App registration with ID %s). See https://www.wpo365.com/article/client-secret-expiration-notification/ for details.', __METHOD__, $app_only_app_id ) );
+						Log_Service::write_log( 'WARN', sprintf( '%s -> WPO365 cannot check if secrets for your App registration(s) in Azure Active Directory will expire soon because you did not configure application permissions for Application.Read.All (in Entra ID on the API Permissions page for the App registration with ID %s). See https://www.wpo365.com/article/client-secret-expiration-notification/ for details.', __METHOD__, $app_only_app_id ) );
 						break;
 					}
 
@@ -115,7 +115,7 @@ if ( ! class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
 									Log_Service::write_log(
 										'ERROR',
 										sprintf(
-											'%s -> The Application (client) secret (hint: %s***) for the Azure AD App registration with ID %s will expire on %s. After this date WPO365 may no longer work as expected and - for example - you may not be able to sign in with Microsoft anymore. Please update this secret as soon as possible!',
+											'%s -> The Application (client) secret (hint: %s***) for the Entra ID App registration with ID %s will expire on %s. After this date WPO365 may no longer work as expected and - for example - you may not be able to sign in with Microsoft anymore. Please update this secret as soon as possible!',
 											__METHOD__,
 											$credential['hint'],
 											$secret['id'],
@@ -172,12 +172,12 @@ if ( ! class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
 			$message  = sprintf(
 				'<p>Dear website administrator</p>
                 <p>The <strong>Application (client) secret</strong> (hint: <strong>%s***</strong>) 
-                for the <em>Azure AD App registration</em> with ID <strong>%s</strong> will expire 
+                for the <em>Entra ID App registration</em> with ID <strong>%s</strong> will expire 
                 on <strong>%s</strong>. After this date, WPO365 may no longer work as expected and 
                 - for example - your users may not be able to sign in with Microsoft anymore.</p>
                 <p>Please update this secret as soon as possible!</p>
                 <p>Marco van Wieren, Downloads by van Wieren</p>
-                <p><strong>WPO365</strong> - Connecting WordPress and Microsoft Entra | AAD | 365</p>
+                <p><strong>WPO365</strong> - Connecting WordPress and Microsoft Entra | Azure | 365</p>
                 <p>Zurich, Switzerland</p>
                 <p>l https://www.linkedin.com/company/downloads-by-van-wieren</p>
                 <p>w https://www.wpo365.com</p>

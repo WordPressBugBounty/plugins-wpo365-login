@@ -7,7 +7,6 @@ use Wpo\Core\WordPress_Helpers;
 use Wpo\Core\Wpmu_Helpers;
 use Wpo\Services\Log_Service;
 use Wpo\Services\Request_Service;
-use Wpo\Services\Saml2_Service;
 use Wpo\Services\Wp_Config_Service;
 
 // Prevent public access to this script
@@ -324,7 +323,6 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 			$options          = $GLOBALS['WPO_CONFIG']['options'];
 			$options[ $name ] = $value;
 			ksort( $options );
-			$GLOBALS['WPO_CONFIG']['options'] = $options;
 
 			if ( self::mu_use_subsite_options() && ! Wpmu_Helpers::mu_is_network_admin() ) {
 				update_option( 'wpo365_options', $options );
@@ -332,6 +330,14 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 				// For non-multisite installs, it uses get_option.
 				update_site_option( 'wpo365_options', $options );
 			}
+
+			unset( $GLOBALS['WPO_CONFIG']['options'] );
+
+			$request_service = Request_Service::get_instance();
+			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+			$request->remove_item( 'wpo_aad' );
+
+			self::ensure_options_cache();
 		}
 
 		/**
@@ -368,7 +374,7 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 
 			if ( self::get_global_boolean_var( 'use_saml' ) === true ) {
 
-				if ( ! Saml2_Service::saml_settings( true ) ) {
+				if ( class_exists( '\Wpo\Services\Saml2_Service' ) && ! \Wpo\Services\Saml2_Service::saml_settings( true ) ) {
 					$is_wpo365_configured = 0;
 					Log_Service::write_log( 'WARN', __METHOD__ . ' -> WPO365 is not configured -> SAML settings are invalid.' );
 				}
@@ -432,7 +438,7 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 			$default_value = $return_bool ? false : '';
 
 			if ( $wpo_aad === false ) {
-				Log_Service::write_log( 'ERROR', '[WPOOSGAO10] -> The AAD options have not been cached' );
+				Log_Service::write_log( 'ERROR', '[WPOOSGAO10] -> The Entra ID options have not been cached' );
 				return $default_value;
 			}
 

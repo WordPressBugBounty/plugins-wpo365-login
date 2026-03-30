@@ -19,9 +19,9 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service_Ciam' ) ) {
 
 
 		/**
-		 * Constructs the Azure AD CIAM oauth authorize URL that is the end point where the user will be sent for authorization.
+		 * Constructs the Entra ID CIAM oauth authorize URL that is the end point where the user will be sent for authorization.
 		 *
-		 * @since 24.0 Added Azure AD Customer IAM (CIAM) support.
+		 * @since 24.0 Added Entra ID Customer IAM (CIAM) support.
 		 *
 		 * @param string $login_hint Login hint that will be added to Open Connect ID link.
 		 *

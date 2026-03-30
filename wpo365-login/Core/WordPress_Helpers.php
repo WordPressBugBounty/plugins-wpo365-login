@@ -269,5 +269,26 @@ if ( ! class_exists( '\Wpo\Core\WordPress_Helpers' ) ) {
 
 			return $date_time->format( $format );
 		}
+
+		/**
+		 * Mimics the PHP 8.0 array_is_list method to check if an array is a simple list of values.
+		 *
+		 * @since 41.0
+		 *
+		 * @param mixed $arr
+		 *
+		 * @return bool
+		 */
+		public static function array_is_list_polyfill( $arr ) {
+			$i = 0;
+
+			foreach ( array_keys( $arr ) as $key ) {
+				if ( $key !== $i++ ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
 	}
 }

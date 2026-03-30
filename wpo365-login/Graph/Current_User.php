@@ -14,7 +14,7 @@ if ( ! class_exists( '\Wpo\Graph\Current_User' ) ) {
 
 
 		/**
-		 * Returns basic information for the current user incl. the user's (Azure AD) UPN and Object ID.
+		 * Returns basic information for the current user incl. the user's (Entra ID) UPN and Object ID.
 		 *
 		 * @since 13.0
 		 *

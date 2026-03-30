@@ -33,11 +33,11 @@ if ( ! class_exists( '\Wpo\Tests\Test_Configuration' ) ) {
 
 			if ( empty( $tenant_id ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "Tenant ID is not configured. If you only plan to enable the <strong>Mail</strong> feature then you can safely ignore this eror. Otherwise, please copy the 'Directory (tenant) ID' from your Azure AD App registration's 'Overview' page and paste it into the corresponding field on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
+				$test_result->message   = "Tenant ID is not configured. If you only plan to enable the <strong>Mail</strong> feature then you can safely ignore this eror. Otherwise, please copy the 'Directory (tenant) ID' from your Entra ID App registration's 'Overview' page and paste it into the corresponding field on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			} elseif ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/', $tenant_id ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "Tenant ID is not a valid GUID but required for all supported features. Please copy the 'Directory (tenant) ID' from your Azure AD App registration's 'Overview' page and paste it into the corresponding field on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
+				$test_result->message   = "Tenant ID is not a valid GUID but required for all supported features. Please copy the 'Directory (tenant) ID' from your Entra ID App registration's 'Overview' page and paste it into the corresponding field on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			}
 
@@ -63,7 +63,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Configuration' ) ) {
 
 			if ( $is_optimized && ( empty( $redirect_url ) || WordPress_Helpers::stripos( $redirect_url, '/wp-admin' ) === false ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "Since you configured <i>define( 'WPO_AUTH_SCENARIO', 'internet' );</i> you must ensure that the Redirect URI ends with '/wp-admin/'. Please update the Redirect URI first in <strong>Azure AD</strong> for your <i>App registration</i> and then subsequently on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
+				$test_result->message   = "Since you configured <i>define( 'WPO_AUTH_SCENARIO', 'internet' );</i> you must ensure that the Redirect URI ends with '/wp-admin/'. Please update the Redirect URI first in <strong>Entra ID</strong> for your <i>App registration</i> and then subsequently on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/36-authentication-scenario';
 			}
 
@@ -94,7 +94,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Configuration' ) ) {
 
 			if ( WordPress_Helpers::stripos( $aad_redirect_url, 'http://' ) === 0 && WordPress_Helpers::stripos( $aad_redirect_url, 'localhost' ) === false ) {
 				$test_result->passed    = false;
-				$test_result->message   = '(Azure AD) Redirect URL must start with https://. Navigate to <a href="#singleSignOn">Single Sign-on</a> and update the Redirect URL and make sure that the Redirect URI that you entered for your Azure AD App registration also starts with https://. If your website does not support SSL then please purchase an SSL certificate and configure this for your website. You can only use an insecure website address for development purposes that use "localhost".';
+				$test_result->message   = '(Entra ID) Redirect URL must start with https://. Navigate to <a href="#singleSignOn">Single Sign-on</a> and update the Redirect URL and make sure that the Redirect URI that you entered for your Entra ID App registration also starts with https://. If your website does not support SSL then please purchase an SSL certificate and configure this for your website. You can only use an insecure website address for development purposes that use "localhost".';
 				$test_result->more_info = '';
 			}
 
@@ -127,7 +127,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Configuration' ) ) {
 
 			if ( empty( $domain_hint_custom_domain ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = 'Domain hint must be present in the list of <em>Custom domains</em> on the plugin\'s <a href="#userRegistration">User registration</a> configuration page (and thus present in the list of <a href="https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/Domains" target="_blank">custom domains added to Azure AD</a>).';
+				$test_result->message   = 'Domain hint must be present in the list of <em>Custom domains</em> on the plugin\'s <a href="#userRegistration">User registration</a> configuration page (and thus present in the list of <a href="https://entra.microsoft.com/#view/Microsoft_AAD_IAM/DomainsManagementMenuBlade/~/CustomDomainNames" target="_blank">custom domains added to Entra ID</a>).';
 				$test_result->more_info = 'https://docs.wpo365.com/article/35-domain-hint';
 			}
 
@@ -147,7 +147,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Configuration' ) ) {
 
 			if ( empty( $custom_domain ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "You have not configured at least one custom domain. Please check your <a href=\"https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/Domains\" target=\"_blank\">Custom domain names</a> in Azure Portal and add the domain names on the plugin's <a href=\"#userRegistration\">User registration</a> page accordingly. Please press '+' after each entry to add the custom domain name to the list.";
+				$test_result->message   = "You have not configured at least one custom domain. Please check your <a href=\"https://entra.microsoft.com/#view/Microsoft_AAD_IAM/DomainsManagementMenuBlade/~/CustomDomainNames\" target=\"_blank\">Custom domain names</a> in Entra Portal and add the domain names on the plugin's <a href=\"#userRegistration\">User registration</a> page accordingly. Please press '+' after each entry to add the custom domain name to the list.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/48-custom-domains';
 				return $test_result;
 			}

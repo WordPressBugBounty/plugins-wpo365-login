@@ -17,6 +17,8 @@ return array(
     'Wpo\\Firebase\\' => array($baseDir . '/Firebase/JWT'),
     'Wpo\\Core\\' => array($baseDir . '/Core'),
     'Wpo\\Blocks\\' => array($baseDir . '/Blocks'),
+    'Wpo\\Apps365\\Api\\' => array($baseDir . '/apps365/api'),
+    'Wpo\\Apps365\\' => array($baseDir . '/apps365'),
     'Wpo\\' => array($baseDir . '/'),
     'ParagonIE\\ConstantTime\\' => array($vendorDir . '/paragonie/constant_time_encoding/src'),
 );

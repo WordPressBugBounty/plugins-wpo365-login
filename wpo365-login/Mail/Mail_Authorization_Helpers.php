@@ -355,7 +355,7 @@ if ( ! class_exists( '\Wpo\Mail\Mail_Authorization_Helpers' ) ) {
 
 			if ( Options_Service::get_global_boolean_var( 'use_wp_config' ) ) {
 				$message = sprintf(
-					'%s -> Cannot migrate app-principal information from mail-integration-365 to WPO365 because the Administrator has choosen to store Azure AD secrets in the wp-config.php file',
+					'%s -> Cannot migrate app-principal information from mail-integration-365 to WPO365 because the Administrator has choosen to store Entra ID secrets in the wp-config.php file',
 					__METHOD__
 				);
 				Log_Service::write_log( 'WARN', $message );
@@ -495,7 +495,7 @@ if ( ! class_exists( '\Wpo\Mail\Mail_Authorization_Helpers' ) ) {
 				return new \WP_Error(
 					'MailAuthRefreshTokenNotFound',
 					sprintf(
-						'%s -> The mail authorization object does not provide a refresh token and therefore the WPO365 plugin cannot refresh the access token to send email using Microsoft Graph. Most likely the administrator has not consented the "offline_access" permission for the Azure AD App registration with ID %s.',
+						'%s -> The mail authorization object does not provide a refresh token and therefore the WPO365 plugin cannot refresh the access token to send email using Microsoft Graph. Most likely the administrator has not consented the "offline_access" permission for the Entra ID App registration with ID %s.',
 						__METHOD__,
 						Options_Service::get_aad_option( 'application_id' )
 					)

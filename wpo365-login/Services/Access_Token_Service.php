@@ -63,7 +63,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 			}
 
 			if ( empty( $current_user_id ) && ! $user_is_logging_in ) {
-				$warning = 'Cannot retrieve an access token for scope ' . $scope . ' when no logged-on user is detected and the use of an app-only access token has not been configured. See <a href="https://docs.wpo365.com/article/23-integrationn" target="_blank">https://docs.wpo365.com/article/23-integration</a> for more information.';
+				$warning = 'Cannot retrieve an access token for scope ' . $scope . ' when no logged-on user is detected and the use of an app-only access token has not been configured. See <a href="https://tutorials.wpo365.com/courses/integration-application-permissions/" target="_blank">https://tutorials.wpo365.com/courses/integration-application-permissions/</a> for more information.';
 				Log_Service::write_log( 'WARN', __METHOD__ . " -> $warning" );
 
 				$access_token_errors   = $request->get_item( 'access_token_errors' );
@@ -83,7 +83,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 			if ( empty( $client_secret ) ) {
 				$warning = 'Cannot retrieve an access token for scope ' . $scope . ' because the Administrator 
                     has not configured a client secret. Please check the 
-                    <a href="https://docs.wpo365.com/article/23-integration" target="_blank">documentation</a> 
+                    <a href="https://tutorials.wpo365.com/courses/integration-application-permissions/" target="_blank">documentation</a> 
                     for detailed step-by-step instructions on how to configure integration with Microsoft Graph and
                     other 365 services';
 				Log_Service::write_log( 'WARN', __METHOD__ . " -> $warning" );
@@ -133,9 +133,9 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
                             for ' . $scope . '. The current user must sign out of the WordPress website and log back in again to 
                             retrieve a fresh authorization code that can be used in exchange for access tokens. If
                             this error occurs regularly, then please check the 
-                            <a href="https://docs.wpo365.com/article/23-integration" target="_blank">documentation</a> 
-                            for detailed step-by-step instructions on how to configure integration with Microsoft Graph and
-                            other 365 services.';
+                            <a href="https://tutorials.wpo365.com/courses/single-sign-on-openid-connect/" target="_blank">documentation</a> 
+                            for detailed step-by-step instructions on how to configure OpenID Connnect based SSO so that WPO365 can retrieve
+														an access token on behalf of the logged-in user.';
 					Log_Service::write_log( 'WARN', __METHOD__ . " -> $warning" );
 
 					$access_token_errors   = $request->get_item( 'access_token_errors' );
@@ -440,7 +440,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 		public static function get_app_only_access_token( $scope = 'https://graph.microsoft.com/.default', $role = null, $use_mail_config = false, $level = 'WARN' ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
-			$tld   = Options_Service::get_aad_option( 'tld' );
+			$tld   = $use_mail_config ? Options_Service::get_mail_option( 'mail_tld' ) : Options_Service::get_aad_option( 'tld' );
 			$tld   = empty( $tld ) ? '.com' : $tld;
 			$scope = str_replace( '.com', $tld, $scope );
 
@@ -537,8 +537,6 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 
 			Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Requesting app-only access token' );
 
-			$tld             = Options_Service::get_aad_option( 'tld' );
-			$tld             = empty( $tld ) ? '.com' : $tld;
 			$authorize_url   = sprintf(
 				'https://login.microsoftonline%s/%s/oauth2/v2.0/token',
 				$tld,

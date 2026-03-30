@@ -47,7 +47,7 @@ if ( ! class_exists( '\Wpo\Services\Saml2_Service' ) ) {
 				Log_Service::write_log(
 					'ERROR',
 					sprintf(
-						'%s ->  Cannot continue sending the user to Microsoft to authenticate [Error: Entra ID / AAD options not cached]',
+						'%s ->  Cannot continue sending the user to Microsoft to authenticate [Error: Entra ID options not cached]',
 						__METHOD__
 					)
 				);

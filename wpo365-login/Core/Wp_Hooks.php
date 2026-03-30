@@ -240,6 +240,7 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 			add_action( 'init', 'Wpo\Core\Shortcode_Helpers::ensure_login_button_short_code_V2' );
 			add_action( 'init', 'Wpo\Core\Shortcode_Helpers::ensure_wpo365_redirect_script_sc' );
 			add_action( 'init', 'Wpo\Core\Shortcode_Helpers::ensure_sso_button_sc' );
+			add_action( 'init', 'Wpo\Core\Shortcode_Helpers::add_app_short_code' );
 
 			// Wire up AJAX backend services
 			add_action( 'wp_ajax_get_tokencache', '\Wpo\Services\Ajax_Service::get_tokencache' );
@@ -359,7 +360,7 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				add_filter( 'rest_authentication_errors', '\Wpo\Services\Rest_Authentication_Service_Cookies::authenticate_request', 10, 1 );
 			}
 
-			// Enable Azure AD protection for WordPress REST API
+			// Enable Entra ID protection for WordPress REST API
 			if ( class_exists( '\Wpo\Services\Rest_Authentication_Service_Aad' ) && Options_Service::get_global_boolean_var( 'use_wp_rest_aad', false ) ) {
 				add_filter( 'rest_authentication_errors', '\Wpo\Services\Rest_Authentication_Service_Aad::authenticate_request', 10, 1 );
 			}

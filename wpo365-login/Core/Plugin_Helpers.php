@@ -696,7 +696,7 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 								'%s -> License key %s for %s is not valid for site with URL %s [raw request: %s]',
 								__METHOD__,
 								$license_key,
-								$extension['store_item_id'],
+								$extension['store_item'],
 								$url,
 							htmlentities( serialize( $response ) ) // phpcs:ignore
 							)

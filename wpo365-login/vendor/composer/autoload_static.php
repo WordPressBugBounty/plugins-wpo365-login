@@ -27,6 +27,8 @@ class ComposerStaticInitab381cd2ee9218b9c4a75bec3cdd3073
             'Wpo\\Firebase\\' => 13,
             'Wpo\\Core\\' => 9,
             'Wpo\\Blocks\\' => 11,
+            'Wpo\\Apps365\\Api\\' => 16,
+            'Wpo\\Apps365\\' => 12,
             'Wpo\\' => 4,
         ),
         'P' => 
@@ -79,6 +81,14 @@ class ComposerStaticInitab381cd2ee9218b9c4a75bec3cdd3073
         'Wpo\\Blocks\\' => 
         array (
             0 => __DIR__ . '/../..' . '/Blocks',
+        ),
+        'Wpo\\Apps365\\Api\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/apps365/api',
+        ),
+        'Wpo\\Apps365\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/apps365',
         ),
         'Wpo\\' => 
         array (

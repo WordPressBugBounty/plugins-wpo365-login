@@ -26,11 +26,11 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
 
 			if ( empty( $application_id ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "Application ID is not configured but needed for OpenID Connect based Single Sign-On and many of the supported features. It may be omitted in case of SAML 2.0 based Single Sign-On. Please copy the 'Application (Client) ID' from your Azure AD App registration's 'Overview' page and paste it into the corresponding field on the <a href=\"#singleSignOn\">'Single Sign-on' tab</a>.";
+				$test_result->message   = "Application ID is not configured but needed for OpenID Connect based Single Sign-On and many of the supported features. It may be omitted in case of SAML 2.0 based Single Sign-On. Please copy the 'Application (Client) ID' from your Entra ID App registration's 'Overview' page and paste it into the corresponding field on the <a href=\"#singleSignOn\">'Single Sign-on' tab</a>.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			} elseif ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/', $application_id ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "Application ID is not a valid GUID but needed for OpenID Connect based Single Sign-On and many of the supported features. It may be omitted in case of SAML 2.0 based Single Sign-On. Please copy the 'Application (Client) ID' from your Azure AD App registration's 'Overview' page and paste it into the corresponding field on the <a href=\"#singleSignOn\">'Single Sign-on' tab</a>.";
+				$test_result->message   = "Application ID is not a valid GUID but needed for OpenID Connect based Single Sign-On and many of the supported features. It may be omitted in case of SAML 2.0 based Single Sign-On. Please copy the 'Application (Client) ID' from your Entra ID App registration's 'Overview' page and paste it into the corresponding field on the <a href=\"#singleSignOn\">'Single Sign-on' tab</a>.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			}
 
@@ -115,7 +115,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
 
 			if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $application_secret ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = 'Application (Client) Secret appears to be invalid. Possibly the secret\'s ID instead of its value has been copied from the corresonding page in Azure Portal.';
+				$test_result->message   = 'Application (Client) Secret appears to be invalid. Possibly the secret\'s ID instead of its value has been copied from the corresonding page in Entra Portal.';
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 				return $test_result;
 			}
@@ -137,7 +137,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
 
 			if ( empty( $redirect_url ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "The Redirect URL is not configured but needed for OpenID Connect based Single Sign-On. It may be omitted in case of SAML 2.0 based Single Sign-On. Please copy the 'Redirect URI' from your Azure AD App registration's 'Authentication' page and paste it into the corresponding field on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
+				$test_result->message   = "The Redirect URL is not configured but needed for OpenID Connect based Single Sign-On. It may be omitted in case of SAML 2.0 based Single Sign-On. Please copy the 'Redirect URI' from your Entra ID App registration's 'Authentication' page and paste it into the corresponding field on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			}
 
@@ -162,9 +162,9 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
                 // phpcs:ignore
                 $error_message = isset( $_REQUEST['error_description'] ) ? \sanitize_text_field( $_REQUEST['error_description'] ) : 'Could not process the ID token. Please check the <a href="#debug">debug log</a> for errors.';
 
-				if ( WordPress_Helpers::stripos( $error_message, 'AADSTS700054' ) === false ) {
+				if ( WordPress_Helpers::stripos( $error_message, 'AADSTS700054' ) !== false ) {
 					$application_id = Options_Service::get_aad_option( 'application_id' );
-					$error_message  = 'It appears you have configured the (OpenID Connect) <strong>Hybrid flow</strong> on the <a href="#singleSignOn">Single Sign-on</a> page but did not allow for <em>Implicit grant and hybrid flows</em> by checking the corresponding options in Azure AD for the App registration with ID ' . $application_id . ' on the <em>Authentication</em> page.';
+					$error_message  = 'It appears you have configured the (OpenID Connect) <strong>Hybrid flow</strong> on the <a href="#singleSignOn">Single Sign-on</a> page but did not allow for <em>Implicit grant and hybrid flows</em> by checking the corresponding options in Entra ID for the App registration with ID ' . $application_id . ' on the <em>Authentication</em> page.';
 				}
 
 				$test_result->passed    = false;
@@ -188,7 +188,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
 				$test_result->more_info = '';
 			} elseif ( empty( $this->id_token->email ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "ID token does not contain email address. Please ensure that the user has a valid email address. If this is the case then please consult the online documentation and update the (Azure AD) App registration's 'Token Configuration' to include the optional 'email' claim.";
+				$test_result->message   = "ID token does not contain email address. Please ensure that the user has a valid email address. If this is the case then please consult the online documentation and update the (Entra ID) App registration's 'Token Configuration' to include the optional 'email' claim.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			}
 
@@ -205,7 +205,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
 				$test_result->more_info = '';
 			} elseif ( empty( $this->id_token->upn ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "ID token does not contain user principal name (upn). Please consult the online documentation and update the (Azure AD) App registration's 'Token Configuration' to include the optional 'upn' claim.";
+				$test_result->message   = "ID token does not contain user principal name (upn). Please consult the online documentation and update the (Entra ID) App registration's 'Token Configuration' to include the optional 'upn' claim.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			}
 
@@ -222,7 +222,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
 				$test_result->more_info = '';
 			} elseif ( empty( $this->id_token->given_name ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "ID token does not contain first name (given_name). Please consult the online documentation and update the (Azure AD) App registration's 'Token Configuration' to include the optional 'given_name' claim. Please note that the latest version of the plugin will try to retrieve a user's profile from Microsoft Graph to update the corresponding WordPress user instead.";
+				$test_result->message   = "ID token does not contain first name (given_name). Please consult the online documentation and update the (Entra ID) App registration's 'Token Configuration' to include the optional 'given_name' claim. Please note that the latest version of the plugin will try to retrieve a user's profile from Microsoft Graph to update the corresponding WordPress user instead.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			}
 
@@ -239,7 +239,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
 				$test_result->more_info = '';
 			} elseif ( empty( $this->id_token->family_name ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "ID token does not contain last name (family_name). Please consult the online documentation and update the (Azure AD) App registration's 'Token Configuration' to include the optional 'family_name' claim. Please note that the latest version of the plugin will try to retrieve a user's profile from Microsoft Graph to update the corresponding WordPress user instead.";
+				$test_result->message   = "ID token does not contain last name (family_name). Please consult the online documentation and update the (Entra ID) App registration's 'Token Configuration' to include the optional 'family_name' claim. Please note that the latest version of the plugin will try to retrieve a user's profile from Microsoft Graph to update the corresponding WordPress user instead.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			}
 
@@ -256,7 +256,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
 				$test_result->more_info = '';
 			} elseif ( empty( $this->id_token->groups ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "ID token does not contain 'groups' claim. Please check whether you need this information and if yes, update the (Azure AD) App registration's 'Token Configuration' to include the 'groups' claim.";
+				$test_result->message   = "ID token does not contain 'groups' claim. Please check whether you need this information and if yes, update the (Entra ID) App registration's 'Token Configuration' to include the 'groups' claim.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow';
 			}
 

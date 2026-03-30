@@ -29,7 +29,9 @@
       "Wpo\\Pages\\": "Pages",
       "Wpo\\Services\\": "Services",
       "Wpo\\Sync\\": "Sync",
-      "Wpo\\Tests\\": "Tests"
+      "Wpo\\Tests\\": "Tests",
+      "Wpo\\Apps365\\": "apps365",
+      "Wpo\\Apps365\\Api\\": "apps365/api"
     }
   }
 }

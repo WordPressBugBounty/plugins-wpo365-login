@@ -37,7 +37,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Rest_Protection' ) ) {
 		 * CONFIGURATION
 		 */
 		public function test_configuration() {
-			$test_result         = new Test_Result( 'Configuration of Azure AD based protection of the WordPress REST API appears valid.', Test_Result::CAPABILITY_REST, Test_Result::SEVERITY_BLOCKING );
+			$test_result         = new Test_Result( 'Configuration of Entra ID based protection of the WordPress REST API appears valid.', Test_Result::CAPABILITY_REST, Test_Result::SEVERITY_BLOCKING );
 			$test_result->passed = true;
 
 			// APPLICATION ID?
@@ -46,7 +46,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Rest_Protection' ) ) {
 			if ( empty( $this->wp_rest_aad_application_id ) ) {
 				$this->wp_rest_configuration_errors = true;
 				$test_result->passed                = false;
-				$test_result->message               = 'No Azure AD Application (Client) ID has been configured. Therefore Azure AD based protection of the WordPress REST API cannot be enabled.';
+				$test_result->message               = 'No Entra ID Application (Client) ID has been configured. Therefore Entra ID based protection of the WordPress REST API cannot be enabled.';
 				$test_result->more_info             = 'https://docs.wpo365.com/article/147-azure-ad-based-protection-for-the-wordpress-rest-api';
 				return $test_result;
 			}
@@ -68,7 +68,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Rest_Protection' ) ) {
 			} else {
 				$this->wp_rest_configuration_errors = true;
 				$test_result->passed                = false;
-				$test_result->message               = 'Cannot continue because no Application (Client) Secret has been configured for the Azure AD application with ID ' . $this->wp_rest_aad_application_id . '.';
+				$test_result->message               = 'Cannot continue because no Application (Client) Secret has been configured for the Entra ID application with ID ' . $this->wp_rest_aad_application_id . '.';
 				$test_result->more_info             = 'https://docs.wpo365.com/article/147-azure-ad-based-protection-for-the-wordpress-rest-api';
 				return $test_result;
 			}
@@ -78,7 +78,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Rest_Protection' ) ) {
 			if ( empty( $this->wp_rest_aad_application_id_uri ) ) {
 				$this->wp_rest_configuration_errors = true;
 				$test_result->passed                = false;
-				$test_result->message               = 'Cannot continue because no Azure AD Application ID URI has been configured for the Azure AD application with ID ' . $this->wp_rest_aad_application_id . '.';
+				$test_result->message               = 'Cannot continue because no Entra ID Application ID URI has been configured for the Entra ID application with ID ' . $this->wp_rest_aad_application_id . '.';
 				$test_result->more_info             = 'https://docs.wpo365.com/article/147-azure-ad-based-protection-for-the-wordpress-rest-api';
 				return $test_result;
 			}
@@ -88,7 +88,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Rest_Protection' ) ) {
 			if ( empty( $this->wp_rest_aad_protected_endpoints ) ) {
 				$this->wp_rest_configuration_errors = true;
 				$test_result->passed                = false;
-				$test_result->message               = 'No WordPress REST API endpoints have been added to the list so no Azure AD based protection will be applied to any endpoint.';
+				$test_result->message               = 'No WordPress REST API endpoints have been added to the list so no Entra ID based protection will be applied to any endpoint.';
 				$test_result->more_info             = 'https://docs.wpo365.com/article/147-azure-ad-based-protection-for-the-wordpress-rest-api';
 				return $test_result;
 			}

@@ -238,7 +238,7 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service' ) ) {
 
 			$multi_tenanted      = Options_Service::get_global_boolean_var( 'multi_tenanted' ) && ! $use_mail_config && ! Options_Service::get_global_boolean_var( 'use_b2c' );
 			$mail_multi_tenanted = Options_Service::get_global_boolean_var( 'mail_multi_tenanted' );
-			$tld                 = Options_Service::get_aad_option( 'tld' );
+			$tld                 = $use_mail_config ? Options_Service::get_mail_option( 'mail_tld' ) : Options_Service::get_aad_option( 'tld' );
 			$tld                 = ! empty( $tld ) ? $tld : '.com';
 			$scope               = str_replace( '.com', $tld, $scope );
 			$scope               = $mode === 'mailAuthorize' && $mail_multi_tenanted
@@ -293,8 +293,6 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service' ) ) {
 			}
 
 			$skip_ssl_verify = ! Options_Service::get_global_boolean_var( 'skip_host_verification' );
-			$tld             = Options_Service::get_aad_option( 'tld' );
-			$tld             = ! empty( $tld ) ? $tld : '.com';
 			$token_url       = sprintf(
 				'https://login.microsoftonline%s/%s/oauth2/v2.0/token',
 				$tld,

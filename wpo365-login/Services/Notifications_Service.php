@@ -107,7 +107,7 @@ if ( ! class_exists( '\Wpo\Services\Notifications_Service' ) ) {
 										__( 'Getting started' ),
 										'wpo365-login'
 									),
-									'<strong>Microsoft 365 / Azure AD</strong>',
+									'<strong>Microsoft 365 / Entra ID</strong>',
 									sprintf(
 										'<ul style="list-style: initial; padding-left: 20px;"><li><a href="https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow" target="_blank">%s</a></li><li><a href="https://docs.wpo365.com/article/100-single-sign-on-with-saml-2-0-for-wordpress" target="_blank">%s</a></li><li><a href="https://docs.wpo365.com/article/108-sending-wordpress-emails-using-microsoft-graph" target="_blank">%s</a></li></ul>',
 										__( 'OpenID based Single Sign-on', 'wpo365-login' ),

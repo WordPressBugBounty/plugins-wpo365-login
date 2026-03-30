@@ -95,7 +95,7 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 			// Do not continue if the global options have not yet been cached
 
 			if ( empty( $options ) ) {
-				Log_Service::write_log( 'WARN', sprintf( '%s -> An attempt to initialize AAD options was made before the global options have been loaded', __METHOD__ ) );
+				Log_Service::write_log( 'WARN', sprintf( '%s -> An attempt to initialize Entra ID options was made before the global options have been loaded', __METHOD__ ) );
 				Authentication_Service::goodbye( Error_Service::CHECK_LOG );
 			}
 

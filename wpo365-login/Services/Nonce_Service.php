@@ -12,7 +12,7 @@ if ( ! class_exists( '\Wpo\Services\Nonce_Service' ) ) {
 	class Nonce_Service {
 
 		/**
-		 * Creates a nonce to ensure the request for an Azure AD token
+		 * Creates a nonce to ensure the request for an Entra ID token
 		 * originates from the current server.
 		 *
 		 * @since   21.6

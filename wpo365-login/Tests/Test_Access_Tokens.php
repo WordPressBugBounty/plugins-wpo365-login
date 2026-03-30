@@ -109,7 +109,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->delegated_static_permissions,
 				Test_Result::SEVERITY_BLOCKING,
 				Test_Result::CAPABILITY_OIC_SSO,
-				'and as a result the plugin may not be able to request (OpenID Connect related) ID tokens. Please add the following API Permission (for the (Azure AD) <em>registered application</em> in Azure Portal): Microsoft Graph > Delegated > openid.',
+				'and as a result the plugin may not be able to request (OpenID Connect related) ID tokens. Please add the following API Permission (for the (Entra ID) <em>registered application</em> in Entra Portal): Microsoft Graph > Delegated > openid.',
 				'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow'
 			);
 		}
@@ -130,7 +130,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->delegated_static_permissions,
 				Test_Result::SEVERITY_CRITICAL,
 				Test_Result::CAPABILITY_OIC_SSO,
-				'and as a result the plugin may fail to match an Entra ID / AAD user by his / her email address. Please add the following API Permission (for the (Azure AD) <em>registered application</em> in Azure Portal): Microsoft Graph > Delegated > offline_access.',
+				'and as a result the plugin may fail to match an Entra ID user by his / her email address. Please add the following API Permission (for the (Entra ID) <em>registered application</em> in Entra Portal): Microsoft Graph > Delegated > offline_access.',
 				'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow'
 			);
 		}
@@ -151,7 +151,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->delegated_static_permissions,
 				Test_Result::SEVERITY_BLOCKING,
 				Test_Result::CAPABILITY_OIC_SSO,
-				'and as a result the plugin will not be able to sign in as a user. Please add the following API Permission (for the (Azure AD) <em>registered application</em> in Azure Portal): Microsoft Graph > Delegated > User.Read.',
+				'and as a result the plugin will not be able to sign in as a user. Please add the following API Permission (for the (Entra ID) <em>registered application</em> in Entra Portal): Microsoft Graph > Delegated > User.Read.',
 				'https://docs.wpo365.com/article/154-aad-single-sign-for-wordpress-using-auth-code-flow'
 			);
 		}
@@ -170,7 +170,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( ! property_exists( $this->delegated_access_token, 'refresh_token' ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = 'Access token for <em>delegated</em> permissions does not include a refresh token. Please add the following API Permission (for the (Azure AD) <em>registered application</em> in Azure Portal): Microsoft Graph > Delegated > offline_access.';
+				$test_result->message   = 'Access token for <em>delegated</em> permissions does not include a refresh token. Please add the following API Permission (for the (Entra ID) <em>registered application</em> in Entra Portal): Microsoft Graph > Delegated > offline_access.';
 				$test_result->more_info = '';
 				return $test_result;
 			}
@@ -350,8 +350,8 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->application_static_permissions,
 				Test_Result::SEVERITY_LOW,
 				Test_Result::CAPABILITY_PROFILE_PLUS,
-				'and as a result the plugin cannot independently from the logged-in user retrieve user profile information from Azure AD using Microsoft Graph.',
-				'https://docs.wpo365.com/article/23-integration'
+				'and as a result the plugin cannot independently from the logged-in user retrieve user profile information from Entra ID using Microsoft Graph.',
+				'https://tutorials.wpo365.com/courses/integration-application-permissions/'
 			);
 
 			if ( ! $test_result_user_read_all->passed ) {
@@ -411,7 +411,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
                     If you do not need the plugin\'s ability to send emails from multiple different accounts then it is strongly recommended that you remove 
                     <strong>application</strong> permissions for <em>Mail.Send</em>. The reason behind this recommendation is the general trend to configure as few and as low permissions as 
                     possible. <strong>Application</strong> <em>Mail.Send</em> permissions allow the plugin to send emails as any user in the organization whereas <strong>
-                    delegated</strong> <em>Mail.Send</em> permissions reduce this to a single account.<br/><div style="color: #0078D4;">If you just changed <strong>delegated</strong> API Permissions in Azure AD 
+                    delegated</strong> <em>Mail.Send</em> permissions reduce this to a single account.<br/><div style="color: #0078D4;">If you just changed <strong>delegated</strong> API Permissions in Entra ID 
                     then please re-authorize the mail user on the plugin\'s <strong>Mail</strong> configuration page and before runing the Plugin self-test again.</div>';
 				$test_result->more_info = 'https://docs.wpo365.com/article/108-sending-wordpress-emails-using-microsoft-graph';
 				return $test_result;
@@ -484,11 +484,11 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( empty( $this->mail_auth_configuration->delegated_shared_authorized ) && empty( $this->mail_auth_configuration->app_only_authorized ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "You have not granted delegated <em>Mail.Send.Shared</em> permissions in Azure AD for App registration with ID 
+				$test_result->message   = "You have not granted delegated <em>Mail.Send.Shared</em> permissions in Entra ID for App registration with ID 
                                          <strong>$mail_application_id</strong> (or alternatively granted application-level <em>Mail.Send</em> permissions) 
                                          and as a result you cannot send WordPress emails from a Microsoft 365 Shared Mailbox. You can safely ignore this 
                                          if you do not wish to send WordPress emails from such a Shared Mailbox.<br/><div style=\"color: #0078D4;\">If 
-                                         you just changed <strong>delegated</strong> API Permissions in Azure AD then please re-authorize the mail user 
+                                         you just changed <strong>delegated</strong> API Permissions in Entra ID then please re-authorize the mail user 
                                          on the plugin\'s <strong>Mail</strong> configuration page before running the Plugin self-test again.</div>";
 				$test_result->more_info = 'https://docs.wpo365.com/article/108-sending-wordpress-emails-using-microsoft-graph';
 				return $test_result;
@@ -542,10 +542,10 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( empty( $this->mail_auth_configuration->delegated_readwrite_authorized ) && empty( $this->mail_auth_configuration->app_only_readwrite_authorized ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "You have not granted delegated <em>Mail.ReadWrite</em> permissions in Azure AD for App registration with ID 
+				$test_result->message   = "You have not granted delegated <em>Mail.ReadWrite</em> permissions in Entra ID for App registration with ID 
                                          <strong>$mail_application_id</strong> (or alternatively granted application-level <em>Mail.ReadWrite</em> 
                                          permissions) and as a result you cannot send attachments larger than 3 MB from WordPress using Microsoft Graph.
-                                         <br/><div style=\"color: #0078D4;\">If you just changed <strong>delegated</strong> API Permissions in Azure AD then 
+                                         <br/><div style=\"color: #0078D4;\">If you just changed <strong>delegated</strong> API Permissions in Entra ID then 
                                          please re-authorize the mail user on the plugin\'s <strong>Mail</strong> configuration page before running 
                                          the Plugin self-test again.</div>";
 				$test_result->more_info = 'https://docs.wpo365.com/article/108-sending-wordpress-emails-using-microsoft-graph';
@@ -600,11 +600,11 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( empty( $this->mail_auth_configuration->delegated_readwrite_shared_authorized ) && empty( $this->mail_auth_configuration->app_only_readwrite_authorized ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "You have not granted delegated <em>Mail.ReadWrite.Shared</em> permissions in Azure AD for App registration with ID 
+				$test_result->message   = "You have not granted delegated <em>Mail.ReadWrite.Shared</em> permissions in Entra ID for App registration with ID 
                                          <strong>$mail_application_id</strong> (or alternatively granted application-level <em>Mail.ReadWrite</em> permissions) 
                                          and as a result you cannot send attachments larger than 3 MB from WordPress using Microsoft Graph from a Microsoft 365 Shared 
                                          Mailbox. You can safely ignore this if you do not wish to send WordPress emails from such a Shared Mailbox.
-                                         <br/><div style=\"color: #0078D4;\">If you just changed <strong>delegated</strong> API Permissions in Azure AD then 
+                                         <br/><div style=\"color: #0078D4;\">If you just changed <strong>delegated</strong> API Permissions in Entra ID then 
                                          please re-authorize the mail user on the plugin\'s <strong>Mail</strong> configuration page before running
                                          the Plugin self-test again.</div>";
 				$test_result->more_info = 'https://docs.wpo365.com/article/108-sending-wordpress-emails-using-microsoft-graph';
@@ -624,7 +624,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				return;
 			}
 
-			$test_result      = new Test_Result( "Authentication response (ID token or SAML response) contains 'groups' claim - Therefore not testing to get Azure AD group memberships from Microsoft Graph using <em>delegated</em> permissions.", Test_Result::CAPABILITY_ROLES_ACCESS, Test_Result::SEVERITY_LOW );
+			$test_result      = new Test_Result( "Authentication response (ID token or SAML response) contains 'groups' claim - Therefore not testing to get Entra ID group memberships from Microsoft Graph using <em>delegated</em> permissions.", Test_Result::CAPABILITY_ROLES_ACCESS, Test_Result::SEVERITY_LOW );
 			$is_oidc_response = filter_var( $this->request->get_item( 'is_oidc_response' ), FILTER_VALIDATE_BOOLEAN );
 			$is_saml_response = filter_var( $this->request->get_item( 'is_saml_response' ), FILTER_VALIDATE_BOOLEAN );
 
@@ -654,7 +654,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				return;
 			}
 
-			$test_result         = new Test_Result( 'Get a user\'s Azure AD group memberships with <em>delegated</em> permissions.', Test_Result::CAPABILITY_ROLES_ACCESS, Test_Result::SEVERITY_LOW );
+			$test_result         = new Test_Result( 'Get a user\'s Entra ID group memberships with <em>delegated</em> permissions.', Test_Result::CAPABILITY_ROLES_ACCESS, Test_Result::SEVERITY_LOW );
 			$test_result->passed = true;
 
 			$suitable_extensions = \array_flip(
@@ -694,7 +694,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->delegated_static_permissions,
 				Test_Result::SEVERITY_LOW,
 				Test_Result::CAPABILITY_ROLES_ACCESS,
-				'and as a result the plugin cannot retrieve a user\'s Azure AD group memberships.',
+				'and as a result the plugin cannot retrieve a user\'s Entra ID group memberships.',
 				'https://docs.wpo365.com/article/23-integration'
 			);
 
@@ -706,7 +706,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->delegated_static_permissions,
 				Test_Result::SEVERITY_LOW,
 				Test_Result::CAPABILITY_ROLES_ACCESS,
-				'and as a result the plugin cannot retrieve a user\'s Azure AD group memberships.',
+				'and as a result the plugin cannot retrieve a user\'s Entra ID group memberships.',
 				'https://docs.wpo365.com/article/23-integration'
 			);
 
@@ -718,7 +718,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->delegated_static_permissions,
 				Test_Result::SEVERITY_LOW,
 				Test_Result::CAPABILITY_ROLES_ACCESS,
-				'and as a result the plugin cannot retrieve a user\'s Azure AD group memberships.',
+				'and as a result the plugin cannot retrieve a user\'s Entra ID group memberships.',
 				'https://docs.wpo365.com/article/23-integration'
 			);
 
@@ -733,7 +733,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 			if ( ! $test_result_groupmember_read_all->passed && $test_result_group_read_all->passed ) {
 				$application_id         = Options_Service::get_aad_option( 'application_id' );
 				$test_result->passed    = false;
-				$test_result->message   = "Static permission <strong>Group.Read.All</strong> has been configured for the (Azure AD) <em>registered application</em> with ID <strong>$application_id</strong> but starting with v18.0 it is strongly recommended to instead configure <strong>GroupMember.Read.All</strong> API Permission (and to remove <em>Group.Read.All</em>).";
+				$test_result->message   = "Static permission <strong>Group.Read.All</strong> has been configured for the (Entra ID) <em>registered application</em> with ID <strong>$application_id</strong> but starting with v18.0 it is strongly recommended to instead configure <strong>GroupMember.Read.All</strong> API Permission (and to remove <em>Group.Read.All</em>).";
 				$test_result->more_info = 'https://docs.wpo365.com/article/23-integration';
 				return $test_result;
 			}
@@ -752,11 +752,11 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 				if ( ! isset( $test_result->data['response_code'] ) || $test_result->data['response_code'] !== 200 ) {
 					$test_result->passed  = false;
-					$test_result->message = 'Failed to retrieve the Azure AD groups for current user from Microsoft Graph. Inspect the data that was received below for a possible reason.';
+					$test_result->message = 'Failed to retrieve the Entra ID groups for current user from Microsoft Graph. Inspect the data that was received below for a possible reason.';
 				}
 			} else {
 				$test_result->passed  = false;
-				$test_result->message = 'Failed to retrieve the Azure AD groups for current user from Microsoft Graph due to earliers errors.';
+				$test_result->message = 'Failed to retrieve the Entra ID groups for current user from Microsoft Graph due to earliers errors.';
 			}
 
 			return $test_result;
@@ -767,7 +767,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 		 */
 		public function test_roles_access_application() {
 
-			$test_result         = new Test_Result( 'Get a user\'s Azure AD group memberships with <em>application</em> permissions.', Test_Result::CAPABILITY_ROLES_ACCESS, Test_Result::SEVERITY_LOW );
+			$test_result         = new Test_Result( 'Get a user\'s Entra ID group memberships with <em>application</em> permissions.', Test_Result::CAPABILITY_ROLES_ACCESS, Test_Result::SEVERITY_LOW );
 			$test_result->passed = true;
 
 			$suitable_extensions = \array_flip(
@@ -807,8 +807,8 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->application_static_permissions,
 				Test_Result::SEVERITY_LOW,
 				Test_Result::CAPABILITY_ROLES_ACCESS,
-				'and as a result the plugin cannot retrieve a user\'s Azure AD group memberships.',
-				'https://docs.wpo365.com/article/23-integration'
+				'and as a result the plugin cannot retrieve a user\'s Entra ID group memberships.',
+				'https://tutorials.wpo365.com/courses/integration-application-permissions/'
 			);
 
 			// Check if access token has appropriate permissions
@@ -819,8 +819,8 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->application_static_permissions,
 				Test_Result::SEVERITY_LOW,
 				Test_Result::CAPABILITY_ROLES_ACCESS,
-				'and as a result the plugin cannot retrieve a user\'s Azure AD group memberships.',
-				'https://docs.wpo365.com/article/23-integration'
+				'and as a result the plugin cannot retrieve a user\'s Entra ID group memberships.',
+				'https://tutorials.wpo365.com/courses/integration-application-permissions/'
 			);
 
 			// Check if access token has appropriate permissions
@@ -831,8 +831,8 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->application_static_permissions,
 				Test_Result::SEVERITY_LOW,
 				Test_Result::CAPABILITY_ROLES_ACCESS,
-				'and as a result the plugin cannot retrieve a user\'s Azure AD group memberships.',
-				'https://docs.wpo365.com/article/23-integration'
+				'and as a result the plugin cannot retrieve a user\'s Entra ID group memberships.',
+				'https://tutorials.wpo365.com/courses/integration-application-permissions/'
 			);
 
 			if ( ! $test_result_user_read_all->passed ) {
@@ -845,8 +845,8 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 			if ( ! $test_result_groupmember_read_all->passed && $test_result_group_read_all->passed ) {
 				$application_id         = Options_Service::get_aad_option( 'app_only_application_id' );
 				$test_result->passed    = false;
-				$test_result->message   = "Static permission <strong>Group.Read.All</strong> has been configured for the (Azure AD) <em>registered application</em> with ID <strong>$application_id</strong> but starting with v18.0 it is strongly recommended to instead configure <strong>GroupMember.Read.All</strong> API Permission (and to remove <em>Group.Read.All</em>).";
-				$test_result->more_info = 'https://docs.wpo365.com/article/23-integration';
+				$test_result->message   = "Static permission <strong>Group.Read.All</strong> has been configured for the (Entra ID) <em>registered application</em> with ID <strong>$application_id</strong> but starting with v18.0 it is strongly recommended to instead configure <strong>GroupMember.Read.All</strong> API Permission (and to remove <em>Group.Read.All</em>).";
+				$test_result->more_info = 'https://tutorials.wpo365.com/courses/integration-application-permissions/';
 				return $test_result;
 			}
 
@@ -863,11 +863,11 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 				if ( is_wp_error( $test_result->data ) || ! isset( $test_result->data['response_code'] ) || $test_result->data['response_code'] !== 200 ) {
 					$test_result->passed  = false;
-					$test_result->message = 'Failed to retrieve the Azure AD groups for current user from Microsoft Graph.';
+					$test_result->message = 'Failed to retrieve the Entra ID groups for current user from Microsoft Graph.';
 				}
 			} else {
 				$test_result->passed  = false;
-				$test_result->message = 'Failed to retrieve the Azure AD groups for current user from Microsoft Graph due to earliers errors.';
+				$test_result->message = 'Failed to retrieve the Entra ID groups for current user from Microsoft Graph due to earliers errors.';
 			}
 
 			return $test_result;
@@ -938,7 +938,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->delegated_static_permissions,
 				Test_Result::SEVERITY_LOW,
 				Test_Result::CAPABILITY_AVATAR,
-				'and as a result the plugin cannot retrieve a user\'s Azure AD profile photo.',
+				'and as a result the plugin cannot retrieve a user\'s Entra ID profile photo.',
 				'https://docs.wpo365.com/article/96-microsoft-365-profile-picture-as-wp-avatar'
 			);
 
@@ -1031,7 +1031,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$this->application_static_permissions,
 				Test_Result::SEVERITY_LOW,
 				Test_Result::CAPABILITY_AVATAR,
-				'and as a result the plugin cannot independently from the currently logged-in user retrieve a user\'s Azure AD profile photo.',
+				'and as a result the plugin cannot independently from the currently logged-in user retrieve a user\'s Entra ID profile photo.',
 				'https://docs.wpo365.com/article/96-microsoft-365-profile-picture-as-wp-avatar'
 			);
 
@@ -1513,7 +1513,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $application_secret ) ) {
 				$test_result->passed                        = false;
-				$test_result->message                       = 'Application (client) secret for <em>Delegated access</em> appears to be invalid. Possibly the secret\'s ID instead of its value has been copied from the corresonding page in Azure Portal.';
+				$test_result->message                       = 'Application (client) secret for <em>Delegated access</em> appears to be invalid. Possibly the secret\'s ID instead of its value has been copied from the corresonding page in Entra Portal.';
 				$test_result->more_info                     = 'https://docs.wpo365.com/article/23-integration';
 				$this->application_access_token_test_result = $test_result;
 				return;
@@ -1562,7 +1562,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 			if ( ! Options_Service::get_aad_option( 'use_app_only_token', true ) ) {
 				$test_result->passed                        = false;
 				$test_result->message                       = 'It is recommended to configure application-level access so the plugin can connect to Microsoft Services such as Microsoft Graph without a logged-in user to enable more advanced scenarios e.g. User Synchronization.';
-				$test_result->more_info                     = 'https://docs.wpo365.com/article/23-integration';
+				$test_result->more_info                     = 'https://tutorials.wpo365.com/courses/integration-application-permissions/';
 				$this->application_access_token_test_result = $test_result;
 				return;
 			}
@@ -1572,7 +1572,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 			if ( empty( $application_id ) ) {
 				$test_result->passed                        = false;
 				$test_result->message                       = 'It is recommended to configure application-level access so the plugin can connect to Microsoft Services such as Microsoft Graph without a logged-in user to enable more advanced scenarios e.g. User Synchronization.';
-				$test_result->more_info                     = 'https://docs.wpo365.com/article/23-integration';
+				$test_result->more_info                     = 'https://tutorials.wpo365.com/courses/integration-application-permissions/';
 				$this->application_access_token_test_result = $test_result;
 				return;
 			}
@@ -1580,7 +1580,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 			if ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/', $application_id ) ) {
 				$test_result->passed                        = false;
 				$test_result->message                       = 'Support for application-level (app-only) access to Microsoft Services has been enabled but the app-only Application (client) ID on the plugin\'s <a href="#integration">Integration</a> page is not a valid GUID';
-				$test_result->more_info                     = 'https://docs.wpo365.com/article/23-integration';
+				$test_result->more_info                     = 'https://tutorials.wpo365.com/courses/integration-application-permissions/';
 				$this->application_access_token_test_result = $test_result;
 				return;
 			}
@@ -1589,16 +1589,16 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( empty( $application_secret ) ) {
 				$test_result->passed                        = false;
-				$test_result->message                       = "The use of application permissions is enabled. However, the plugin failed to retrieve the necessary application (client) secret for the corresponding (Azure AD) <em>registered application</em> with ID <strong>$application_id</strong>. Please create a Client secret for the (Azure AD) <em>registered application</em> in Azure AD and enter it on the plugin's <a href=\"#integration\">Integration</a>.";
-				$test_result->more_info                     = 'https://docs.wpo365.com/article/23-integration';
+				$test_result->message                       = "The use of application permissions is enabled. However, the plugin failed to retrieve the necessary application (client) secret for the corresponding (Entra ID) <em>registered application</em> with ID <strong>$application_id</strong>. Please create a Client secret for the (Entra ID) <em>registered application</em> in Entra ID and enter it on the plugin's <a href=\"#integration\">Integration</a>.";
+				$test_result->more_info                     = 'https://tutorials.wpo365.com/courses/integration-application-permissions/';
 				$this->application_access_token_test_result = $test_result;
 				return;
 			}
 
 			if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $application_secret ) ) {
 				$test_result->passed                        = false;
-				$test_result->message                       = 'App-only Application (client) secret for (Azure AD) <em>registered application</em> with ID <strong>' . $application_id . '</strong> appears to be invalid. Possibly the secret\'s ID instead of its value has been copied from the corresonding page for the (Azure AD) <em>registered application</em> in Azure Portal.';
-				$test_result->more_info                     = 'https://docs.wpo365.com/article/23-integration';
+				$test_result->message                       = 'App-only Application (client) secret for (Entra ID) <em>registered application</em> with ID <strong>' . $application_id . '</strong> appears to be invalid. Possibly the secret\'s ID instead of its value has been copied from the corresonding page for the (Entra ID) <em>registered application</em> in Entra Portal.';
+				$test_result->more_info                     = 'https://tutorials.wpo365.com/courses/integration-application-permissions/';
 				$this->application_access_token_test_result = $test_result;
 				return;
 			}
@@ -1607,7 +1607,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( is_wp_error( $this->application_access_token ) || ! property_exists( $this->application_access_token, 'access_token' ) ) {
 				$test_result->passed                        = false;
-				$test_result->message                       = 'Could not fetch app-only access token from the (Azure AD) <em>registered application</em> with ID <strong>' . $application_id . '</strong>. The following error occurred: ' . $this->application_access_token->get_error_message();
+				$test_result->message                       = 'Could not fetch app-only access token from the (Entra ID) <em>registered application</em> with ID <strong>' . $application_id . '</strong>. The following error occurred: ' . $this->application_access_token->get_error_message();
 				$test_result->more_info                     = '';
 				$this->application_access_token_test_result = $test_result;
 				return;
@@ -1615,8 +1615,8 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 
 			if ( empty( $this->application_access_token->roles ) ) {
 				$test_result->passed                        = false;
-				$test_result->message                       = 'Support for application-level (app-only) access to Microsoft Services has been configured for (Azure AD) <em>registered application</em> with ID <strong>' . $application_id . '</strong>. However, the access token that was retrieved does not have any roles (= application-level API permissions) assigned / granted.';
-				$test_result->more_info                     = 'https://docs.wpo365.com/article/23-integration';
+				$test_result->message                       = 'Support for application-level (app-only) access to Microsoft Services has been configured for (Entra ID) <em>registered application</em> with ID <strong>' . $application_id . '</strong>. However, the access token that was retrieved does not have any roles (= application-level API permissions) assigned / granted.';
+				$test_result->more_info                     = 'https://tutorials.wpo365.com/courses/integration-application-permissions/';
 				$this->application_access_token_test_result = $test_result;
 				return;
 			}
@@ -1637,7 +1637,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 				$application_id = Options_Service::get_aad_option( 'app_only_application_id' );
 			}
 
-			$test_result         = new Test_Result( "Static <strong>$permission_type</strong> permission <strong>$permission</strong> has been configured for the (Azure AD) <em>registered application</em> with ID <strong>$application_id</strong>", $category, $severity );
+			$test_result         = new Test_Result( "Static <strong>$permission_type</strong> permission <strong>$permission</strong> has been configured for the (Entra ID) <em>registered application</em> with ID <strong>$application_id</strong>", $category, $severity );
 			$test_result->passed = true;
 
 			if ( empty( $access_token ) ) {
@@ -1662,7 +1662,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 			}
 
 			$test_result->passed    = false;
-			$test_result->message   = "Static <strong>$permission_type</strong> permission <strong>$permission</strong> is not configured for the (Azure AD) <em>registered application</em> with ID <strong>$application_id</strong> $additional_message";
+			$test_result->message   = "Static <strong>$permission_type</strong> permission <strong>$permission</strong> is not configured for the (Entra ID) <em>registered application</em> with ID <strong>$application_id</strong> $additional_message";
 			$test_result->more_info = $more_info;
 			return $test_result;
 		}

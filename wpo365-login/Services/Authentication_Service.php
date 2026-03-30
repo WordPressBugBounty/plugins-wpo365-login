@@ -154,7 +154,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			);
 
 			/**
-			 * Authenticate but don't sign in Azure AD users.
+			 * Authenticate but don't sign in Entra ID users.
 			 *
 			 * @since   16.0
 			 */
@@ -215,7 +215,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			 *
 			 * The wpo365_openid_token_processed action hook signals to its subscribers
 			 * that a user has just signed in successfully with Microsoft. As arguments
-			 * it provides the WordPress user ID and the user's Azure AD group IDs
+			 * it provides the WordPress user ID and the user's Entra ID group IDs
 			 * as an one-dimensional array of GUIDs (as strings).
 			 */
 
@@ -288,7 +288,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			);
 
 			/**
-			 * Authenticate but don't sign in Azure AD users.
+			 * Authenticate but don't sign in Entra ID users.
 			 *
 			 * @since   16.0
 			 */
@@ -429,14 +429,14 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 						Log_Service::write_log(
 							'ERROR',
 							__METHOD__ . ' -> Access denied error because the administrator has restricted
-                        access to a limited number of Azure AD (security) groups but also enabled Express Login. As a result the plugin
-                        can possibly not retrieve all Azure AD (security) groups that a user is a member of.'
+                        access to a limited number of Entra ID (security) groups but also enabled Express Login. As a result the plugin
+                        can possibly not retrieve all Entra ID (security) groups that a user is a member of.'
 						);
 					} else {
 						Log_Service::write_log(
 							'WARN',
 							__METHOD__ . ' -> Access denied error because the administrator has restricted
-                        access to a limited number of Azure AD (security) groups and the user trying to log on 
+                        access to a limited number of Entra ID (security) groups and the user trying to log on 
                         is not in one of these groups.'
 						);
 					}

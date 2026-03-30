@@ -121,7 +121,7 @@ if ( ! class_exists( '\Wpo\Core\Wpmu_Helpers' ) ) {
 				$state_blog_id    = self::get_blog_id_from_host_and_path( $state_host, $state_path );
 				$redirect_blog_id = self::get_blog_id_from_host_and_path( $redirect_host, $redirect_path );
 
-				Log_Service::write_log( 'DEBUG', __METHOD__ . " -> Detected WPMU with state context (path: $state_path - ID: $state_blog_id) and AAD redirect context (path: $redirect_path - ID: $redirect_blog_id)" );
+				Log_Service::write_log( 'DEBUG', __METHOD__ . " -> Detected WPMU with state context (path: $state_path - ID: $state_blog_id) and Entra ID redirect context (path: $redirect_path - ID: $redirect_blog_id)" );
 
 				if ( $state_blog_id !== $redirect_blog_id ) {
 					switch_to_blog( $state_blog_id );

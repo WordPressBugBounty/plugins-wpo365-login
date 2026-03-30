@@ -116,15 +116,17 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 			$props = array(
 				'addOns'             => wp_json_encode( $addons, JSON_FORCE_OBJECT ),
 				'adminUrl'           => get_site_url( null, '/wp-admin' ),
+				'autoRetryOk'        => ! Options_Service::get_global_boolean_var( 'mail_auto_retry' ) || wp_next_scheduled( 'wpo_process_unsent_messages' ) !== false,
 				'availableGroups'    => wp_json_encode( $itthinx_groups ),
 				'availablePostTypes' => wp_json_encode( $post_types ),
 				'availableRoles'     => wp_json_encode( $wp_roles->roles ),
 				'extensions'         => $extensions,
 				'ina'                => is_network_admin(),
+				'ssoConfigured'      => Options_Service::is_wpo365_configured(),
 				'ldCourses'          => wp_json_encode( $learndash_courses ),
 				'ldGroups'           => wp_json_encode( $learndash_groups ),
 				'licNotices'         => wp_json_encode( $lic_notices ),
-				'autoRetryOk'        => ! Options_Service::get_global_boolean_var( 'mail_auto_retry' ) || wp_next_scheduled( 'wpo_process_unsent_messages' ) !== false,
+				'pluginsUrl'         => plugins_url(),
 				'nonce'              => wp_create_nonce( 'wpo365_fx_nonce' ),
 				'restNonce'          => wp_create_nonce( 'wp_rest' ),
 				'scimSecretDefined'  => defined( 'WPO_SCIM_TOKEN' ),
@@ -154,6 +156,26 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 				),
 				'before'
 			);
+
+			$plugin_dir     = dirname( __DIR__ ) . '/apps/dist';
+			$matching_files = array();
+
+			if ( is_dir( $plugin_dir ) ) {
+				$files = scandir( $plugin_dir );
+
+				foreach ( $files as $file ) {
+					if ( is_file( $plugin_dir . '/' . $file ) && strpos( $file, 'wizard-asset' ) !== false ) {
+						$matching_files[] = $file;
+					}
+				}
+			}
+
+			$counter = 0;
+
+			foreach ( $matching_files as $file ) {
+				wp_enqueue_style( 'wizardcss_' . $counter, trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) . 'apps/dist/' . $file, array(), $GLOBALS['WPO_CONFIG']['version'] );
+				++$counter;
+			}
 		}
 
 		/**
@@ -171,7 +193,7 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 				$tag = str_replace( '></script>', ' async></script>', $tag );
 			}
 
-			if ( $handle === 'newuserjs' ) {
+			if ( $handle === 'wizardjs' || WordPress_Helpers::stripos( $handle, 'wpo365-app' ) === 0 || $handle === 'newuserjs' ) {
 				$tag = str_replace( '></script>', ' type="module"></script>', $tag );
 			}
 

@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.Found
 
 namespace Wpo\Graph;
 
@@ -7,7 +8,9 @@ defined( 'ABSPATH' ) || die();
 
 use Wpo\Core\Permissions_Helpers;
 use Wpo\Graph\Request;
-use Wpo\Services\Access_Token_Service;
+use Wpo\Graph\Apps_Db;
+use Wpo\Graph\Apps_Helpers;
+use Wpo\Graph\Apps_Service;
 use Wpo\Services\Authentication_Service;
 use Wpo\Services\Log_Service;
 use Wpo\Services\Options_Service;
@@ -16,17 +19,17 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 
 	class Controller extends \WP_REST_Controller {
 
-
 		/**
 		 * Register the routes for the objects of the controller.
 		 */
 		public function register_routes() {
 
-			$version   = '1';
-			$namespace = 'wpo365/v' . $version . '/graph';
+			$version           = '1';
+			$default_namespace = 'wpo365/v' . $version;
+			$graph_namespace   = $default_namespace . '/graph';
 
 			register_rest_route(
-				$namespace,
+				$graph_namespace,
 				'/user',
 				array(
 					array(
@@ -38,7 +41,7 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			);
 
 			register_rest_route(
-				$namespace,
+				$graph_namespace,
 				'/users',
 				array(
 					array(
@@ -54,7 +57,7 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			);
 
 			register_rest_route(
-				$namespace,
+				$graph_namespace,
 				'/myorganization',
 				array(
 					array(
@@ -70,7 +73,7 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			);
 
 			register_rest_route(
-				$namespace,
+				$graph_namespace,
 				'/me',
 				array(
 					array(
@@ -84,7 +87,7 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			);
 
 			register_rest_route(
-				$namespace,
+				$graph_namespace,
 				'/groups',
 				array(
 					array(
@@ -100,7 +103,7 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			);
 
 			register_rest_route(
-				$namespace,
+				$graph_namespace,
 				'/drives',
 				array(
 					array(
@@ -116,7 +119,7 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			);
 
 			register_rest_route(
-				$namespace,
+				$graph_namespace,
 				'/sites',
 				array(
 					array(
@@ -132,7 +135,23 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			);
 
 			register_rest_route(
-				$namespace,
+				$graph_namespace,
+				'/search',
+				array(
+					array(
+						'methods'             => \WP_REST_Server::CREATABLE,
+						'callback'            => function ( $request ) {
+							return Request::get( $request, '/search' );
+						},
+						'permission_callback' => function ( $request ) {
+							return $this->check_permissions( $request, true );
+						},
+					),
+				)
+			);
+
+			register_rest_route(
+				$graph_namespace,
 				'/proxy',
 				array(
 					array(
@@ -148,7 +167,23 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			);
 
 			register_rest_route(
-				$namespace,
+				$graph_namespace,
+				'/batch',
+				array(
+					array(
+						'methods'             => \WP_REST_Server::CREATABLE,
+						'callback'            => function ( $request ) {
+							return Request::batch( $request );
+						},
+						'permission_callback' => function ( $request ) {
+							return $this->check_permissions( $request, true, true );
+						},
+					),
+				)
+			);
+
+			register_rest_route(
+				$graph_namespace,
 				'/token',
 				array(
 					array(
@@ -162,6 +197,113 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 					),
 				)
 			);
+
+			register_rest_route(
+				$graph_namespace,
+				'/file',
+				array(
+					array(
+						'methods'             => \WP_REST_Server::CREATABLE,
+						'callback'            => function ( $request ) {
+							return Request::file();
+						},
+						'permission_callback' => function ( $request ) {
+							return $this->check_permissions_get_token( $request );
+						},
+					),
+				)
+			);
+
+			// #region App routes
+
+			/**
+			 * Creates a new instance of an app of a given type.
+			 */
+			register_rest_route(
+				$default_namespace,
+				sprintf( '/apps/instance' ),
+				array(
+					array(
+						'methods'             => \WP_REST_Server::READABLE,
+						'callback'            => function ( $request ) {
+							$result = Apps_Db::get_app_instances();
+							return Apps_Helpers::create_rest_response( $result );
+						},
+						'permission_callback' => array( $this, 'check_permissions_light' ),
+					),
+					array(
+						'methods'             => \WP_REST_Server::CREATABLE,
+						'callback'            => function ( $request ) {
+							$result = Apps_Service::add_app_instance( $request );
+							return Apps_Helpers::create_rest_response( $result );
+						},
+						'permission_callback' => array( $this, 'check_permissions_light' ),
+						'args'                => array(
+							'appInstance' => array(
+								'description'       => 'The app instance as a JSON object',
+								'type'              => 'object',
+								'default'           => '',
+								'required'          => true,
+								'validate_callback' => array( $this, 'check_param_is_not_empty' ),
+							),
+						),
+					),
+				)
+			);
+
+			/**
+			 * Deletes / Updates an app instance corresponding to the id.
+			 */
+			register_rest_route(
+				$default_namespace,
+				sprintf( '/apps/instance/(?P<id>\d+)' ),
+				array(
+					array(
+						'methods'             => \WP_REST_Server::DELETABLE,
+						'callback'            => function ( $request ) {
+							$result = Apps_Service::delete_app_instance( $request );
+							return Apps_Helpers::create_rest_response( $result );
+						},
+						'permission_callback' => array( $this, 'check_permissions_light' ),
+					),
+					array(
+						'methods'             => \WP_REST_Server::EDITABLE,
+						'callback'            => function ( $request ) {
+							$result = Apps_Service::update_app_instance( $request );
+							return Apps_Helpers::create_rest_response( $result );
+						},
+						'permission_callback' => array( $this, 'check_permissions_light' ),
+						'args'                => array(
+							'appInstance' => array(
+								'description'       => 'The updated app instance as a JSON object',
+								'type'              => 'object',
+								'required'          => true,
+								'validate_callback' => array( $this, 'check_param_is_not_empty' ),
+							),
+						),
+					),
+				)
+			);
+
+			/**
+			 * Applies the provided app and user requirements to the WPO365 configuration.
+			 */
+			register_rest_route(
+				$default_namespace,
+				sprintf( '/apps/requirements/apponly/(?P<id>\d+)' ),
+				array(
+					array(
+						'methods'             => \WP_REST_Server::EDITABLE,
+						'callback'            => function ( $request ) {
+							$result = Apps_Service::apply_requirements_app_only( $request );
+							return Apps_Helpers::create_rest_response( $result );
+						},
+						'permission_callback' => array( $this, 'check_permissions_light' ),
+					),
+				)
+			);
+
+			// #endregion
 		}
 
 		/**
@@ -234,6 +376,32 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 		}
 
 		/**
+		 * Checks if the user is allowed to use the current REST route.
+		 *
+		 * @since   39.0
+		 *
+		 * @param   WP_REST_Request $request
+		 * @return  bool|WP_Error   True if user is allowed, otherwise a WP_Error is returned.
+		 */
+		public function check_permissions_light( $request ) {
+			if ( ! wp_verify_nonce( $request->get_header( 'X-WP-Nonce' ), 'wp_rest' ) ) {
+				return new \WP_Error( 'UnauthorizedException', 'The request cannot be validated.', array( 'status' => 401 ) );
+			}
+
+			$wp_usr = \wp_get_current_user();
+
+			if ( empty( $wp_usr ) ) {
+				return new \WP_Error( 'UnauthorizedException', 'Please sign in first before using this API.', array( 'status' => 401 ) );
+			}
+
+			if ( ! Permissions_Helpers::user_is_admin( $wp_usr ) ) {
+				return new \WP_Error( 'UnauthorizedException', 'Please sign in with administrative credentials before using this API.', array( 'status' => 403 ) );
+			}
+
+			return true;
+		}
+
+		/**
 		 * Checks if the app may retrieve a (delegated) oauth access token.
 		 *
 		 * @since   17.0
@@ -287,6 +455,10 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			}
 
 			return true;
+		}
+
+		public function check_param_is_not_empty( $param, $request, $key ) {
+				return ! empty( $param );
 		}
 
 		/**

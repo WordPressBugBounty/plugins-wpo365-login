@@ -38,7 +38,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_B2c' ) ) {
 				$test_result->more_info = 'https://docs.wpo365.com/article/130-azure-ad-b2c-based-single-sign-on-for-wordpress';
 			} elseif ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/', $application_id ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "Application ID is not a valid GUID but needed for Azure AD B2C based Single Sign-On. Please copy the 'Application (Client) ID' from your Azure AD App registration's 'Overview' page and paste it into the corresponding field on the <a href=\"#singleSignOn\">'Single Sign-on' tab</a>.";
+				$test_result->message   = "Application ID is not a valid GUID but needed for Azure AD B2C based Single Sign-On. Please copy the 'Application (Client) ID' from your Entra ID App registration's 'Overview' page and paste it into the corresponding field on the <a href=\"#singleSignOn\">'Single Sign-on' tab</a>.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/130-azure-ad-b2c-based-single-sign-on-for-wordpress';
 			}
 
@@ -91,7 +91,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_B2c' ) ) {
 
 			if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $application_secret ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = 'Application (Client) Secret appears to be invalid. Possibly the secret\'s ID instead of its value has been copied from the corresonding page in Azure Portal.';
+				$test_result->message   = 'Application (Client) Secret appears to be invalid. Possibly the secret\'s ID instead of its value has been copied from the corresonding page in Azure AD B2C Portal.';
 				$test_result->more_info = 'https://docs.wpo365.com/article/130-azure-ad-b2c-based-single-sign-on-for-wordpress';
 				return $test_result;
 			}
@@ -109,7 +109,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_B2c' ) ) {
 
 			if ( empty( $redirect_url ) ) {
 				$test_result->passed    = false;
-				$test_result->message   = "The Redirect URL is not configured but needed for Azure AD B2C based Single Sign-On. Please copy the 'Redirect URI' from your Azure AD App registration's 'Authentication' page and paste it into the corresponding field on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
+				$test_result->message   = "The Redirect URL is not configured but needed for Azure AD B2C based Single Sign-On. Please copy the 'Redirect URI' from your Entra ID App registration's 'Authentication' page and paste it into the corresponding field on the plugin's <a href=\"#singleSignOn\">Single Sign-on</a> page.";
 				$test_result->more_info = 'https://docs.wpo365.com/article/130-azure-ad-b2c-based-single-sign-on-for-wordpress';
 			}
 
@@ -136,7 +136,7 @@ if ( ! class_exists( '\Wpo\Tests\Test_B2c' ) ) {
 
 				if ( WordPress_Helpers::stripos( $error_message, 'AADB2C90057' ) !== false ) {
 					$application_id = Options_Service::get_aad_option( 'application_id' );
-					$error_message  = 'It appears you have configured the (OpenID Connect) <strong>Hybrid flow</strong> on the <a href="#singleSignOn">Single Sign-on</a> page but did not allow for <em>Implicit grant and hybrid flows</em> by checking the corresponding options in Azure AD for the App registration with ID ' . $application_id . ' on the <em>Authentication</em> page.';
+					$error_message  = 'It appears you have configured the (OpenID Connect) <strong>Hybrid flow</strong> on the <a href="#singleSignOn">Single Sign-on</a> page but did not allow for <em>Implicit grant and hybrid flows</em> by checking the corresponding options in Entra ID for the App registration with ID ' . $application_id . ' on the <em>Authentication</em> page.';
 				}
 
 				$test_result->passed    = false;

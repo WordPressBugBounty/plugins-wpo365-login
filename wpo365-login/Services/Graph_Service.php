@@ -98,7 +98,7 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 				$access_token = Access_Token_Service::get_access_token( $scope );
 			} elseif ( $use_app_only ) {
 				$scope_host     = WordPress_Helpers::stripos( $scope, 'https://' ) !== false ? wp_parse_url( $scope, PHP_URL_HOST ) : 'graph.microsoft.com';
-				$tld            = Options_Service::get_aad_option( 'tld' );
+				$tld            = $use_mail_config ? Options_Service::get_mail_option( 'mail_tld' ) : Options_Service::get_aad_option( 'tld' );
 				$tld            = ! empty( $tld ) ? $tld : '.com';
 				$scope_host     = str_replace( '.com', $tld, $scope_host );
 				$app_only_scope = "https://$scope_host/.default";
@@ -131,11 +131,19 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 
 			$_headers = array();
 
-			foreach ( $headers as $header ) {
-				$splitted = explode( ':', $header );
+			if ( WordPress_Helpers::array_is_list_polyfill( $headers ) ) {
 
-				if ( count( $splitted ) === 2 ) {
-					$_headers[ WordPress_Helpers::trim( $splitted[0] ) ] = WordPress_Helpers::trim( $splitted[1] );
+				foreach ( $headers as $header ) {
+								$splitted = explode( ':', $header );
+
+					if ( count( $splitted ) === 2 ) {
+						$_headers[ WordPress_Helpers::trim( $splitted[0] ) ] = WordPress_Helpers::trim( $splitted[1] );
+					}
+				}
+			} else {
+
+				foreach ( $headers as $key => $value ) {
+					$_headers[ WordPress_Helpers::trim( $key ) ] = WordPress_Helpers::trim( $value );
 				}
 			}
 
@@ -152,11 +160,11 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 
 			$graph_version = Options_Service::get_global_string_var( 'graph_version' );
 			$graph_version = empty( $graph_version ) || $graph_version === 'current'
-				? self::GRAPH_VERSION
-				: ( $graph_version === 'beta'
-					? self::GRAPH_VERSION_BETA
-					: self::GRAPH_VERSION
-				);
+			? self::GRAPH_VERSION
+			: ( $graph_version === 'beta'
+				? self::GRAPH_VERSION_BETA
+				: self::GRAPH_VERSION
+			);
 
 			$url = self::REST_API . $graph_version . $query;
 
@@ -202,13 +210,13 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 				return new \WP_Error( '1040', $warning );
 			}
 
-			$body = wp_remote_retrieve_body( $response );
+			$body                = wp_remote_retrieve_body( $response );
+			$http_code           = wp_remote_retrieve_response_code( $response );
+			$http_status_message = wp_remote_retrieve_response_message( $response );
 
 			if ( ! $binary ) {
-				$body = json_decode( $body, true );
+				$body = ( $http_code < 200 || $http_code > 299 ) && empty( $body ) ? $http_status_message : json_decode( $body, true );
 			}
-
-			$http_code = wp_remote_retrieve_response_code( $response );
 
 			return array(
 				'payload'       => $body,

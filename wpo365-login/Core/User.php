@@ -83,7 +83,7 @@ if ( ! class_exists( '\Wpo\Core\User' ) ) {
 		public $full_name = '';
 
 		/**
-		 * Office 365 and/or Azure AD group ids
+		 * Office 365 and/or Entra ID group ids
 		 *
 		 * @var array
 		 */
@@ -97,7 +97,7 @@ if ( ! class_exists( '\Wpo\Core\User' ) ) {
 		public $tid = '';
 
 		/**
-		 * User's Azure AD object ID
+		 * User's Entra ID object ID
 		 *
 		 * @var string
 		 */
