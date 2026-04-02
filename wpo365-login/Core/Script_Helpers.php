@@ -194,6 +194,7 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 			}
 
 			if ( $handle === 'wizardjs' || WordPress_Helpers::stripos( $handle, 'wpo365-app' ) === 0 || $handle === 'newuserjs' ) {
+				$tag = preg_replace( '/\s+type\s*=\s*(["\']).*?\1/i', '', $tag );
 				$tag = str_replace( '></script>', ' type="module"></script>', $tag );
 			}
 
