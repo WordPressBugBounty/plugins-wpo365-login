@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 6.9
-Stable tag: 41.1
+Stable tag: 41.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,10 +223,15 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 
 Also available [online](https://www.wpo365.com/change-log/).
 
-= v41.0.1 =
+= v41.2 =
+* Fix: Prevented duplicate or incorrect type attributes on script tags, which could cause "Cannot use import statement outside a module" errors. [LOGIN]
+* Fix: Resolved a critical error that could occur when obtaining an access token for an embed-app due to an undefined method call. [LOGIN]
+* Fix: Automatically disables SSO when the mail function is invoked in the context of the WPO365 | MICROSOFT GRAPH MAILER plugin (preventing the plugin from logging unconfigured-warnings). [MAILER].
+
+= v41.1 =
 * Fix: Prevented duplicate or incorrect type attributes on script tags, which could cause "Cannot use import statement outside a module" errors. [LOGIN]
 
-= v41.0.0 =
+= v41.0 =
 * Change: Added a brand‑new M*365 Apps Framework for embedding content from SharePoint Online, Microsoft Entra ID, Exchange Online, and Power BI, with persistent app configuration stored in the database, a preview option, and a guided configuration wizard. [LOGIN, APPS, INTEGRATE (INTRANET)]
 * Change: Redesigned the menu of the plugin's Configuration Pages - new with a new vertical navigation, Redesigned the plugin menu with a new vertical navigation, improving clarity and access to features. [ALL]
 * Improvement: To align with Microsoft’s current branding, Azure AD has been renamed to Microsoft Entra ID throughout the plugin, and all portal links now open in entra.microsoft.com. [ALL]

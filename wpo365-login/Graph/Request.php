@@ -421,7 +421,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 
 			if ( is_wp_error( $access_token ) ) {
 				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $access_token->get_error_message() ) );
-				return new \WP_Error( 'not_authorized', $access_token->get_access_token(), array( 'status' => 403 ) );
+				return new \WP_Error( 'not_authorized', $access_token->get_error_message(), array( 'status' => 403 ) );
 			}
 
 			return array(

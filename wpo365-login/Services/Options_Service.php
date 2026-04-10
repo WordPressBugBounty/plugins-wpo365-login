@@ -358,8 +358,15 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 				return ( $is_wpo365_configured === 1 );
 			}
 
+			// No SSO > return false.
 			if ( self::get_global_boolean_var( 'no_sso' ) ) {
 				return $is_wpo365_configured;
+			}
+
+			// SSO but not WPO365 | LOGIN.
+			if ( ! class_exists( '\Wpo\Login' ) ) {
+				self::add_update_option( 'no_sso', true );
+				return self::is_wpo365_configured();
 			}
 
 			// Assume WPO365 is configured

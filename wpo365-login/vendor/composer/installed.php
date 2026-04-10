@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wpo365/wpo365-login',
-        'pretty_version' => 'dev-develop',
-        'version' => 'dev-develop',
-        'reference' => '9182d246083be7c111c5ecc5826ac7011faaea1f',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '15d1f9e08989575f400ba65fc5d98c0e19eaeee1',
         'type' => 'plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -38,9 +38,9 @@
             'dev_requirement' => false,
         ),
         'wpo365/wpo365-login' => array(
-            'pretty_version' => 'dev-develop',
-            'version' => 'dev-develop',
-            'reference' => '9182d246083be7c111c5ecc5826ac7011faaea1f',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '15d1f9e08989575f400ba65fc5d98c0e19eaeee1',
             'type' => 'plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

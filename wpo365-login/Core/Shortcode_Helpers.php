@@ -344,7 +344,20 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 			}
 
 			$script_tag = wp_get_script_tag( $script_tag_atts );
-			$script_tag = str_replace( 'type="text/javascript"', 'type="module"', $script_tag );
+
+			if ( $is_vite_app ) {
+				$script_tag = str_replace( 'type="text/javascript"', 'type="module"', $script_tag );
+
+				if ( ! preg_match( '/\btype\s*=\s*([\'"])/i', $script_tag ) ) {
+					$script_tag = preg_replace(
+						'/^<script\b(.*?)>/i',
+						'<script$1 type="module">',
+						$script_tag,
+						1
+					);
+				}
+			}
+
 			echo $script_tag; // phpcs:ignore
 
 			echo( '</div>' );
