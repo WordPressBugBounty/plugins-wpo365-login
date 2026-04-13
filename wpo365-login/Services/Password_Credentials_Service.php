@@ -64,7 +64,7 @@ if ( ! class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
 
 			foreach ( $secrets as $secret ) {
 
-				if ( in_array( $secret['id'], $flagged_app_ids, true ) ) {
+				if ( in_array( ( $secret['id'] . $secret['secret'] ), $flagged_app_ids, true ) ) {
 					continue;
 				}
 
@@ -95,19 +95,17 @@ if ( ! class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
 					return;
 				}
 
-				if ( isset( $result['payload'] ) ) {
-					$payload = json_decode( $result['payload'], true );
-
+				if ( isset( $result['payload'] ) && is_array( $result['payload'] ) ) {
 					if (
-						is_array( $payload['value'] )
-						&& count( $payload['value'] ) === 1
-						&& isset( $payload['value'][0]['passwordCredentials'] )
+						is_array( $result['payload']['value'] )
+						&& count( $result['payload']['value'] ) === 1
+						&& isset( $result['payload']['value'][0]['passwordCredentials'] )
 					) {
-						$credentials = $payload['value'][0]['passwordCredentials'];
+						$credentials = $result['payload']['value'][0]['passwordCredentials'];
 
 						foreach ( $credentials as $credential ) {
 
-							if ( isset( $credential['hint'] ) && WordPress_Helpers::stripos( $secret['secret'], $credential['hint'] ) !== false && ! empty( $credential['endDateTime'] ) ) {
+							if ( isset( $credential['hint'] ) && WordPress_Helpers::stripos( $secret['secret'], $credential['hint'] ) === 0 && ! empty( $credential['endDateTime'] ) ) {
 								$end_date_time = strtotime( $credential['endDateTime'] );
 
 								if ( ( $end_date_time - 2592000 ) < time() ) {
@@ -125,7 +123,7 @@ if ( ! class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
 									self::send_secret_expired_notification( $secret['id'], $credential['hint'], $date_as_string );
 								}
 
-								$flagged_app_ids[] = $secret['id'];
+								$flagged_app_ids[] = $secret['id'] . $secret['secret'];
 							}
 						}
 					}
