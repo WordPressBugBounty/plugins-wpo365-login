@@ -6,7 +6,7 @@ defined( 'ABSPATH' ) || die();
 
 ?>
 
-<div class="notice notice-<?php echo esc_html( $notice_type ); ?>" style="margin-left: 2px;">
+<div class="notice notice-<?php echo esc_html( $notice_type ); ?>" style="margin-left: 2px; background-color: #ffffff;">
 	<table style="border: 0; border-collapse: collapse; width: 100%; max-width: 1024px;">
 		<tbody>
 			<tr>

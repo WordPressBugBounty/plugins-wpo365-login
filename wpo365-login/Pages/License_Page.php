@@ -347,22 +347,35 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 				$lic_notices = array();
 			}
 
-			$license_is_active = function ( $store_item ) use ( $lic_notices ) {
+			$license_is_active = function ( $license_key, $store_item_id ) {
 
-				// An empty store item cannot be activated.
-				if ( empty( $store_item ) ) {
+				// Bail out early if either the license key or the store item id are omitted.
+				if ( empty( $license_key ) || empty( $store_item_id ) ) {
 					return false;
 				}
 
-				foreach ( $lic_notices as $lic_notice ) {
+				$url = is_multisite() ? network_home_url() : home_url();
 
-					if ( strpos( $lic_notice, $store_item ) >= 0 ) {
-						return false;
+				$response = wp_remote_get(
+					\sprintf( 'https://www.wpo365.com/?edd_action=check_license&license=%s&item_id=%s&url=%s', $license_key, $store_item_id, $url ),
+					array(
+						'timeout'   => 15,
+						'sslverify' => false,
+					)
+				);
+
+				if ( ! is_wp_error( $response ) ) {
+					$license_data = json_decode( wp_remote_retrieve_body( $response ) );
+
+					if ( ! empty( $license_data->license ) && $license_data->license === 'valid' ) {
+						return true;
 					}
 				}
 
-				return true;
+				return false;
 			};
+
+			$license_is_required = Plugin_Helpers::is_license_required();
 
 			?>
 			<style>
@@ -373,7 +386,7 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 					float: left;
 					margin: 0 15px 15px 0;
 					max-width: 350px;
-					min-height: 220px;
+					min-height: <?php echo( $license_is_required ? '220px' : '300px' ); ?>;
 					padding: 14px;
 					position: relative;
 					position: relative;
@@ -411,6 +424,10 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 					position: absolute;
 					width: 100%;
 				}
+
+				.wpo365-license-table TD P {
+					margin-bottom: 10px;
+				}
 			</style>
 			<div class="wrap">
 				<h2><?php _e( 'WPO365 | Licenses' ); ?></h2>
@@ -440,12 +457,12 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 									<th scope="row" valign="top">
 										<?php echo esc_html( $data['store_item'] ); ?>
 									</th>
-									<?php if ( Plugin_Helpers::is_license_required() ) : ?>
+									<?php if ( $license_is_required ) : ?>
 										<td>
 											<?php echo wp_nonce_field( 'wpo365-manage-licenses', 'wpo365_license_nonce' ); ?>
 											<input type="text" class="regular-text" id="<?php echo esc_attr( $license_key_name ); ?>" name="<?php echo esc_attr( $license_key_name ); ?>" value="<?php echo esc_attr( $license_key ); ?>">
 
-											<?php if ( $license_is_active( $data['store_item'] ) ) : ?>
+											<?php if ( $license_is_active( $license_key, $data['store_item_id'] ) ) : ?>
 												<input type="submit" class="button-secondary" name="deactivate_license" value="<?php _e( 'Deactivate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />
 											<?php else : ?>
 												<input type="submit" class="button-secondary" name="activate_license" value="<?php _e( 'Activate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />
@@ -457,7 +474,19 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 										</td>
 									<?php else : ?>
 										<td>
-											<p>You're good to go - This environment is recognized as non-productive, so no license is required.</p>
+											<p>You're good to go - This environment is recognized as non-productive, so the activation of a license is optional.</p>
+											<?php echo wp_nonce_field( 'wpo365-manage-licenses', 'wpo365_license_nonce' ); ?>
+											<input type="text" class="regular-text" id="<?php echo esc_attr( $license_key_name ); ?>" name="<?php echo esc_attr( $license_key_name ); ?>" value="<?php echo esc_attr( $license_key ); ?>">
+
+											<?php if ( $license_is_active( $license_key, $data['store_item_id'] ) ) : ?>
+												<input type="submit" class="button-secondary" name="deactivate_license" value="<?php _e( 'Deactivate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />
+											<?php else : ?>
+												<input type="submit" class="button-secondary" name="activate_license" value="<?php _e( 'Activate License' ); ?>" onclick="document.getElementById('store_item_id').value = <?php echo esc_attr( $data['store_item_id'] ); ?>" />
+											<?php endif ?>
+
+											<div>
+												<p><a href="https://www.wpo365.com/your-account/" target="_blank">Manage Sites</a></p>
+											</div>
 										</td>
 									<?php endif ?>
 								</tr>
@@ -478,8 +507,8 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 						<td>
 							<form method="POST" action="<?php echo admin_url( 'admin-post.php' ); ?>" enctype="multipart/form-data">
 								<input type="hidden" name="action" value="wpo365_force_check_for_plugin_updates">
-								<input type="hidden" name="request_url" value="<?php echo $_SERVER['REQUEST_URI'] ?>">
-								<input type="hidden" name="is_network_admin" value="<?php echo is_network_admin() ? "1" : "0" ?>">
+								<input type="hidden" name="request_url" value="<?php echo $_SERVER['REQUEST_URI']; ?>">
+								<input type="hidden" name="is_network_admin" value="<?php echo is_network_admin() ? '1' : '0'; ?>">
 								<?php wp_nonce_field( 'wpo365_force_check_for_plugin_updates', 'wpo365_force_check_for_plugin_updates_nonce' ); ?>
 								<input type="submit" class="button-secondary" value="<?php _e( 'Verify license and check for plugin updates' ); ?>" />
 							</form>

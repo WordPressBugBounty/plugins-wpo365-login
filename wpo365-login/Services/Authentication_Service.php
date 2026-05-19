@@ -75,7 +75,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				$login_hint = isset( $_REQUEST['login_hint'] ) // phpcs:ignore
 				? \sanitize_text_field( $_REQUEST['login_hint'] ) // phpcs:ignore
 				: null;
-				self::redirect_to_microsoft( $login_hint );
+				self::redirect_to_microsoft( $login_hint, true );
 			}
 
 			// Check if user has expired
@@ -104,7 +104,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 
 					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> User logged out because current login not valid anymore (' . $auth_expired . ')' );
 
-					self::redirect_to_microsoft( $login_hint );
+					self::redirect_to_microsoft( $login_hint, true );
 				}
 			} else {
 				Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Session expiration ignored because the administrator configured a duration of 0' );
@@ -204,7 +204,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			 * @since 7.1
 			 *
 			 * @param string  $user_login Username.
-			 * @param WP_User $user       WP_User object of the logged-in user.
+			 * @param \WP_User $user       WP_User object of the logged-in user.
 			 */
 			if ( Options_Service::get_global_boolean_var( 'skip_wp_login_action' ) === false ) {
 				do_action( 'wp_login', $wp_usr->user_login, $wp_usr );
@@ -336,7 +336,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			 * @since 7.1
 			 *
 			 * @param string  $user_login Username.
-			 * @param WP_User $user       WP_User object of the logged-in user.
+			 * @param \WP_User $user       WP_User object of the logged-in user.
 			 */
 			if ( Options_Service::get_global_boolean_var( 'skip_wp_login_action' ) === false ) {
 				do_action( 'wp_login', $wp_usr->user_login, $wp_usr );
@@ -358,11 +358,12 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 		 *
 		 * @since 8.0
 		 *
-		 * @param string $login_hint string Login hint that will be added to the Open ID Connect link if present.
+		 * @param string  $login_hint string Login hint that will be added to the Open ID Connect link if present.
+		 * @param boolean $check_dual_login If true the plugin will check whether the user should be sent to the login page instead.
 		 *
 		 * @return void
 		 */
-		public static function redirect_to_microsoft( $login_hint = null ) {
+		public static function redirect_to_microsoft( $login_hint = null, $check_dual_login = false ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
 			if ( ! Options_Service::is_wpo365_configured() ) {
@@ -370,18 +371,33 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				return;
 			}
 
-			if ( class_exists( '\Wpo\Services\Dual_Login_Service' ) ) {
+			// Remove the SSO bypass cookie so that proceeding to Microsoft always works,
+			// regardless of whether SSO was explicitly initiated or forced by the plugin.
+			$cookie_name = defined( 'WPO_SSO_BYPASS_COOKIE' ) ? constant( 'WPO_SSO_BYPASS_COOKIE' ) : 'wordpress_wpo365_sso_bypass';
+
+			if ( isset( $_COOKIE[ $cookie_name ] ) ) {
+				$secure = ( wp_parse_url( wp_login_url(), PHP_URL_SCHEME ) === 'https' );
+				setcookie( $cookie_name, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, $secure );
+				unset( $_COOKIE[ $cookie_name ] );
+			}
+
+			// Only attempt a dual-login redirect when the feature is actually enabled and
+			// the class is available (premium only). Skips all URL parsing for free-tier
+			// installs and sites that have not enabled either dual-login option.
+			if (
+				$check_dual_login && class_exists( '\Wpo\Services\Dual_Login_Service' ) ) {
 				\Wpo\Services\Dual_Login_Service::redirect();
 			}
 
 			Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Forwarding the user to Microsoft to get fresh ID and access token(s)' );
 
-			/**
-			 * @since 33.0  The loading template has become optional and instead the redirect to Microsoft
-			 *              is performed server-side.
-			 */
+			// Serve the client-side redirect template when Teams support is enabled so that
+			// pintra-redirect.js can detect iframes and open a popup if needed.
+			// Skip the template when the request already came FROM pintra-redirect.js
+			// (action=openidredirect) to avoid an infinite loop: template → JS posts → template → …
+			$from_pintra = ! empty( $_REQUEST['action'] ) && $_REQUEST['action'] === 'openidredirect'; // phpcs:ignore
 
-			if ( Options_Service::get_global_boolean_var( 'use_teams' ) ) {
+			if ( Options_Service::get_global_boolean_var( 'use_teams' ) && ! $from_pintra ) {
 				ob_start();
 				include $GLOBALS['WPO_CONFIG']['plugin_dir'] . '/templates/openid-redirect.php';
 				$content = ob_get_clean();
@@ -407,6 +423,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 
 		/**
 		 * @since 11.0
+		 *
+		 * @param \Wpo\Core\User $wpo_usr
 		 */
 		private static function user_in_group( $wpo_usr ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
@@ -449,6 +467,9 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 
 		/**
 		 * @since 11.0
+		 *
+		 * @param string $preferred_username
+		 * @param string $email
 		 */
 		public static function user_from_domain( $preferred_username, $email ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );

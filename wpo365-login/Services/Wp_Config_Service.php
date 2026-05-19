@@ -103,6 +103,22 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 
 			$wpo_idps = self::get_multiple_idps();
 
+			if ( $wpo_idps === false ) {
+				$idp_id_check = $request->get_item( 'idp_id' );
+
+				if ( ! empty( $idp_id_check ) ) {
+					Log_Service::write_log(
+						'WARN',
+						sprintf(
+							'%s -> An idp_id (%s) was received but no multiple IdP configuration (WPO_IDPS_%s) was found. The idp_id will be ignored. Verify that a premium WPO365 extension is active and that the wpo365_active_extensions option is not stale.',
+							__METHOD__,
+							$idp_id_check,
+							\Wpo\Core\Wpmu_Helpers::get_options_blog_id()
+						)
+					);
+				}
+			}
+
 			if ( $wpo_idps !== false ) {
 
 				// Closure to filter the default IdP
@@ -145,8 +161,8 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 						if ( count( $filtered_idps ) === 1 ) {
 							$wpo_aad = $filtered_idps[0];
 						} else {
-							$wpo_aad = array();
-							Log_Service::write_log( 'ERROR', sprintf( '%s -> Could not find IdP by IdP ID', __METHOD__ ) );
+							Log_Service::write_log( 'ERROR', sprintf( '%s -> Could not find IdP by IdP ID %s; falling back to the default IdP', __METHOD__, $idp_id ) );
+							// Leave $wpo_aad unset so the fallback below selects the default IdP.
 						}
 					}
 				}

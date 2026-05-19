@@ -77,7 +77,13 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service_Ciam' ) ) {
 				$ciam_domain = sprintf( 'https://%s', trailingslashit( $ciam_domain ) );
 			}
 
-			$state_url = Url_Helpers::get_state_url();
+			$query_args = array();
+
+			if ( ! empty( $_REQUEST['wpo_embedded'] ) ) { // phpcs:ignore
+				$query_args['mode'] = sanitize_key( $_REQUEST['wpo_embedded'] ) === 'teams' ? 'wpoEmbeddedTeams' : 'wpoEmbeddedIframe'; // phpcs:ignore 
+			}
+
+			$state_url = Url_Helpers::get_state_url( '', $query_args );
 
 			if ( class_exists( '\Wpo\Services\User_Create_Update_Service' ) ) {
 				$tld   = Options_Service::get_aad_option( 'tld' );

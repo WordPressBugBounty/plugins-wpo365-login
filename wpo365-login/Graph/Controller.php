@@ -286,6 +286,24 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			);
 
 			/**
+			 * Create a copy of an app instance corresponding to the id.
+			 */
+			register_rest_route(
+				$default_namespace,
+				sprintf( '/apps/instance/(?P<id>\d+)/copy' ),
+				array(
+					array(
+						'methods'             => \WP_REST_Server::CREATABLE,
+						'callback'            => function ( $request ) {
+							$result = Apps_Service::duplicate_app_instance( $request );
+							return Apps_Helpers::create_rest_response( $result );
+						},
+						'permission_callback' => array( $this, 'check_permissions_light' ),
+					),
+				)
+			);
+
+			/**
 			 * Applies the provided app and user requirements to the WPO365 configuration.
 			 */
 			register_rest_route(
@@ -309,11 +327,11 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 		/**
 		 * Checks if the app is allowed to access the API.
 		 *
-		 * @param WP_REST_Request $request
-		 * @param bool            $allow_application
-		 * @param bool            $check_proxy
+		 * @param \WP_REST_Request $request
+		 * @param bool             $allow_application
+		 * @param bool             $check_proxy
 		 *
-		 * @return bool|WP_Error True if user can retrieve an access token for the requested scope otherwise a WP_Error is returned.
+		 * @return bool|\WP_Error True if user can retrieve an access token for the requested scope otherwise a WP_Error is returned.
 		 */
 		public function check_permissions( $request, $allow_application = false, $check_proxy = false ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
@@ -380,8 +398,8 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 		 *
 		 * @since   39.0
 		 *
-		 * @param   WP_REST_Request $request
-		 * @return  bool|WP_Error   True if user is allowed, otherwise a WP_Error is returned.
+		 * @param   \WP_REST_Request $request
+		 * @return  bool|\WP_Error   True if user is allowed, otherwise a WP_Error is returned.
 		 */
 		public function check_permissions_light( $request ) {
 			if ( ! wp_verify_nonce( $request->get_header( 'X-WP-Nonce' ), 'wp_rest' ) ) {
@@ -406,7 +424,9 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 		 *
 		 * @since   17.0
 		 *
-		 * @return  bool|WP_Error   True if user can retrieve an access token for the requested scope otherwise a WP_Error is returned.
+		 * @param   \WP_REST_Request $request
+		 *
+		 * @return  bool|\WP_Error   True if user can retrieve an access token for the requested scope otherwise a WP_Error is returned.
 		 */
 		public function check_permissions_get_token( $request ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
@@ -457,6 +477,14 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 			return true;
 		}
 
+		/**
+		 * Checks whether param is not empty.
+		 *
+		 * @param mixed $param
+		 * @param mixed $request
+		 * @param mixed $key
+		 * @return bool
+		 */
 		public function check_param_is_not_empty( $param, $request, $key ) {
 				return ! empty( $param );
 		}

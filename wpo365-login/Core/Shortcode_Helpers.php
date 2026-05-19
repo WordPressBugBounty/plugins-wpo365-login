@@ -30,7 +30,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 
 						if ( ! empty( $atts['id'] ) && is_numeric( $atts['id'] ) ) {
 							$id           = (int) $atts['id'];
-							$app_instance = Apps_Db::get_app_instance( $id, true );
+							$app_instance = Apps_Db::get_app_instance( $id );
 
 							if ( is_wp_error( $app_instance ) ) {
 								return sprintf( '<div>Could not retrieve WPO365 app. [Error: %s]</div>', $app_instance->get_error_message() );
@@ -116,7 +116,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 							$script_url = add_query_arg( 'rootId', $elem_id, $script_url );
 							$script_url = add_query_arg( 'appId', $id, $script_url );
 
-							$script_handle = sprintf( 'wpo365-app-%d', $id );
+							$script_handle = sprintf( 'wpo365-app-%d-%s', $id, $elem_id );
 
 							wp_enqueue_script( $script_handle, $script_url, array(), $GLOBALS['WPO_CONFIG']['version'] ); // phpcs:ignore
 
@@ -213,8 +213,9 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 			 *              if the common Toast component is not found in the root of the "apps//dist" folder.
 			 */
 
-			$base_url  = site_url();
-			$base_path = ABSPATH;
+			$base_url    = site_url();
+			$base_path   = ABSPATH;
+			$is_vite_app = false;
 
 			if ( stripos( $script_url, $base_url ) === 0 ) {
 				$clean_url         = explode( '?', $script_url )[0];
@@ -278,7 +279,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 			}
 
 			if ( ! empty( $result ) ) {
-				$props = wp_json_encode( $result );
+				$props = wp_json_encode( $result, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT );
 			}
 
 			// Vite built apps have with react.
@@ -334,7 +335,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 				'src'                 => $url,
 				'data-nonce'          => wp_create_nonce( 'wpo365_fx_nonce' ),
 				'data-wpajaxadminurl' => admin_url( 'admin-ajax.php' ),
-				'data-props'          => htmlspecialchars( $props ),
+				'data-props'          => $props,
 				'id'                  => $script_id,
 			);
 
@@ -374,56 +375,20 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 		 * @return void
 		 */
 		public static function ensure_login_button_short_code_v2() {
-			if ( empty( Extensions_Helpers::get_active_extensions() ) ) {
-				return;
-			}
-
 			if ( ! shortcode_exists( 'wpo365-sign-in-with-microsoft-v2-sc' ) ) {
-				add_shortcode( 'wpo365-sign-in-with-microsoft-v2-sc', '\Wpo\Core\Shortcode_Helpers::add_sign_in_with_microsoft_shortcode_V2' );
+				add_shortcode(
+					'wpo365-sign-in-with-microsoft-v2-sc',
+					function () {
+						Compatibility_Helpers::compat_warning(
+							sprintf(
+								'%s -> A deprecated version of an SSO button shortcode has been detected. To ensure continued compatibility with future updates, please update your site and use the shortcode [wpo365-sso-button] instead.',
+								__METHOD__
+							)
+						);
+						return \Wpo\Core\Shortcode_Helpers::login_button();
+					}
+				);
 			}
-		}
-
-		/**
-		 * Adds the Sign in with Microsoft short code V2
-		 *
-		 * @since 8.0
-		 *
-		 * @param array  $params Shortcode parameters according to WordPress codex.
-		 * @param string $content Found in between the short code start and end tag.
-		 * @param string $tag Text domain.
-		 */
-		public static function add_sign_in_with_microsoft_shortcode_V2( $params = array(), $content = null, $tag = '' ) { // phpcs:ignore
-			if ( empty( $content ) ) {
-				return $content;
-			}
-
-			// Ensure pintra-redirect is enqueued
-			Script_Helpers::enqueue_pintra_redirect();
-
-			$site_url = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
-
-			// Load the js dependency
-			ob_start();
-			include Extensions_Helpers::get_active_extension_dir( array( 'wpo365-login-premium/wpo365-login.php', 'wpo365-sync-5y/wpo365-sync-5y.php', 'wpo365-login-intranet/wpo365-login.php', 'wpo365-intranet-5y/wpo365-intranet-5y.php', 'wpo365-integrate/wpo365-integrate.php', 'wpo365-pro/wpo365-pro.php', 'wpo365-customers/wpo365-customers.php', 'wpo365-essentials/wpo365-essentials.php' ) ) . '/templates/openid-ssolink.php';
-			$js_lib = ob_get_clean();
-
-			// Sanitize the HTML template
-			$dom = new \DOMDocument();
-			@$dom->loadHTML( $content ); // phpcs:ignore
-			$script = $dom->getElementsByTagName( 'script' );
-			$remove = array();
-
-			foreach ( $script as $item ) {
-				$remove[] = $item;
-			}
-
-			foreach ( $remove as $item ) {
-				$item->parentNode->removeChild( $item ); // phpcs:ignore
-			}
-
-			// Concatenate the two
-			$output = $js_lib . $dom->saveHTML();
-			return str_replace( '__##PLUGIN_BASE_URL##__', $GLOBALS['WPO_CONFIG']['plugin_url'], $output );
 		}
 
 		/**
@@ -433,7 +398,29 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 		 */
 		public static function ensure_login_button_short_code() {
 			if ( ! shortcode_exists( 'wpo365-login-button' ) ) {
-				add_shortcode( 'wpo365-login-button', '\Wpo\Core\Shortcode_Helpers::login_button' );
+				add_shortcode(
+					'wpo365-login-button',
+					function () {
+						Compatibility_Helpers::compat_warning(
+							sprintf(
+								'%s -> A deprecated version of an SSO button shortcode has been detected. To ensure continued compatibility with future updates, please update your site and use the shortcode [wpo365-sso-button] instead.',
+								__METHOD__
+							)
+						);
+						return \Wpo\Core\Shortcode_Helpers::login_button();
+					}
+				);
+			}
+		}
+
+		/**
+		 * Helper method to ensure that short codes are initialized.
+		 *
+		 * @return void
+		 */
+		public static function ensure_sso_button_sc() {
+			if ( ! shortcode_exists( 'wpo365-sso-button' ) ) {
+				add_shortcode( 'wpo365-sso-button', '\Wpo\Core\Shortcode_Helpers::login_button' );
 			}
 		}
 
@@ -442,15 +429,42 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 		 *
 		 * @since 10.6
 		 *
-		 * @param bool $output Whether to return the HTML or not.
-		 *
-		 * @return void
+		 * @return string
 		 */
-		public static function login_button( $output = false ) {
+		public static function login_button() {
 			// Don't render a login button when sso is disabled
 			if ( Options_Service::get_global_boolean_var( 'no_sso' ) ) {
-				return;
+				return '';
 			}
+
+			if ( class_exists( '\Wpo\Core\Url_Helpers' ) && \Wpo\Core\Url_Helpers::is_wp_login() ) {
+				$_site_url = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
+
+				if ( defined( 'WPO_AUTH_SCENARIO' ) && constant( 'WPO_AUTH_SCENARIO' ) === 'internet' ) {
+					$_site_url = \Wpo\Services\Options_Service::get_aad_option( 'redirect_url' );
+					$_site_url = \Wpo\Services\Options_Service::get_global_boolean_var( 'use_saml' )
+						? \Wpo\Services\Options_Service::get_aad_option( 'saml_sp_acs_url' )
+						: $_site_url;
+					$_site_url = apply_filters( 'wpo365/aad/redirect_uri', $_site_url );
+				}
+			}
+
+			wp_enqueue_script( 'wpossobutton', trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) . 'scripts/wpoSsoButton.js', array(), $GLOBALS['WPO_CONFIG']['version'], false );
+
+			$permalink_structure = get_option( 'permalink_structure' );
+			$sso_start_base_url  = empty( $permalink_structure )
+				? add_query_arg( 'wpo_sso_start', '1', home_url( '/' ) )
+				: home_url( '/wpo/sso/start' );
+
+			wp_add_inline_script(
+				'wpossobutton',
+				sprintf(
+					"window.wpo365 = window.wpo365 || {}; window.wpo365.siteUrl = '%s'; window.wpo365.ssoStartUrl = '%s';",
+					isset( $_site_url ) ? esc_js( $_site_url ) : '',
+					esc_js( $sso_start_base_url )
+				),
+				'before'
+			);
 
 			// Used by the template that is rendered
 			$hide_login_button      = Options_Service::get_global_boolean_var( 'hide_login_button' );
@@ -503,12 +517,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 			ob_start();
 			include $login_button_template;
 			$content = ob_get_clean();
-
-			if ( $output ) {
-				return wp_kses( $content, WordPress_Helpers::get_allowed_html() );
-			}
-
-			echo wp_kses( $content, WordPress_Helpers::get_allowed_html() );
+			return wp_kses( $content, WordPress_Helpers::get_allowed_html() );
 		}
 
 		/**
@@ -582,36 +591,6 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 		}
 
 		/**
-		 * Helper method to ensure that short codes are initialized
-		 *
-		 * @since 8.0
-		 *
-		 * @return void
-		 */
-		public static function ensure_sso_button_sc() {
-			if ( ! shortcode_exists( 'wpo365-sso-button' ) ) {
-				add_shortcode( 'wpo365-sso-button', '\Wpo\Core\Shortcode_Helpers::add_sso_button_sc' );
-			}
-		}
-
-		/**
-		 * Adds the default SSO button with customizations applied
-		 *
-		 * @since 33.0
-		 *
-		 * @param array  $params Shortcode parameters according to WordPress codex.
-		 * @param string $content Found in between the short code start and end tag.
-		 * @param string $tag Text domain.
-		 */
-		public static function add_sso_button_sc( $params = array(), $content = null, $tag = '' ) { // phpcs:ignore
-			// Ensure pintra-redirect is enqueued
-			Script_Helpers::enqueue_pintra_redirect();
-
-			// Output the SSO button
-			return self::login_button( true );
-		}
-
-		/**
 		 * Validates the script URL and replaces the major part of the URL to ensure
 		 * the script is located in the WPO365 apps/dist folder.
 		 *
@@ -660,7 +639,29 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 				array_pop( $segments )
 			);
 
-			return plugins_url( $script_relative_url );
+			global $wp_filter;
+
+			$had_hook = isset( $wp_filter['plugins_url'] );
+			$saved    = $had_hook ? $wp_filter['plugins_url'] : null;
+
+			remove_all_filters( 'plugins_url' );
+
+			try {
+				$validated_url = plugins_url( $script_relative_url );
+
+				if ( WordPress_Helpers::stripos( $validated_url, '/' ) === 0 ) {
+					return rtrim( home_url(), '/' ) . $validated_url;
+				}
+
+				return $validated_url;
+
+			} finally {
+				if ( $saved !== null ) {
+					$wp_filter['plugins_url'] = $saved; // phpcs:ignore
+				} else {
+					unset( $wp_filter['plugins_url'] );
+				}
+			}
 		}
 	}
 }

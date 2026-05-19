@@ -2,27 +2,6 @@
 
 defined( 'ABSPATH' ) || die();
 
-if ( class_exists( '\Wpo\Core\Url_Helpers' ) && \Wpo\Core\Url_Helpers::is_wp_login() ) {
-		$_site_url = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
-
-	if ( defined( 'WPO_AUTH_SCENARIO' ) && constant( 'WPO_AUTH_SCENARIO' ) === 'internet' ) {
-		$_site_url = \Wpo\Services\Options_Service::get_aad_option( 'redirect_url' );
-		$_site_url = \Wpo\Services\Options_Service::get_global_boolean_var( 'use_saml' )
-			? \Wpo\Services\Options_Service::get_aad_option( 'saml_sp_acs_url' )
-			: $_site_url;
-		$_site_url = apply_filters( 'wpo365/aad/redirect_uri', $_site_url );
-	}
-}
-
-$javascript = "window.wpo365 = window.wpo365 || {};\n" .
-							( ! empty( $_site_url ) ? sprintf( "window.wpo365.siteUrl = '%s';\n", $_site_url ) : '' );
-
-if ( ! current_theme_supports( 'html5', 'script' ) || ! function_exists( 'wp_print_inline_script_tag' ) ) {
-		printf( "<script>%s</script>\n", $javascript ); // phpcs:ignore
-} else {
-	wp_print_inline_script_tag( $javascript );
-}
-
 ?>
 
 <div>
@@ -147,7 +126,7 @@ if ( ! current_theme_supports( 'html5', 'script' ) || ! function_exists( 'wp_pri
 				</div>
 			<?php endif ?>
 			<div class="wpo365-mssignin-spacearound">
-				<button class="wpo365-mssignin-button" type="button" onclick="window.wpo365.pintraRedirect.toMsOnline('', location.href, '', '', false, document.getElementById('selectedTenant') ? document.getElementById('selectedTenant').value : null)" aria-label="<?php echo esc_html( $sign_in_with_microsoft ); ?>">
+				<button class="wpo365-mssignin-button" type="button" onclick="window.location=getWpoSsoUrl()" aria-label="<?php echo esc_html( $sign_in_with_microsoft ); ?>">
 					<?php if ( empty( $button_hide_logo ) ) : ?>
 						<div class="wpo365-mssignin-logo">
 							<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21">

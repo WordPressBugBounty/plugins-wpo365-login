@@ -18,6 +18,10 @@ if ( ! class_exists( '\Wpo\Services\Request_Service' ) ) {
 
 		private $requests = array();
 
+		/**
+		 *
+		 * @var \Wpo\Services\Request_Service $instance
+		 */
 		private static $instance = null;
 
 		private function __construct() {
@@ -91,6 +95,12 @@ if ( ! class_exists( '\Wpo\Services\Request_Service' ) ) {
 			return self::$instance;
 		}
 
+		/**
+		 *
+		 * @param string $id
+		 *
+		 * @return \Wpo\Core\Request
+		 */
 		public function get_request( $id ) {
 
 			if ( ! array_key_exists( $id, $this->requests ) ) {

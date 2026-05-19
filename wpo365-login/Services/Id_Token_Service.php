@@ -72,7 +72,13 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service' ) ) {
 
 			$redirect_uri = Options_Service::get_aad_option( 'redirect_url' );
 			$redirect_uri = apply_filters( 'wpo365/aad/redirect_uri', $redirect_uri );
-			$state_url    = Url_Helpers::get_state_url();
+			$query_args   = array();
+
+			if ( ! empty( $_REQUEST['wpo_embedded'] ) ) { // phpcs:ignore
+				$query_args['mode'] = sanitize_key( $_REQUEST['wpo_embedded'] ) === 'teams' ? 'wpoEmbeddedTeams' : 'wpoEmbeddedIframe'; // phpcs:ignore 
+			}
+
+			$state_url = Url_Helpers::get_state_url( '', $query_args );
 
 			/**
 			 * @since   21.9    Premium extensions of the WPO365 plugin require User.Read to update core WP user fields.
@@ -190,13 +196,8 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service' ) ) {
 				return;
 			}
 
-			// Handle if nonce is invalid
-			if ( ! Options_Service::get_global_boolean_var( 'skip_nonce_verification' ) ) {
-
-				if ( ! Nonce_Service::verify_nonce( $id_token->nonce ) ) {
-					Log_Service::write_log( 'WARN', __METHOD__ . ' -> Could not successfully validate oidc nonce with value ' . $id_token->nonce );
-				}
-			}
+			// Verify the nonce; verify_nonce() calls Authentication_Service::goodbye() and exits on failure.
+			Nonce_Service::verify_nonce( $id_token->nonce );
 
 			// Log id token if configured
 			if ( Options_Service::get_global_boolean_var( 'debug_log_id_token' ) === true ) {

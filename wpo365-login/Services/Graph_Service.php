@@ -214,6 +214,14 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 			$http_code           = wp_remote_retrieve_response_code( $response );
 			$http_status_message = wp_remote_retrieve_response_message( $response );
 
+			if ( $http_code === 302 ) {
+				$location = wp_remote_retrieve_header( $response, 'location' );
+				return array(
+					'payload'       => $location,
+					'response_code' => $http_code,
+				);
+			}
+
 			if ( ! $binary ) {
 				$body = ( $http_code < 200 || $http_code > 299 ) && empty( $body ) ? $http_status_message : json_decode( $body, true );
 			}
@@ -229,7 +237,10 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 		 *
 		 * @since 7.17
 		 *
-		 * @param mixed $fetch_result
+		 * @param mixed  $fetch_result
+		 * @param string $message
+		 * @param string $level
+		 * @param mixed  $on_error
 		 *
 		 * @return bool True if valid otherwise false
 		 */

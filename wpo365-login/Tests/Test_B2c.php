@@ -123,8 +123,6 @@ if ( ! class_exists( '\Wpo\Tests\Test_B2c' ) ) {
 			$test_result         = new Test_Result( 'Can decode the ID token', Test_Result::CAPABILITY_B2C_SSO, Test_Result::SEVERITY_BLOCKING );
 			$test_result->passed = true;
 
-			Id_Token_Service::process_openidconnect_token( false );
-
 			$request_service = Request_Service::get_instance();
 			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 

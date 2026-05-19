@@ -22,7 +22,21 @@ foreach ( $candidates as $candidate ) {
 		require_once $file;
 
 		try {
-	    $file         = $_GET['file'] ?? ''; // phpcs:ignore
+			// Read the rewrite-generated 'file' parameter from the raw QUERY_STRING.
+			// Both Apache [QSA] and Nginx append the original query string AFTER the
+			// rewrite params, so a user-supplied 'file=' would appear as a second
+			// entry. PHP $_GET['file'] gives the last value (injection risk). We take
+			// the first value instead.
+			$raw_qs = isset( $_SERVER['QUERY_STRING'] ) ? $_SERVER['QUERY_STRING'] : ''; // phpcs:ignore
+			$file   = '';
+
+			foreach ( explode( '&', $raw_qs ) as $qs_pair ) {
+				if ( strncmp( $qs_pair, 'file=', 5 ) === 0 ) {
+					$file = urldecode( substr( $qs_pair, 5 ) );
+					break;
+				}
+			}
+
 			$sec_download = new \Wpo\Services\Secure_Download_Service();
 			$sec_download->serve_file( $file );
 		} catch ( \Exception $ex ) { // phpcs:ignore

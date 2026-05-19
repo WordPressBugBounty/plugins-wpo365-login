@@ -260,6 +260,25 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 			}
 
 			/**
+			 * @since   41.4    Allow to send from an Alias.
+			 */
+
+			if ( Options_Service::get_global_boolean_var( 'mail_send_alias' ) ) {
+				$alias_mailbox = Options_Service::get_global_string_var( 'mail_send_alias_from' );
+
+				if ( filter_var( $alias_mailbox, FILTER_VALIDATE_EMAIL ) ) {
+					$array_of_email_addresses = self::validate_email_addresses( $alias_mailbox );
+
+					if ( is_array( $array_of_email_addresses ) && count( $array_of_email_addresses ) === 1 ) {
+
+						if ( $retry_error_code === 0 ) {
+							$send_from = $array_of_email_addresses[0];
+						}
+					}
+				}
+			}
+
+			/**
 			 * @since   21.x    Allow to send as / on behalf of
 			 */
 			if ( Options_Service::get_global_boolean_var( 'mail_send_as' ) ) {

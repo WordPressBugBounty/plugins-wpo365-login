@@ -64,7 +64,13 @@ if ( ! class_exists( '\Wpo\Services\Saml2_Service' ) ) {
 
 			require_once $GLOBALS['WPO_CONFIG']['plugin_dir'] . '/OneLogin/_toolkit_loader.php';
 
-			$state_url     = Url_Helpers::get_state_url( $redirect_to );
+			$query_args = array();
+
+			if ( ! empty( $_REQUEST['wpo_embedded'] ) ) { // phpcs:ignore
+				$query_args['mode'] = sanitize_key( $_REQUEST['wpo_embedded'] ) === 'teams' ? 'wpoEmbeddedTeams' : 'wpoEmbeddedIframe'; // phpcs:ignore 
+			}
+
+			$state_url     = Url_Helpers::get_state_url( '', $query_args );
 			$force_authn   = Options_Service::get_global_boolean_var( 'saml_force_authn' );
 			$saml_settings = self::saml_settings();
 			$auth          = new \OneLogin_Saml2_Auth( $saml_settings );

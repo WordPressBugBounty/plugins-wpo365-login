@@ -444,7 +444,7 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 
 			$default_value = $return_bool ? false : '';
 
-			if ( $wpo_aad === false ) {
+			if ( $wpo_aad === false || ( is_array( $wpo_aad ) && empty( $wpo_aad ) ) ) {
 				Log_Service::write_log( 'ERROR', '[WPOOSGAO10] -> The Entra ID options have not been cached' );
 				return $default_value;
 			}

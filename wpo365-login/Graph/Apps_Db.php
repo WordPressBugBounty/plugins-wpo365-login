@@ -99,7 +99,7 @@ if ( ! class_exists( '\Wpo\Graph\Apps_Db' ) ) {
 		 *
 		 * @param int $id
 		 *
-		 * @return string|null|WP_Error
+		 * @return object|null|WP_Error
 		 */
 		public static function get_app_instance( $id ) {
 			global $wpdb;
@@ -203,6 +203,8 @@ if ( ! class_exists( '\Wpo\Graph\Apps_Db' ) ) {
 		 *
 		 * @since 3.0
 		 *
+		 * @param string $table_name
+		 *
 		 * @return string
 		 */
 		private static function get_table_name( $table_name ) {
@@ -219,6 +221,8 @@ if ( ! class_exists( '\Wpo\Graph\Apps_Db' ) ) {
 		 * Helper method to create / update the custom Mail DB table used for logging.
 		 *
 		 * @since   17.0
+		 *
+		 * @param string $table_name
 		 *
 		 * @return  boolean|WP_Error
 		 */
@@ -252,6 +256,8 @@ if ( ! class_exists( '\Wpo\Graph\Apps_Db' ) ) {
 		 * Helper method to check whether the custom WordPress table exists.
 		 *
 		 * @since   3.0
+		 *
+		 * @param string $table_name
 		 *
 		 * @return boolean
 		 */

@@ -100,6 +100,49 @@ if ( ! class_exists( '\Wpo\Graph\Apps_Service' ) ) {
 
 		/**
 		 *
+		 * @param WP_REST_Request $request
+		 * @return \WP_REST_Response|WP_Error
+		 */
+		public static function duplicate_app_instance( $request ) {
+			$id = absint( sanitize_key( $request['id'] ) );
+
+			if ( ! is_numeric( $id ) || $id === 0 ) {
+				return new WP_Error(
+					'ArgumentException',
+					sprintf( 'The method %s expected an integer value as ID. [%s]', __METHOD__, $id ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$source = Apps_Db::get_app_instance( $id );
+
+			if ( is_wp_error( $source ) ) {
+				return $source;
+			}
+
+			if ( $source === null ) {
+				return new WP_Error(
+					'NotFoundException',
+					sprintf( 'The requested app instance with ID %d was not found.', $id ),
+					array( 'status' => 404 )
+				);
+			}
+
+			$copy        = json_decode( wp_json_encode( $source ), false );
+			$copy->title = sprintf( 'Copy of app %d', $id );
+			unset( $copy->id );
+
+			$result = Apps_Db::add_app_instance( $copy );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return new \WP_REST_Response( null, 201 );
+		}
+
+		/**
+		 *
 		 * @param stdClass $requirements
 		 * @param stdClass $config
 		 *
@@ -140,7 +183,7 @@ if ( ! class_exists( '\Wpo\Graph\Apps_Service' ) ) {
 						if ( ! $updated && strcasecmp( $allowed_endpoint['key'], $endpoint ) === 0 ) {
 							$allowed_endpoints[ $index ] = array(
 								'key'     => $endpoint,
-								'boolVal' => $app_only_access,
+								'boolVal' => $allowed_endpoint['boolVal'] || $app_only_access, // Do not remove application-access.
 							);
 
 							$updated = true;

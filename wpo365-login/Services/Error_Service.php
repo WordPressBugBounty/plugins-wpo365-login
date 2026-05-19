@@ -14,23 +14,26 @@ if ( ! class_exists( '\Wpo\Services\Error_Service' ) ) {
 	class Error_Service {
 
 
-		const AADAPPREG_ERROR = 'AADAPPREG_ERROR';
-		const BASIC_VERSION   = 'BASIC_VERSION';
-		const CHECK_LOG       = 'CHECK_LOG';
-		const DEACTIVATED     = 'DEACTIVATED';
-		const DUAL_LOGIN      = 'DUAL_LOGIN';
-		const DUAL_LOGIN_V2   = 'DUAL_LOGIN_V2';
-		const ID_TOKEN_ERROR  = 'ID_TOKEN_ERROR';
-		const ID_TOKEN_AUD    = 'ID_TOKEN_AUD';
-		const LOGGED_OUT      = 'LOGGED_OUT';
-		const PRIVATE_PAGE    = 'PRIVATE_PAGE';
-		const NOT_CONFIGURED  = 'NOT_CONFIGURED';
-		const NOT_FROM_DOMAIN = 'NOT_FROM_DOMAIN';
-		const NOT_IN_GROUP    = 'NOT_IN_GROUP';
-		const SAML2_ERROR     = 'SAML2_ERROR';
-		const TAMPERED_WITH   = 'TAMPERED_WITH';
-		const USER_NOT_FOUND  = 'USER_NOT_FOUND';
-		const NO_IDP_SELECTED = 'NO_IDP_SELECTED';
+		const AADAPPREG_ERROR  = 'AADAPPREG_ERROR';
+		const BASIC_VERSION    = 'BASIC_VERSION';
+		const CHECK_LOG        = 'CHECK_LOG';
+		const DEACTIVATED      = 'DEACTIVATED';
+		const DUAL_LOGIN       = 'DUAL_LOGIN';
+		const DUAL_LOGIN_V2    = 'DUAL_LOGIN_V2';
+		const ID_TOKEN_ERROR   = 'ID_TOKEN_ERROR';
+		const ID_TOKEN_AUD     = 'ID_TOKEN_AUD';
+		const LOGGED_OUT       = 'LOGGED_OUT';
+		const PRIVATE_PAGE     = 'PRIVATE_PAGE';
+		const NOT_CONFIGURED   = 'NOT_CONFIGURED';
+		const NOT_FROM_DOMAIN  = 'NOT_FROM_DOMAIN';
+		const NOT_IN_GROUP     = 'NOT_IN_GROUP';
+		const SAML2_ERROR      = 'SAML2_ERROR';
+		const TAMPERED_WITH    = 'TAMPERED_WITH';
+		const USER_NOT_FOUND   = 'USER_NOT_FOUND';
+		const NO_IDP_SELECTED  = 'NO_IDP_SELECTED';
+		const NONCE_EXPIRED    = 'NONCE_EXPIRED';
+		const NONCE_NOT_FOUND  = 'NONCE_NOT_FOUND';
+		const INVALID_ENDPOINT = 'INVALID_ENDPOINT';
 
 		/**
 		 * Checks for errors in the login messages container and display and unset immediatly after if any
@@ -76,40 +79,46 @@ if ( ! class_exists( '\Wpo\Services\Error_Service' ) ) {
 		public static function get_error_message( $error_code ) {
 
 			$deprecated_error_messages = array(
-				self::CHECK_LOG       => 'Please contact your System Administrator and check log file.',
-				self::DEACTIVATED     => 'Account deactivated.',
-				self::DUAL_LOGIN      => 'Alternatively, you can click the following link to sign into this website with your corporate <a href="__##OAUTH_URL##__">network login (Microsoft 365)</a>',
-				self::DUAL_LOGIN_V2   => 'Alternatively, you can click the following link to sign into this website with your corporate <span class="wpo365-dual-login-notice" style="cursor: pointer; text-decoration: underline; color: #000CD" onclick="window.wpo365.pintraRedirect.toMsOnline()">network login (Microsoft 365)</span>',
-				self::ID_TOKEN_ERROR  => 'Your ID token could not be processed. Please contact your System Administrator.',
-				self::ID_TOKEN_AUD    => 'The ID token is intended for a different audience. Please contact your System Administrator.',
-				self::LOGGED_OUT      => 'You are now logged out.',
-				self::NOT_CONFIGURED  => 'SSO (WPO365) login not configured yet. Please contact your System Administrator.',
-				self::NOT_FROM_DOMAIN => 'Access Denied. Please contact your System Administrator.',
-				self::NOT_IN_GROUP    => 'User not in group. Please contact your System Administrator.',
-				self::SAML2_ERROR     => 'SAML authentication error',
-				self::TAMPERED_WITH   => 'Your login might be tampered with. Please contact your System Administrator.',
-				self::USER_NOT_FOUND  => 'Could not create or retrieve your login. Please contact your System Administrator.',
-				self::NO_IDP_SELECTED => 'Please select an Identity Provider from the list below to sign in to the website.',
+				self::CHECK_LOG        => 'Please contact your System Administrator and check log file.',
+				self::DEACTIVATED      => 'Account deactivated.',
+				self::DUAL_LOGIN       => 'Alternatively, you can click the following link to sign into this website with your corporate <a href="__##OAUTH_URL##__">network login (Microsoft 365)</a>',
+				self::DUAL_LOGIN_V2    => 'Alternatively, you can click the following link to sign into this website with your corporate <span class="wpo365-dual-login-notice" style="cursor: pointer; text-decoration: underline; color: #000CD" onclick="window.wpo365.pintraRedirect.toMsOnline()">network login (Microsoft 365)</span>',
+				self::ID_TOKEN_ERROR   => 'Your ID token could not be processed. Please contact your System Administrator.',
+				self::ID_TOKEN_AUD     => 'The ID token is intended for a different audience. Please contact your System Administrator.',
+				self::LOGGED_OUT       => 'You are now logged out.',
+				self::NOT_CONFIGURED   => 'SSO (WPO365) login not configured yet. Please contact your System Administrator.',
+				self::NOT_FROM_DOMAIN  => 'Access Denied. Please contact your System Administrator.',
+				self::NOT_IN_GROUP     => 'User not in group. Please contact your System Administrator.',
+				self::SAML2_ERROR      => 'SAML authentication error',
+				self::TAMPERED_WITH    => 'Your login might be tampered with. Please contact your System Administrator.',
+				self::USER_NOT_FOUND   => 'Could not create or retrieve your login. Please contact your System Administrator.',
+				self::NO_IDP_SELECTED  => 'Please select an Identity Provider from the list below to sign in to the website.',
+				self::NONCE_EXPIRED    => 'Your sign-in session has expired. Please try again.',
+				self::NONCE_NOT_FOUND  => 'Your login might be tampered with. Please contact your System Administrator.',
+				self::INVALID_ENDPOINT => 'Access denied due to invalid request parameters.',
 			);
 
 			$error_messages = array(
-				self::AADAPPREG_ERROR => __( 'Could not create or retrieve your login. Most likely the authentication response received from Microsoft does not contain an email address. Consult the <a target="_blank" href="https://www.wpo365.com/troubleshooting-the-wpo365-login-plugin/#PARSING_ERROR">online documentation</a> for details.', 'wpo365-login' ),
-				self::BASIC_VERSION   => __( 'The BASIC edition of the WPO365 plugin does not automatically create new users. See the following <a href="https://www.wpo365.com/basic-edition/">online documentation</a> for more info.', 'wpo365-login' ),
-				self::CHECK_LOG       => __( 'Please contact your System Administrator and check log file.', 'wpo365-login' ),
-				self::DEACTIVATED     => __( 'Account deactivated.', 'wpo365-login' ),
-				self::DUAL_LOGIN      => __( 'Alternatively, you can click the following link to sign into this website with your corporate <a href="__##OAUTH_URL##__">network login (Microsoft 365)</a>', 'wpo365-login' ),
-				self::DUAL_LOGIN_V2   => __( 'Alternatively, you can click the following link to sign into this website with your corporate <span class="wpo365-dual-login-notice" style="cursor: pointer; text-decoration: underline; color: #000CD" onclick="window.wpo365.pintraRedirect.toMsOnline()">network login (Microsoft 365)</span>', 'wpo365-login' ),
-				self::ID_TOKEN_ERROR  => __( 'Your ID token could not be processed. Please contact your System Administrator.', 'wpo365-login' ),
-				self::ID_TOKEN_AUD    => __( 'The ID token is intended for a different audience. Please contact your System Administrator.', 'wpo365_login' ),
-				self::LOGGED_OUT      => __( 'You are now logged out.', 'wpo365-login' ),
-				self::PRIVATE_PAGE    => __( 'The page you requested requires you to sign in first.', 'wpo365-login' ),
-				self::NOT_CONFIGURED  => __( 'SSO (WPO365) not configured yet. Please contact your System Administrator.', 'wpo365-login' ),
-				self::NOT_FROM_DOMAIN => __( 'Access Denied. Please contact your System Administrator.', 'wpo365-login' ),
-				self::NOT_IN_GROUP    => __( 'Access Denied. Please contact your System Administrator.', 'wpo365-login' ),
-				self::SAML2_ERROR     => __( 'SAML authentication error.', 'wpo365-login' ),
-				self::TAMPERED_WITH   => __( 'Your login might be tampered with. Please contact your System Administrator.', 'wpo365-login' ),
-				self::USER_NOT_FOUND  => __( 'Could not create or retrieve your login. Please contact your System Administrator.', 'wpo365-login' ),
-				self::NO_IDP_SELECTED => __( 'Please select an Identity Provider from the list below to sign in to the website.', 'wpo365-login' ),
+				self::AADAPPREG_ERROR  => __( 'Could not create or retrieve your login. Most likely the authentication response received from Microsoft does not contain an email address. Consult the <a target="_blank" href="https://www.wpo365.com/troubleshooting-the-wpo365-login-plugin/#PARSING_ERROR">online documentation</a> for details.', 'wpo365-login' ),
+				self::BASIC_VERSION    => __( 'The BASIC edition of the WPO365 plugin does not automatically create new users. See the following <a href="https://www.wpo365.com/basic-edition/">online documentation</a> for more info.', 'wpo365-login' ),
+				self::CHECK_LOG        => __( 'Please contact your System Administrator and check log file.', 'wpo365-login' ),
+				self::DEACTIVATED      => __( 'Account deactivated.', 'wpo365-login' ),
+				self::DUAL_LOGIN       => __( 'Alternatively, you can click the following link to sign into this website with your corporate <a href="__##OAUTH_URL##__">network login (Microsoft 365)</a>', 'wpo365-login' ),
+				self::DUAL_LOGIN_V2    => __( 'Alternatively, you can click the following link to sign into this website with your corporate <span class="wpo365-dual-login-notice" style="cursor: pointer; text-decoration: underline; color: #000CD" onclick="window.wpo365.pintraRedirect.toMsOnline()">network login (Microsoft 365)</span>', 'wpo365-login' ),
+				self::ID_TOKEN_ERROR   => __( 'Your ID token could not be processed. Please contact your System Administrator.', 'wpo365-login' ),
+				self::ID_TOKEN_AUD     => __( 'The ID token is intended for a different audience. Please contact your System Administrator.', 'wpo365_login' ),
+				self::LOGGED_OUT       => __( 'You are now logged out.', 'wpo365-login' ),
+				self::PRIVATE_PAGE     => __( 'The page you requested requires you to sign in first.', 'wpo365-login' ),
+				self::NOT_CONFIGURED   => __( 'SSO (WPO365) not configured yet. Please contact your System Administrator.', 'wpo365-login' ),
+				self::NOT_FROM_DOMAIN  => __( 'Access Denied. Please contact your System Administrator.', 'wpo365-login' ),
+				self::NOT_IN_GROUP     => __( 'Access Denied. Please contact your System Administrator.', 'wpo365-login' ),
+				self::SAML2_ERROR      => __( 'SAML authentication error.', 'wpo365-login' ),
+				self::TAMPERED_WITH    => __( 'Your login might be tampered with. Please contact your System Administrator.', 'wpo365-login' ),
+				self::USER_NOT_FOUND   => __( 'Could not create or retrieve your login. Please contact your System Administrator.', 'wpo365-login' ),
+				self::NO_IDP_SELECTED  => __( 'Please select an Identity Provider from the list below to sign in to the website.', 'wpo365-login' ),
+				self::NONCE_EXPIRED    => __( 'Your sign-in session has expired. Please try again.', 'wpo365-login' ),
+				self::NONCE_NOT_FOUND  => __( 'Your login might be tampered with. Please contact your System Administrator.', 'wpo365-login' ),
+				self::INVALID_ENDPOINT => __( 'Access denied due to invalid request parameters.', 'wpo365-login' ),
 			);
 
 			if ( class_exists( '\Wpo\Services\Options_Service' ) ) {

@@ -84,7 +84,13 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service_B2c' ) ) {
 				$b2c_domain = sprintf( 'https://%s', trailingslashit( $b2c_domain ) );
 			}
 
-			$state_url     = Url_Helpers::get_state_url( '', array( 'tfp' => $policy ) );
+			$query_args = array();
+
+			if ( ! empty( $_REQUEST['wpo_embedded'] ) ) { // phpcs:ignore
+				$query_args['mode'] = sanitize_key( $_REQUEST['wpo_embedded'] ) === 'teams' ? 'wpoEmbeddedTeams' : 'wpoEmbeddedIframe'; // phpcs:ignore 
+			}
+
+			$state_url     = Url_Helpers::get_state_url( '', $query_args );
 			$response_mode = Options_Service::get_aad_option( 'oidc_response_mode' );
 
 			if ( empty( $response_mode ) || $oidc_flow !== 'code' ) {

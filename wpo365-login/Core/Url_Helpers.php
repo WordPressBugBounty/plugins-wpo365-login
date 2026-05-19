@@ -357,6 +357,65 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		public static function goto_after( $wpo_usr = null ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
+			$request_service = Request_Service::get_instance();
+			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+			$mode            = $request->get_item( 'mode' );
+
+			if ( $mode === 'wpoEmbeddedTeams' || $mode === 'wpoEmbeddedIframe' ) {
+				// 1) Try to send headers only if still possible
+				if ( ! headers_sent() ) {
+						// WordPress helpers (safe if WP is loaded)
+					if ( function_exists( 'nocache_headers' ) ) {
+								nocache_headers();
+					}
+
+					// Set content type explicitly
+					header( 'Content-Type: text/html; charset=utf-8', true, 200 );
+				}
+
+				echo '<!doctype html><html><head><meta charset="utf-8"><title>Sign-in completed</title></head><body>';
+
+				if ( $mode === 'wpoEmbeddedTeams' ) {
+					// The script pintra-redirect.js injects wpoNotifyTeamsSuccess into the global namespace.
+					wp_print_script_tag(
+						array(
+							'src' => sprintf( '%sapps/dist/pintra-redirect.js?v=%s', esc_url( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) ), esc_html( $GLOBALS['WPO_CONFIG']['version'] ) ),
+						)
+					);
+				}
+
+				echo '<p>Sign-in completed. You can close this window.</p>';
+				echo '<script>
+							(function () {
+							  if (window.wpoNotifyTeamsSuccess) {
+								  window.wpoNotifyTeamsSuccess();
+									return
+								}	
+								try {
+									if (window.opener && !window.opener.closed) {
+										window.opener.location.reload();
+									}
+								} catch (e) {}
+
+								// Attempt to close
+								window.close();
+
+								// If close didn\'t work, show a hint after a moment
+								setTimeout(function () {
+									document.body.insertAdjacentHTML("beforeend",
+										"<p><em>If this window didn\'t close automatically, please close it now.</em></p>"
+									);
+								}, 300);
+							})();
+							</script>';
+				echo '</body></html>';
+
+				if ( function_exists( 'wp_die' ) ) {
+						// Prevent WP from appending extra theme output
+						wp_die( '', '', array( 'response' => 200 ) );
+				}
+			}
+
 			// Get URL and redirect user (default is the WordPress homepage)
 			$redirect_url = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
 
@@ -658,6 +717,8 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		/**
 		 * Remove the protocol and www from a URL e.g. https://www.your-site.com/ becomes
 		 * ://your-site.com/
+		 *
+		 * @param string $url
 		 */
 		public static function remove_protocol_and_www( $url ) {
 			$wo_https = \str_replace( 'https', '', $url );

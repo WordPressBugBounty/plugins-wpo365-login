@@ -17,6 +17,10 @@ if ( ! class_exists( '\Wpo\Graph\Apps_Helpers' ) ) {
 				return $result;
 			}
 
+			if ( $result instanceof WP_REST_Response ) {
+				return $result;
+			}
+
 			if ( $result === null ) {
 				return new WP_REST_Response( null, 204 );
 			}

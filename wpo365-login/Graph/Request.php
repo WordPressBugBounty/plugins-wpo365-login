@@ -13,6 +13,7 @@ use Wpo\Services\Access_Token_Service;
 use Wpo\Services\Graph_Service;
 use Wpo\Services\Log_Service;
 use Wpo\Services\Options_Service;
+use Wpo\Services\Request_Service;
 
 if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 
@@ -58,11 +59,29 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$method        = ! empty( $body['method'] ) ? \strtoupper( sanitize_key( $body['method'] ) ) : 'GET';
 			$query         = $endpoint . Url_Helpers::leadingslashit( sanitize_text_field( urldecode( $body['query'] ) ) );
 
+			$request_service = Request_Service::get_instance();
+			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+
+			if ( ! empty( $data['http_request_args'] ) ) {
+				$request->set_item( 'http_request_args', $data['http_request_args'] );
+				add_filter( 'http_request_args', '\Wpo\Graph\Request::add_http_request_args', 10, 2 );
+			}
+
 			$result = Graph_Service::fetch( $query, $method, $binary, $headers, $use_delegated, false, $data, $scope );
+
+			if ( ! empty( $request->get_item( 'http_request_args' ) ) ) {
+				$request->remove_item( 'http_request_args' );
+				remove_filter( 'http_request_args', '\Wpo\Graph\Request::add_http_request_args', 10 );
+			}
 
 			if ( \is_wp_error( $result ) ) {
 				Log_Service::write_log( 'ERROR', sprintf( '%s -> Failed to fetch from Microsoft Graph. [Error: %s]', __METHOD__, $result->get_error_message() ) );
 				return new \WP_Error( 'fetch_error', $result->get_error_message(), array( 'status' => 500 ) );
+			}
+
+			// The payload is expected to return the 302 Location header e.g. a pre-authenticated downloadUrl.
+			if ( $result['response_code'] === 302 && ! empty( $result['payload'] ) ) {
+				return $result['payload'];
 			}
 
 			if ( $result['response_code'] < 200 || $result['response_code'] > 299 ) {
@@ -163,6 +182,15 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$application = ! empty( $body['application'] ) ? filter_var( $body['application'], FILTER_VALIDATE_BOOLEAN ) : false;
 			$headers     = ! empty( $body['headers'] ) && \is_array( $body['headers'] ) ? $body['headers'] : array();
 			$method      = ! empty( $body['method'] ) ? \strtoupper( $body['method'] ) : 'GET';
+
+			// Fix possible wrong headers.
+			foreach ( $headers as $key => $value ) {
+
+				if ( WordPress_Helpers::stripos( $key, 'contenttype' ) !== false ) {
+					$headers['Content-Type'] = $value;
+					unset( $headers[ $key ] );
+				}
+			}
 
 			$access_token = $application
 				? Access_Token_Service::get_app_only_access_token( $scope )
@@ -564,6 +592,32 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 					'raw'    => $body,
 				)
 			);
+		}
+
+		/**
+		 * Adds the redirection argument to the http request arguments.
+		 *
+		 * @param array  $args
+		 * @param string $url
+		 * @return array
+		 */
+		public static function add_http_request_args( $args, $url ) {
+			$request_service   = Request_Service::get_instance();
+			$request           = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+			$http_request_args = $request->get_item( 'http_request_args' );
+
+			if ( ! is_array( $http_request_args ) ) {
+				return $args;
+			}
+
+			foreach ( $http_request_args as $http_request_arg ) {
+
+				if ( WordPress_Helpers::stripos( $url, $http_request_arg['url'] ) !== false ) {
+					$args[ $http_request_arg['key'] ] = $http_request_arg['value'];
+				}
+			}
+
+			return $args;
 		}
 
 		/**

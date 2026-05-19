@@ -25,7 +25,21 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 		public static function has_route() {
 			// initiate openidconnect / saml flow
 			if ( ! empty( $_REQUEST['action'] ) && $_REQUEST['action'] === 'openidredirect' ) { // phpcs:ignore
-				add_action( 'init', '\Wpo\Services\Router_Service::route_initiate_user_authentication' );
+				add_action( 'init', '\Wpo\Services\Router_Service::route_openidredirect' );
+				return true;
+			}
+
+			// Initiate SSO via the /wpo/sso/start custom endpoint.
+			if ( self::detect_sso_start_endpoint() ) {
+
+				if ( ! self::validate_sso_start_params() ) {
+					Log_Service::write_log( 'WARN', __METHOD__ . ' -> SSO start endpoint called with invalid or unknown query-string parameters.' );
+					add_action( 'init', '\Wpo\Services\Router_Service::route_sso_start_invalid' );
+					return true;
+				}
+
+				self::store_sso_start_params();
+				add_action( 'init', '\Wpo\Services\Router_Service::route_sso_start_initiate' );
 				return true;
 			}
 
@@ -143,84 +157,94 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 		}
 
 		/**
-		 * Route to initialize user authentication with the option to do
-		 * so with OpenID Connect or with SAML.
+		 * Registers the /wpo/sso/start custom rewrite rule and flushes if not yet saved.
+		 * Called on the 'init' action so it runs per-request for every blog in a network.
 		 *
-		 * @since 11.0
+		 * @since 34.x
 		 *
 		 * @return void
 		 */
-		public static function route_initiate_user_authentication() {
-			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
+		public static function add_sso_start_rewrite_rule() {
+			add_rewrite_rule( '^wpo/sso/start/?$', 'index.php?wpo_sso_start=1', 'top' );
 
-			// Remove sso-bypass-cookie.
-			$cookie_name = defined( 'WPO_SSO_BYPASS_COOKIE' ) ? constant( 'WPO_SSO_BYPASS_COOKIE' ) : 'wordpress_wpo365_sso_bypass';
+			$rules = get_option( 'rewrite_rules' );
 
-			if ( isset( $_COOKIE[ $cookie_name ] ) ) {
-				$secure = ( wp_parse_url( wp_login_url(), PHP_URL_SCHEME ) === 'https' );
-				setcookie( $cookie_name, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, $secure );
-				unset( $_COOKIE[ $cookie_name ] );
-			}
-
-			/**
-			 * In case of multiple IdPs the type of IdP is leading the way.
-			 */
-
-			if ( Options_Service::get_global_boolean_var( 'use_saml' ) ) {
-				self::route_saml2_initiate();
-			} else {
-				self::route_openidconnect_initiate();
+			if ( empty( $rules ) || ! isset( $rules['^wpo/sso/start/?$'] ) ) {
+				flush_rewrite_rules( false );
 			}
 		}
 
 		/**
-		 * Route to redirect user to login.microsoftonline.com
+		 * Adds the wpo_sso_start query variable so WordPress recognises the rewritten parameter.
 		 *
-		 * @since 11.0
+		 * @since 34.x
 		 *
-		 * @return void
+		 * @param array $vars Existing registered query variables.
+		 * @return array
 		 */
-		public static function route_openidconnect_initiate() {
-			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
-
-			if ( Options_Service::is_wpo365_configured() ) {
-
-				if ( Options_Service::get_global_boolean_var( 'use_b2c' ) && \class_exists( '\Wpo\Services\Id_Token_Service_B2c' ) ) {
-					$auth_url = \Wpo\Services\Id_Token_Service_B2c::get_openidconnect_url();
-				} elseif ( Options_Service::get_global_boolean_var( 'use_ciam' ) ) {
-					$auth_url = \Wpo\Services\Id_Token_Service_Ciam::get_openidconnect_url();
-				} else {
-					$auth_url = Id_Token_Service::get_openidconnect_url();
-				}
-
-				Url_Helpers::force_redirect( $auth_url );
-			}
-
-			Log_Service::write_log( 'WARN', sprintf( '%s -> Attempt to initiate SSO failed because WPO365 is not configured', __METHOD__ ) );
-
-			$redirect_to = remove_query_arg( 'cb' );
-			Url_Helpers::force_redirect( $redirect_to );
+		public static function add_sso_start_query_var( $vars ) {
+			$vars[] = 'wpo_sso_start';
+			return $vars;
 		}
 
 		/**
-		 * Route to redirect user to the configured SAML 2.0 IdP
+		 * Route handler for a /wpo/sso/start request that failed parameter validation.
+		 * Sends the user to the login page with the INVALID_ENDPOINT error code.
+		 *
+		 * @since 34.x
+		 *
+		 * @return void
+		 */
+		public static function route_sso_start_invalid() {
+			Authentication_Service::goodbye( Error_Service::INVALID_ENDPOINT );
+		}
+
+		/**
+		 * Wrapper called at 'init' for a validated /wpo/sso/start request.
+		 * Restores redirect_to into $_REQUEST from the property bag — where it was stored
+		 * at plugins_loaded time — before calling redirect_to_microsoft().
+		 * $_REQUEST cannot be set at plugins_loaded time because WordPress calls wp_magic_quotes()
+		 * immediately after plugins_loaded fires, which completely rebuilds $_REQUEST as
+		 * array_merge( $_GET, $_POST ), discarding any value injected during plugins_loaded.
+		 *
+		 * @since 34.x
+		 *
+		 * @return void
+		 */
+		public static function route_sso_start_initiate() {
+			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
+
+			$request_service = Request_Service::get_instance();
+			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+
+			// store_sso_start_params guarantees sso_start_redirect_to is a safe, loop-free
+			// URL (either the supplied redirect_to or a configured fallback). Write it into
+			// $_REQUEST now (at init time) so Url_Helpers::get_state_url() picks it up;
+			// wp_magic_quotes() runs immediately after plugins_loaded and would have wiped
+			// anything written there.
+			$redirect_to = $request->get_item( 'sso_start_redirect_to' );
+
+			if ( ! empty( $redirect_to ) ) {
+				$_REQUEST['redirect_to'] = $redirect_to; // phpcs:ignore
+			}
+
+			$login_hint = $request->get_item( 'login_hint' );
+			Authentication_Service::redirect_to_microsoft( ! empty( $login_hint ) ? $login_hint : null );
+		}
+
+		/**
+		 * Handler called at 'init' for a legacy action=openidredirect POST request generated
+		 * by pintra-redirect.js after it has completed its client-side iframe/Teams detection.
+		 * Delegates directly to redirect_to_microsoft(), which skips the Teams template when
+		 * action=openidredirect is present, preventing an infinite loop.
 		 *
 		 * @since 11.0
 		 *
 		 * @return void
 		 */
-		public static function route_saml2_initiate() {
+		public static function route_openidredirect() {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
-
-			if ( Options_Service::is_wpo365_configured() ) {
-				\Wpo\Services\Saml2_Service::initiate_request();
-				exit();
-			}
-
-			Log_Service::write_log( 'WARN', sprintf( '%s -> Attempt to initiate SSO failed because WPO365 is not configured', __METHOD__ ) );
-
-			$redirect_to = remove_query_arg( 'cb' );
-			Url_Helpers::force_redirect( $redirect_to );
+			Authentication_Service::redirect_to_microsoft();
 		}
 
 		/**
@@ -452,9 +476,197 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 		}
 
 		/**
+		 * Returns true when the current request targets the /wpo/sso/start endpoint.
+		 * Detection is based on the raw REQUEST_URI path so it works at plugins_loaded
+		 * time, before WordPress has parsed query variables.
+		 *
+		 * @since 34.x
+		 *
+		 * @return bool
+		 */
+		private static function detect_sso_start_endpoint() {
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : ''; // phpcs:ignore
+
+			if ( empty( $request_uri ) ) {
+				return false;
+			}
+
+			$path      = wp_parse_url( $request_uri, PHP_URL_PATH );
+			$path      = rtrim( $path, '/' );
+			$site_path = rtrim( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'], '/' );
+			$sso_path  = $site_path . '/wpo/sso/start';
+
+			if ( strcasecmp( $path, $sso_path ) === 0 ) {
+				return true;
+			}
+
+			// Fallback: query-parameter form /?wpo_sso_start=1, used when plain
+			// permalinks are active (no server catch-all routes /wpo/sso/start to
+			// index.php) or when WordPress internally rewrites the pretty URL via
+			// the registered rewrite rule (which adds wpo_sso_start=1 to $_GET).
+			return isset( $_GET['wpo_sso_start'] ) && $_GET['wpo_sso_start'] === '1'; // phpcs:ignore
+		}
+
+		/**
+		 * Returns true when an arbitrary URL points to the /wpo/sso/start endpoint.
+		 * Used to prevent redirect_to loops: if the OAuth state encodes the SSO start
+		 * URL, the user would land back here after returning from Microsoft.
+		 * Covers both the pretty-permalink form (/wpo/sso/start) and the plain-permalink
+		 * fallback (?wpo_sso_start=1).
+		 *
+		 * @since 34.x
+		 *
+		 * @param string $url URL to test.
+		 * @return bool
+		 */
+		private static function is_sso_start_url( $url ) {
+			$path     = rtrim( wp_parse_url( $url, PHP_URL_PATH ), '/' );
+			$sso_path = rtrim( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'], '/' ) . '/wpo/sso/start';
+
+			if ( strcasecmp( $path, $sso_path ) === 0 ) {
+				return true;
+			}
+
+			// Plain-permalink form: ?wpo_sso_start=1
+			$qs   = wp_parse_url( $url, PHP_URL_QUERY );
+			$args = array();
+
+			if ( ! empty( $qs ) ) {
+				parse_str( $qs, $args );
+			}
+
+			return isset( $args['wpo_sso_start'] ) && $args['wpo_sso_start'] === '1';
+		}
+
+		/**
+		 * Validates the query-string parameters supplied with a /wpo/sso/start request.
+		 *
+		 * Allowed parameters (all optional):
+		 *   idp_id      — alphanumeric characters only
+		 *   login_hint  — a valid e-mail address
+		 *   redirect_to — a valid URL (cross-domain allowed for Multisite mapped-domain setups)
+		 *   b2c_policy  — alphanumeric characters plus hyphens and underscores
+		 *
+		 * Any other parameter causes validation to fail.
+		 * Validation is performed via sanitize-and-compare.
+		 *
+		 * @since 34.x
+		 *
+		 * @return bool True when all supplied parameters are valid, false otherwise.
+		 */
+		private static function validate_sso_start_params() {
+			$request_uri  = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : ''; // phpcs:ignore
+			$query_string = $request_uri !== '' ? wp_parse_url( $request_uri, PHP_URL_QUERY ) : '';
+
+			if ( empty( $query_string ) ) {
+				return true; // All parameters are optional.
+			}
+
+			$params = array();
+			parse_str( $query_string, $params );
+
+			// idp_id: alphanumeric characters only.
+			if ( isset( $params['idp_id'] ) ) {
+				$sanitized = preg_replace( '/[^a-zA-Z0-9]/', '', $params['idp_id'] );
+
+				if ( $sanitized !== $params['idp_id'] ) {
+					return false;
+				}
+			}
+
+			// login_hint: must be a valid e-mail address.
+			if ( isset( $params['login_hint'] ) ) {
+				$sanitized = sanitize_email( $params['login_hint'] );
+
+				if ( $sanitized !== $params['login_hint'] || ! is_email( $params['login_hint'] ) ) {
+					return false;
+				}
+			}
+
+			// redirect_to: must be a structurally valid URL (domain is not restricted).
+			if ( isset( $params['redirect_to'] ) ) {
+				$sanitized = esc_url_raw( $params['redirect_to'] );
+
+				if ( empty( $sanitized ) || $sanitized !== $params['redirect_to'] ) {
+					return false;
+				}
+			}
+
+			// b2c_policy: alphanumeric, hyphens, and underscores only.
+			if ( isset( $params['b2c_policy'] ) ) {
+				$sanitized = preg_replace( '/[^a-zA-Z0-9_-]/', '', $params['b2c_policy'] );
+
+				if ( $sanitized !== $params['b2c_policy'] ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Copies any validated /wpo/sso/start parameters that are not already handled by
+		 * the existing request-init code into the request property bag.
+		 *
+		 * Not stored here (handled by existing mechanisms):
+		 *   idp_id      — extracted from $_REQUEST by Request_Service::get_instance(true)
+		 *   redirect_to — read from $_REQUEST by Url_Helpers::get_state_url()
+		 *
+		 * @since 34.x
+		 *
+		 * @return void
+		 */
+		private static function store_sso_start_params() {
+			$request_uri  = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : ''; // phpcs:ignore
+			$query_string = $request_uri !== '' ? wp_parse_url( $request_uri, PHP_URL_QUERY ) : '';
+
+			$params = array();
+
+			if ( ! empty( $query_string ) ) {
+				parse_str( $query_string, $params );
+			}
+
+			$request_service = Request_Service::get_instance();
+			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+
+			// Store b2c_policy as tfp for compatibility with the B2C/CIAM flow.
+			if ( ! empty( $params['b2c_policy'] ) ) {
+				$request->set_item( 'tfp', sanitize_text_field( $params['b2c_policy'] ) );
+			}
+
+			// Store login_hint for downstream use (e.g. pre-filling the Microsoft login form).
+			if ( ! empty( $params['login_hint'] ) ) {
+				$request->set_item( 'login_hint', sanitize_email( $params['login_hint'] ) );
+			}
+
+			// If no redirect_to was supplied, or if it points back to /wpo/sso/start (which
+			// would cause an infinite redirect loop when the user returns from Microsoft),
+			// store a safe fallback in the property bag.
+			// The value is written into $_REQUEST at init time by route_sso_start_initiate(),
+			// because wp_magic_quotes() runs immediately after plugins_loaded and rebuilds
+			// $_REQUEST = array_merge( $_GET, $_POST ), wiping anything set here.
+			if ( empty( $params['redirect_to'] ) || self::is_sso_start_url( $params['redirect_to'] ) ) {
+				if ( ! empty( $params['redirect_to'] ) ) {
+					Log_Service::write_log( 'WARN', sprintf( '%s -> redirect_to points back to /wpo/sso/start; replacing with safe fallback', __METHOD__ ) );
+				}
+
+				$redirect_to = Options_Service::get_global_string_var( 'goto_after_signon_url' );
+
+				if ( empty( $redirect_to ) ) {
+					$redirect_to = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
+				}
+
+				$request->set_item( 'sso_start_redirect_to', $redirect_to );
+			}
+		}
+
+		/**
 		 * Checks if WPO365 should process an authentication response that it has detected by comparing the current URL with the Redirect URI.
 		 *
 		 * @since 25.0
+		 *
+		 * @param boolean $is_oidc_response
+		 * @param boolean $is_saml_response
 		 *
 		 * @return bool True if WPO365 should continue processing the authentication response.
 		 */
@@ -486,7 +698,9 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 				$redirect_url = Options_Service::get_aad_option( 'saml_sp_acs_url' );
 			}
 
-			$redirect_url = apply_filters( 'wpo365/aad/redirect_uri', $redirect_url );
+			if ( isset( $redirect_url ) ) {
+				$redirect_url = apply_filters( 'wpo365/aad/redirect_uri', $redirect_url );
+			}
 
 			if ( empty( $home_url ) || empty( $redirect_url ) ) {
 				Log_Service::write_log(

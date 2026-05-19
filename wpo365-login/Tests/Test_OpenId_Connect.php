@@ -151,16 +151,15 @@ if ( ! class_exists( '\Wpo\Tests\Test_OpenId_Connect' ) ) {
 			$test_result         = new Test_Result( 'Can decode the ID token', Test_Result::CAPABILITY_OIC_SSO, Test_Result::SEVERITY_BLOCKING );
 			$test_result->passed = true;
 
-			Id_Token_Service::process_openidconnect_token( false );
-
+			// ID token is already parsed when the plugin bootstrapped and detected the OIDC response.
 			$request_service = Request_Service::get_instance();
 			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 
 			$this->id_token = $request->get_item( 'id_token' );
 
 			if ( empty( $this->id_token ) ) {
-                // phpcs:ignore
-                $error_message = isset( $_REQUEST['error_description'] ) ? \sanitize_text_field( $_REQUEST['error_description'] ) : 'Could not process the ID token. Please check the <a href="#debug">debug log</a> for errors.';
+        // phpcs:ignore
+        $error_message = isset( $_REQUEST['error_description'] ) ? \sanitize_text_field( $_REQUEST['error_description'] ) : 'Could not process the ID token. Please check the <a href="#debug">debug log</a> for errors.';
 
 				if ( WordPress_Helpers::stripos( $error_message, 'AADSTS700054' ) !== false ) {
 					$application_id = Options_Service::get_aad_option( 'application_id' );

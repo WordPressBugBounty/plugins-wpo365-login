@@ -320,7 +320,14 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 			add_filter( 'safe_style_css', '\Wpo\Core\WordPress_Helpers::safe_css', 10, 1 );
 
 			// Adds the login button
-			add_action( 'login_form', '\Wpo\Core\Shortcode_Helpers::login_button', 10 );
+			add_action(
+				'login_form',
+				function () {
+					$login_button = \Wpo\Core\Shortcode_Helpers::login_button();
+					echo $login_button; // phpcs:ignore -- Output already escaped.
+				},
+				10
+			);
 
 			// Init the custom REST API for config
 			if ( class_exists( '\Wpo\Core\Config_Controller' ) ) {
@@ -444,6 +451,10 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 
 			// Enable login message output
 			add_filter( 'login_message', '\Wpo\Services\Error_Service::check_for_login_messages', 10, 1 );
+
+			// Register the /wpo/sso/start custom SSO endpoint.
+			add_action( 'init', '\Wpo\Services\Router_Service::add_sso_start_rewrite_rule' );
+			add_filter( 'query_vars', '\Wpo\Services\Router_Service::add_sso_start_query_var' );
 
 			// Add custom wp query vars
 			add_filter( 'query_vars', '\Wpo\Core\Url_Helpers::add_query_vars_filter' );

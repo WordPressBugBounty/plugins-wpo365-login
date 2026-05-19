@@ -2,8 +2,8 @@
 Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
-Tested up to: 6.9
-Stable tag: 41.3
+Tested up to: 7.0
+Stable tag: 42.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -128,6 +128,7 @@ The features below can be unlocked with [premium addOns and bundles](https://www
 - Send attachments larger than 3MB  [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
 - Send as / On behalf [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
 - Send from a Shared Mailbox [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
+- Send from alias addresses [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
 - Enable Staging Mode [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
 - Mail Throttle [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
 - Send as BCC [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
@@ -222,6 +223,21 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v42.0 =
+* Change: To improve and streamline the Microsoft Single Sign-On flow, authentication is now consistently initiated via the **/wpo/sso/start** endpoint (or **?wpo_sso_start=1** without permalinks), and all login buttons have been updated accordingly. See the [updated online documentation](https://www.wpo365.com/news/simplified-microsoft-single-sign-on/) for details. [LOGIN, MS GRAPH MAILER]
+* Improvement: You can now send emails from **alias addresses** when using Microsoft Graph, enabling more tailored and professional communication. Consult the [online documentation](https://docs.wpo365.com/article/231-send-from-an-alias-email-address) for details. [MAIL, PROFESSIONAL, INTEGRATE, CUSTOMERS (SYNC, INTRANET)]
+* Improvement: New you can configure the **SharePoint Library (premium) embed-app** to hide folders and enforce file downloads (instead of opening files in Microsoft 365). [APPS, INTEGRATE (INTRANET)]
+* Improvement: Completely refactored the **WPO365 User Synchronization** feature for improved reliability e.g. to eliminate caching issues with expired next-links and enhance logging for better diagnostics. [INTEGRATE (SYNC, INTRANET)]
+* Improvement: Users of the new automated embed-app configurator can now duplicate apps - allowing them to effectively create an embed-app template. [LOGIN, APPS, INTEGRATE (INTRANET)]
+* Fix: **Nonce** handling has been enhanced to prevent caching issues and ensure more secure authentication requests. [LOGIN, MS GRAPH MAILER]
+* Fix: Enhanced **Microsoft Teams** experience by updating to the latest Microsoft Teams JavaScript SDK. Also refactored existing support for embedded WordPress running in an iframe. [LOGIN]
+* Fix: **Media Folder protection** now supports query string variables for greater flexibility. Administrators using Apache should reinitialize the feature to apply the required .htaccess updates. [ESSENTIALS, PROFESSIONAL, CUSTOMERS, INTEGRATE (SYNC, INTRANET)]
+* Fix: Resolved a race condition in the automated embed-app configurator that could overwrite existing configuration and lead to permission-related issues. [LOGIN, APPS, INTEGRATE (INTRANET)]
+* Fix: Users of the new automated embed-app configurator are now asked to choose between embedding for their organization or for customers to ensure the correct permissions are applied - when applicable. [APPS, INTEGRATE (INTRANET)]
+* Fix: Users of the new automated embed-app configurator for Power BI are now able to configure XmlaPermissions (for Paginated Reports). [APPS, INTEGRATE (INTRANET)]
+* Fix: Resolved several issues affecting configurations with multiple Identity Providers. [ESSENTIALS, PROFESSIONAL, CUSTOMERS, INTEGRATE (LOGIN+, SYNC, INTRANET)]
+* Support for WordPress 7.0.
 
 = v41.3 =
 * Fix: The Mail Log Viewer now reliably displays attachment names without crashing. [LOGIN, MAILER]
