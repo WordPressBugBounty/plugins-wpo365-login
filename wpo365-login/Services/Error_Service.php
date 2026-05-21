@@ -32,7 +32,6 @@ if ( ! class_exists( '\Wpo\Services\Error_Service' ) ) {
 		const USER_NOT_FOUND   = 'USER_NOT_FOUND';
 		const NO_IDP_SELECTED  = 'NO_IDP_SELECTED';
 		const NONCE_EXPIRED    = 'NONCE_EXPIRED';
-		const NONCE_NOT_FOUND  = 'NONCE_NOT_FOUND';
 		const INVALID_ENDPOINT = 'INVALID_ENDPOINT';
 
 		/**
@@ -94,7 +93,6 @@ if ( ! class_exists( '\Wpo\Services\Error_Service' ) ) {
 				self::USER_NOT_FOUND   => 'Could not create or retrieve your login. Please contact your System Administrator.',
 				self::NO_IDP_SELECTED  => 'Please select an Identity Provider from the list below to sign in to the website.',
 				self::NONCE_EXPIRED    => 'Your sign-in session has expired. Please try again.',
-				self::NONCE_NOT_FOUND  => 'Your login might be tampered with. Please contact your System Administrator.',
 				self::INVALID_ENDPOINT => 'Access denied due to invalid request parameters.',
 			);
 
@@ -117,7 +115,6 @@ if ( ! class_exists( '\Wpo\Services\Error_Service' ) ) {
 				self::USER_NOT_FOUND   => __( 'Could not create or retrieve your login. Please contact your System Administrator.', 'wpo365-login' ),
 				self::NO_IDP_SELECTED  => __( 'Please select an Identity Provider from the list below to sign in to the website.', 'wpo365-login' ),
 				self::NONCE_EXPIRED    => __( 'Your sign-in session has expired. Please try again.', 'wpo365-login' ),
-				self::NONCE_NOT_FOUND  => __( 'Your login might be tampered with. Please contact your System Administrator.', 'wpo365-login' ),
 				self::INVALID_ENDPOINT => __( 'Access denied due to invalid request parameters.', 'wpo365-login' ),
 			);
 

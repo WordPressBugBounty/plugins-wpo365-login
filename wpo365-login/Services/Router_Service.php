@@ -508,37 +508,6 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 		}
 
 		/**
-		 * Returns true when an arbitrary URL points to the /wpo/sso/start endpoint.
-		 * Used to prevent redirect_to loops: if the OAuth state encodes the SSO start
-		 * URL, the user would land back here after returning from Microsoft.
-		 * Covers both the pretty-permalink form (/wpo/sso/start) and the plain-permalink
-		 * fallback (?wpo_sso_start=1).
-		 *
-		 * @since 34.x
-		 *
-		 * @param string $url URL to test.
-		 * @return bool
-		 */
-		private static function is_sso_start_url( $url ) {
-			$path     = rtrim( wp_parse_url( $url, PHP_URL_PATH ), '/' );
-			$sso_path = rtrim( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'], '/' ) . '/wpo/sso/start';
-
-			if ( strcasecmp( $path, $sso_path ) === 0 ) {
-				return true;
-			}
-
-			// Plain-permalink form: ?wpo_sso_start=1
-			$qs   = wp_parse_url( $url, PHP_URL_QUERY );
-			$args = array();
-
-			if ( ! empty( $qs ) ) {
-				parse_str( $qs, $args );
-			}
-
-			return isset( $args['wpo_sso_start'] ) && $args['wpo_sso_start'] === '1';
-		}
-
-		/**
 		 * Validates the query-string parameters supplied with a /wpo/sso/start request.
 		 *
 		 * Allowed parameters (all optional):
@@ -645,7 +614,7 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 			// The value is written into $_REQUEST at init time by route_sso_start_initiate(),
 			// because wp_magic_quotes() runs immediately after plugins_loaded and rebuilds
 			// $_REQUEST = array_merge( $_GET, $_POST ), wiping anything set here.
-			if ( empty( $params['redirect_to'] ) || self::is_sso_start_url( $params['redirect_to'] ) ) {
+			if ( empty( $params['redirect_to'] ) || Url_Helpers::is_sso_start_url( $params['redirect_to'] ) ) {
 				if ( ! empty( $params['redirect_to'] ) ) {
 					Log_Service::write_log( 'WARN', sprintf( '%s -> redirect_to points back to /wpo/sso/start; replacing with safe fallback', __METHOD__ ) );
 				}

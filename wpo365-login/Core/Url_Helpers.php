@@ -6,6 +6,7 @@ use Wpo\Core\WordPress_Helpers;
 use Wpo\Services\Log_Service;
 use Wpo\Services\Options_Service;
 use Wpo\Services\Request_Service;
+use Wpo\Services\Router_Service;
 
 // Prevent public access to this script
 defined( 'ABSPATH' ) || die();
@@ -583,7 +584,7 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 			$url = self::url_ensure_absolute( $url );
 
 			// if $url is a login / logout URL then either update to its redirect_to query arg or take the site's home address
-			if ( self::is_wp_login( $url ) || self::is_custom_logout_url( $url ) ) {
+			if ( self::is_sso_start_url( $url ) || self::is_wp_login( $url ) || self::is_custom_logout_url( $url ) ) {
 
 				if ( ! self::try_get_redirect_to_query_arg( $url ) ) {
 					// URL configured by the admin where users should be sent if not following a deep link
@@ -738,6 +739,37 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 			$url = str_replace( 'https://', '', $url );
 			$url = str_replace( 'http://', '', $url );
 			return $url;
+		}
+
+		/**
+		 * Returns true when an arbitrary URL points to the /wpo/sso/start endpoint.
+		 * Used to prevent redirect_to loops: if the OAuth state encodes the SSO start
+		 * URL, the user would land back here after returning from Microsoft.
+		 * Covers both the pretty-permalink form (/wpo/sso/start) and the plain-permalink
+		 * fallback (?wpo_sso_start=1).
+		 *
+		 * @since 42.0
+		 *
+		 * @param string $url URL to test.
+		 * @return bool
+		 */
+		public static function is_sso_start_url( $url ) {
+			$path     = rtrim( wp_parse_url( $url, PHP_URL_PATH ), '/' );
+			$sso_path = rtrim( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'], '/' ) . '/wpo/sso/start';
+
+			if ( strcasecmp( $path, $sso_path ) === 0 ) {
+				return true;
+			}
+
+			// Plain-permalink form: ?wpo_sso_start=1
+			$qs   = wp_parse_url( $url, PHP_URL_QUERY );
+			$args = array();
+
+			if ( ! empty( $qs ) ) {
+				parse_str( $qs, $args );
+			}
+
+			return isset( $args['wpo_sso_start'] ) && $args['wpo_sso_start'] === '1';
 		}
 	}
 }

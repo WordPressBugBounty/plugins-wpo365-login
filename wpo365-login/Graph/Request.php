@@ -130,7 +130,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			}
 
 			$scope = sanitize_text_field( urldecode( $body['scope'] ) );
-			$data  = array_key_exists( 'data', $body ) && ! empty( $body['data'] ) ? $body['data'] : '';
+			$data  = array_key_exists( 'data', $body ) && ! empty( $body['data'] ) ? json_decode( $body['data'], true ) : '';
 
 			if ( WordPress_Helpers::stripos( $scope, 'https://analysis.windows.net/powerbi/api/.default' ) === 0 ) {
 
@@ -162,17 +162,24 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 							$data['identities'][ $i ]['customData'] = ! empty( $custom_data ) ? $custom_data : '';
 						}
 
-						if ( ! empty( $data['identities'][ $i ]['roles'] ) && is_string( $data['identities'][ $i ]['roles'] ) && WordPress_Helpers::stripos( $data['identities'][ $i ]['roles'], 'meta_' ) === 0 ) {
-							$key                               = str_replace( 'meta_', '', $data['identities'][ $i ]['roles'] );
-							$roles                             = get_user_meta( $wp_usr->ID, $key );
-							$roles                             = ! empty( $roles ) && ! is_array( $roles )
-								? $roles                       = array( $roles )
-								: (
-									( ! empty( $roles )
-										? $roles
-										: array() )
-								);
-							$data['identities'][ $i ]['roles'] = $roles;
+						if ( ! empty( $data['identities'][ $i ]['roles'] ) && is_string( $data['identities'][ $i ]['roles'] ) ) {
+
+							if ( WordPress_Helpers::stripos( $data['identities'][ $i ]['roles'], 'meta_' ) === 0 ) {
+								$key                               = str_replace( 'meta_', '', $data['identities'][ $i ]['roles'] );
+								$roles                             = get_user_meta( $wp_usr->ID, $key );
+								$roles                             = ! empty( $roles ) && ! is_array( $roles )
+									? $roles                       = array( $roles )
+									: (
+										( ! empty( $roles )
+											? $roles
+											: array() )
+									);
+								$data['identities'][ $i ]['roles'] = $roles;
+							} else {
+								// Data is formatted as a string, which is incorrect.
+								Log_Service::write_log( 'ERROR', sprintf( '%s -> Token request JSON formatting error: Found string "%s" for identities.[%d].roles. Array expected.', __METHOD__, $data['identities'][ $i ]['roles'], $i ) );
+								$data['identities'][ $i ]['roles'] = array( $data['identities'][ $i ]['roles'] );
+							}
 						}
 					}
 				}
@@ -182,6 +189,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$application = ! empty( $body['application'] ) ? filter_var( $body['application'], FILTER_VALIDATE_BOOLEAN ) : false;
 			$headers     = ! empty( $body['headers'] ) && \is_array( $body['headers'] ) ? $body['headers'] : array();
 			$method      = ! empty( $body['method'] ) ? \strtoupper( $body['method'] ) : 'GET';
+			$data        = is_array( $data ) ? wp_json_encode( $data ) : '';
 
 			// Fix possible wrong headers.
 			foreach ( $headers as $key => $value ) {

@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 42.0
+Stable tag: 42.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,11 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v42.1 =
+* Improvement: Redirection to Microsoft for SSO now consistently routes through the plugin’s custom endpoint **/wpo/sso/start**. This allows administrators to **exclude a single endpoint from caching**, ensuring reliable nonce verification and preventing cache-related errors such as “Your login has been tampered with”. Read this [article](https://www.wpo365.com/news/improved-reliability-and-security-for-single-sign-on-sso/) to get a better understanding. [LOGIN, MAILER, ESSENTIALS, PROFESSIONAL, CUSTOMERS, INTEGRATE (LOGIN+, SYNC, INTRANET)]
+* Fix: Dynamic tokens such as "wp_user_email" in a custom Power BI token request JSON are once again properly resolved to their corresponding values. [APPS, INTEGRATE (INTRANET)]
+* Fix: Translation for the “Your login has been tampered with” error is now correctly resolved. [LOGIN, MAILER]
 
 = v42.0 =
 * Change: To improve and streamline the Microsoft Single Sign-On flow, authentication is now consistently initiated via the **/wpo/sso/start** endpoint (or **?wpo_sso_start=1** without permalinks), and all login buttons have been updated accordingly. See the [updated online documentation](https://www.wpo365.com/news/simplified-microsoft-single-sign-on/) for details. [LOGIN, MS GRAPH MAILER]

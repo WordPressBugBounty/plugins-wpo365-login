@@ -75,7 +75,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				$login_hint = isset( $_REQUEST['login_hint'] ) // phpcs:ignore
 				? \sanitize_text_field( $_REQUEST['login_hint'] ) // phpcs:ignore
 				: null;
-				self::redirect_to_microsoft( $login_hint, true );
+				self::redirect_to_sso_start( $login_hint, true );
 			}
 
 			// Check if user has expired
@@ -104,7 +104,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 
 					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> User logged out because current login not valid anymore (' . $auth_expired . ')' );
 
-					self::redirect_to_microsoft( $login_hint, true );
+					self::redirect_to_sso_start( $login_hint, true );
 				}
 			} else {
 				Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Session expiration ignored because the administrator configured a duration of 0' );
@@ -349,6 +349,40 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			do_action( 'wpo365/saml/authenticated', $wp_usr->ID );
 
 			return $wpo_usr;
+		}
+
+		/**
+		 * Redirects the current request either to the login page (if dual login is enabled) or
+		 * to the SSO endpoint wpo/sso/start to initiate SSO.
+		 *
+		 * @since 42.1
+		 *
+		 * @param string $login_hint
+		 * @param bool   $check_dual_login
+		 * @return never
+		 */
+		public static function redirect_to_sso_start( $login_hint = '', $check_dual_login = false ) {
+			// Only attempt a dual-login redirect when the feature is actually enabled and
+			// the class is available (premium only). Skips all URL parsing for free-tier
+			// installs and sites that have not enabled either dual-login option.
+			if (
+				$check_dual_login && class_exists( '\Wpo\Services\Dual_Login_Service' ) ) {
+				\Wpo\Services\Dual_Login_Service::redirect();
+			}
+
+			// Redirect the current request to /wpo/sso/start on the site's home URL.
+			$target = home_url( '/wpo/sso/start' );
+
+			// Ensure it's a clean URL string (belt + suspenders).
+			$target = esc_url_raw( $target );
+
+			if ( ! empty( $login_hint ) && filter_var( $login_hint, FILTER_VALIDATE_EMAIL ) ) {
+				$target = add_query_arg( 'login_hint', $login_hint, $target );
+			}
+
+			// Perform a safe redirect (only allows same-host by default).
+			wp_safe_redirect( $target );
+			exit;
 		}
 
 		/**

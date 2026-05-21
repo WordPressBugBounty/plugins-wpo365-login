@@ -2,6 +2,8 @@
 
 namespace Wpo\Services;
 
+use Wpo\Core\Compatibility_Helpers;
+
 // Prevent public access to this script
 defined( 'ABSPATH' ) || die();
 
@@ -103,7 +105,7 @@ if ( ! class_exists( '\Wpo\Services\Nonce_Service' ) ) {
 		 * Reads directly from the database to bypass any persistent object cache.
 		 *
 		 * Calls Authentication_Service::goodbye() and exits on failure:
-		 *   - Nonce not found        → Error_Service::NONCE_NOT_FOUND
+		 *   - Nonce not found        → Error_Service::TAMPERED_WITH
 		 *   - Nonce older than 5 min → Error_Service::NONCE_EXPIRED
 		 *
 		 * On success the nonce row is deleted (delete-on-use). Approximately once per
@@ -129,11 +131,18 @@ if ( ! class_exists( '\Wpo\Services\Nonce_Service' ) ) {
 			$skip = Options_Service::get_global_boolean_var( 'skip_nonce_verification' );
 
 			if ( $row === null ) {
-				Log_Service::write_log( 'WARN', sprintf( '%s -> Nonce not found', __METHOD__ ) );
+				$warning = sprintf(
+					'%s -> Nonce not found. Please make sure that you exclude the endpoint %s from being cached or - less secure - check the option "Skip NONCE-verification" on the plugin\'s "Miscellaneous" page.',
+					__METHOD__,
+					home_url( '/wpo/sso/start' )
+				);
 
 				if ( ! $skip ) {
-					Authentication_Service::goodbye( Error_Service::NONCE_NOT_FOUND );
+					Compatibility_Helpers::compat_warning( $warning );
+					Authentication_Service::goodbye( Error_Service::TAMPERED_WITH );
 				}
+
+				Log_Service::write_log( 'WARN', $warning );
 
 				return;
 			}
@@ -147,10 +156,10 @@ if ( ! class_exists( '\Wpo\Services\Nonce_Service' ) ) {
 					array( 'nonce' => $nonce ),
 					array( '%s' )
 				);
-				Log_Service::write_log( 'WARN', sprintf( '%s -> Nonce has expired (age: %ds)', __METHOD__, $age_seconds ) );
+				Log_Service::write_log( 'WARN', sprintf( '%s -> Nonce has expired (age: %d seconds)', __METHOD__, $age_seconds ) );
 
 				if ( ! $skip ) {
-					Authentication_Service::goodbye( Error_Service::NONCE_NOT_FOUND );
+					Authentication_Service::goodbye( Error_Service::NONCE_EXPIRED );
 				}
 
 				return;
