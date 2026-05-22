@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 42.1
+Stable tag: 42.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,10 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v42.2 =
+* Fix: To maintain compatibility with legacy premium Power BI embed-app configurations, the plugin now automatically converts specific string values into arrays when processing manually edited Token Request JSON. [LOGIN]
+* Fix: The body of the email sent when an (OpenID Connect) Application (Client) Secret is about to expire now includes the blog's name. [LOGIN]
 
 = v42.1 =
 * Improvement: Redirection to Microsoft for SSO now consistently routes through the plugin’s custom endpoint **/wpo/sso/start**. This allows administrators to **exclude a single endpoint from caching**, ensuring reliable nonce verification and preventing cache-related errors such as “Your login has been tampered with”. Read this [article](https://www.wpo365.com/news/improved-reliability-and-security-for-single-sign-on-sso/) to get a better understanding. [LOGIN, MAILER, ESSENTIALS, PROFESSIONAL, CUSTOMERS, INTEGRATE (LOGIN+, SYNC, INTRANET)]

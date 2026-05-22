@@ -174,6 +174,7 @@ if ( ! class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
                 on <strong>%s</strong>. After this date, WPO365 may no longer work as expected and 
                 - for example - your users may not be able to sign in with Microsoft anymore.</p>
                 <p>Please update this secret as soon as possible!</p>
+								<p>This email is sent from your site "%s"<p>
                 <p>Marco van Wieren, Downloads by van Wieren</p>
                 <p><strong>WPO365</strong> - Connecting WordPress and Microsoft Entra | Azure | 365</p>
                 <p>Zurich, Switzerland</p>
@@ -182,7 +183,8 @@ if ( ! class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
                 <p>e support@wpo365.com</p>',
 				$hint,
 				$id,
-				$date_as_string
+				$date_as_string,
+				$blogname
 			);
 
 			@wp_mail( // phpcs:ignore

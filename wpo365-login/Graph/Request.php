@@ -177,9 +177,15 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 								$data['identities'][ $i ]['roles'] = $roles;
 							} else {
 								// Data is formatted as a string, which is incorrect.
-								Log_Service::write_log( 'ERROR', sprintf( '%s -> Token request JSON formatting error: Found string "%s" for identities.[%d].roles. Array expected.', __METHOD__, $data['identities'][ $i ]['roles'], $i ) );
+								Log_Service::write_log( 'WARN', sprintf( '%s -> Token request JSON formatting error: Found string "%s" for identities.[%d].roles. Array expected.', __METHOD__, $data['identities'][ $i ]['roles'], $i ) );
 								$data['identities'][ $i ]['roles'] = array( $data['identities'][ $i ]['roles'] );
 							}
+						}
+
+						if ( ! empty( $data['identities'][ $i ]['datasets'] ) && is_string( $data['identities'][ $i ]['datasets'] ) ) {
+							// Data is formatted as a string, which is incorrect.
+							Log_Service::write_log( 'WARN', sprintf( '%s -> Token request JSON formatting error: Found string "%s" for identities.[%d].datasets. Array expected.', __METHOD__, $data['identities'][ $i ]['datasets'], $i ) );
+							$data['identities'][ $i ]['datasets'] = array( $data['identities'][ $i ]['datasets'] );
 						}
 					}
 				}
