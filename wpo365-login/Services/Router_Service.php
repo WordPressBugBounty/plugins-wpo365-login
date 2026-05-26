@@ -484,7 +484,7 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 		 *
 		 * @return bool
 		 */
-		private static function detect_sso_start_endpoint() {
+		public static function detect_sso_start_endpoint() {
 			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : ''; // phpcs:ignore
 
 			if ( empty( $request_uri ) ) {
@@ -493,7 +493,8 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 
 			$path      = wp_parse_url( $request_uri, PHP_URL_PATH );
 			$path      = rtrim( $path, '/' );
-			$site_path = rtrim( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'], '/' );
+			$home      = get_option( 'home' );
+			$site_path = rtrim( wp_parse_url( $home, PHP_URL_PATH ), '/' );
 			$sso_path  = $site_path . '/wpo/sso/start';
 
 			if ( strcasecmp( $path, $sso_path ) === 0 ) {

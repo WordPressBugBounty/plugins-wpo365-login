@@ -3,7 +3,7 @@
  *  Plugin Name: WPO365 | LOGIN
  *  Plugin URI: https://wordpress.org/plugins/wpo365-login
  *  Description: WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI.
- *  Version: 42.2
+ *  Version: 42.3
  *  Author: marco@wpo365.com
  *  Author URI: https://www.wpo365.com
  *  License: GPL2+
@@ -44,7 +44,12 @@ if ( ! class_exists( '\Wpo\Login' ) ) {
 
 			if ( $skip_init ) {
 				add_action( 'login_init', array( $this, 'load' ), 1 );
-				return;
+				add_action( 'init', '\Wpo\Services\Router_Service::add_sso_start_rewrite_rule' );
+				add_filter( 'query_vars', '\Wpo\Services\Router_Service::add_sso_start_query_var' );
+
+				if ( ! Router_Service::detect_sso_start_endpoint() ) {
+					return;
+				}
 			}
 
 			$this->load();

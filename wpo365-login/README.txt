@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 42.2
+Stable tag: 42.3
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,9 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v42.3 =
+* Fix: Resolved an issue that prevented Single Sign-On from starting when a custom authentication scenario WPO_AUTH_SCENARIO was defined (in wp-config.php). [LOGIN]
 
 = v42.2 =
 * Fix: To maintain compatibility with legacy premium Power BI embed-app configurations, the plugin now automatically converts specific string values into arrays when processing manually edited Token Request JSON. [LOGIN]
