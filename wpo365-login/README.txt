@@ -3,16 +3,16 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 42.3
+Stable tag: 42.4
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI.
+WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Sync, SharePoint, PowerBI.
 
 == Description ==
 
-WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI.
+WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Sync, SharePoint, PowerBI.
 
 = SINGLE SIGN-ON (SSO) =
 
@@ -223,6 +223,9 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v42.4 =
+* Fix: Resolved an issue that could prevent Single Sign-On from starting when the request URL was altered by plugins, reverse proxies, or subdirectory setups. [LOGIN]
 
 = v42.3 =
 * Fix: Resolved an issue that prevented Single Sign-On from starting when a custom authentication scenario WPO_AUTH_SCENARIO was defined (in wp-config.php). [LOGIN]
