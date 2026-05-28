@@ -486,7 +486,7 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 		 */
 		public static function detect_sso_start_endpoint() {
 			// 1) Bail out early.
-			if ( is_admin() || ( ! empty( $_SERVER['REQUEST_METHOD'] ) && $_SERVER['REQUEST_METHOD'] !== 'GET' ) ) { // phpcs:ignore
+			if ( is_admin() ) {
 				return false;
 			}
 
