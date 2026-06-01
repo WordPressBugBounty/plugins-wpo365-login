@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 42.6
+Stable tag: 42.7
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,9 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v42.7 =
+* Fix: Resolved an issue that prevented the plugin from forcing Single Sign-on for the login page when a custom authentication scenario WPO_AUTH_SCENARIO has been defined (in wp-config.php). [LOGIN]
 
 = v42.6 =
 * Fix: Resolved an issue that prevented the plugin for redirecting the user back to the URL they intended to navigate to, before WPO365 initialized SSO and sent the user to Microsoft to authenticate. [LOGIN]
