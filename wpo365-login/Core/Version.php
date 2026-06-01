@@ -9,6 +9,6 @@ if ( ! class_exists( '\Wpo\Core\Version' ) ) {
 
 	class Version {
 
-		public static $current = '42.7';
+		public static $current = '42.8';
 	}
 }

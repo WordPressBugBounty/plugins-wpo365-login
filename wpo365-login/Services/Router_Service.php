@@ -23,6 +23,13 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 
 
 		public static function has_route() {
+
+			// If we detect interim-login then redirect to homepage to force WordPress fallback to "Session expired" UI.
+			if ( isset( $_REQUEST['interim-login'] ) && (string) $_REQUEST['interim-login'] === '1' ) { // phpcs:ignore
+				wp_safe_redirect( home_url() );
+				exit;
+			}
+
 			// initiate openidconnect / saml flow
 			if ( ! empty( $_REQUEST['action'] ) && $_REQUEST['action'] === 'openidredirect' ) { // phpcs:ignore
 				add_action( 'init', '\Wpo\Services\Router_Service::route_openidredirect' );
