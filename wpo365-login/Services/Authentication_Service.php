@@ -380,6 +380,13 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				$target = add_query_arg( 'login_hint', $login_hint, $target );
 			}
 
+			// Memoize the current URL.
+			$current_url = Url_Helpers::get_current_url();
+
+			if ( ! empty( $current_url ) ) {
+				$target = add_query_arg( 'redirect_to', $current_url, $target );
+			}
+
 			// Perform a safe redirect (only allows same-host by default).
 			wp_safe_redirect( $target );
 			exit;

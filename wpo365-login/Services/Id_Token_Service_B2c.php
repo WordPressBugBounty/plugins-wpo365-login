@@ -62,8 +62,12 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service_B2c' ) ) {
 			$directory_id   = Options_Service::get_aad_option( 'tenant_id' );
 			$domain_name    = Options_Service::get_aad_option( 'b2c_domain_name' );
 			$oidc_flow      = Options_Service::get_aad_option( 'oidc_flow' );
-			$b2c_policy     = empty( $_REQUEST['b2c_policy'] ) ? null : sanitize_text_field( wp_unslash( $_REQUEST['b2c_policy'] ) ); // phpcs:ignore
-			$policy         = empty( $b2c_policy ) || ! Options_Service::get_aad_option( 'b2c_allow_multiple_policies', true ) ? Options_Service::get_aad_option( 'b2c_policy_name' ) : $b2c_policy;
+
+			if ( empty( $b2c_policy && Options_Service::get_aad_option( 'b2c_allow_multiple_policies', true ) ) ) {
+				$b2c_policy = ! empty( $_REQUEST['b2c_policy'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['b2c_policy'] ) ) : null; // phpcs:ignore
+			}
+
+			$policy = empty( $b2c_policy ) ? Options_Service::get_aad_option( 'b2c_policy_name' ) : $b2c_policy;
 
 			/**
 			 * @since 24.0 Filters the AAD Redirect URI e.g. to set it dynamically to the current host.
@@ -84,7 +88,7 @@ if ( ! class_exists( '\Wpo\Services\Id_Token_Service_B2c' ) ) {
 				$b2c_domain = sprintf( 'https://%s', trailingslashit( $b2c_domain ) );
 			}
 
-			$query_args = array();
+			$query_args = array( 'tfp' => $policy );
 
 			if ( ! empty( $_REQUEST['wpo_embedded'] ) ) { // phpcs:ignore
 				$query_args['mode'] = sanitize_key( $_REQUEST['wpo_embedded'] ) === 'teams' ? 'wpoEmbeddedTeams' : 'wpoEmbeddedIframe'; // phpcs:ignore 
