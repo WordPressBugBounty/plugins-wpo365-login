@@ -138,7 +138,7 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 				'wpoHealthMessages'  => wp_json_encode( $wpo365_errors ),
 			);
 
-			wp_enqueue_script( 'wizardjs', trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) . 'apps/dist/wizard.js', array(), $GLOBALS['WPO_CONFIG']['version'], true );
+			wp_enqueue_script( 'wizardjs', Url_Helpers::get_asset_url_for_current_site( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) . 'apps/dist/wizard.js' ), array(), $GLOBALS['WPO_CONFIG']['version'], true );
 
 			\wp_add_inline_script(
 				'wizardjs',

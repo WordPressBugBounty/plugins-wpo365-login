@@ -754,10 +754,9 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		 * @return bool
 		 */
 		public static function is_sso_start_url( $url ) {
-			$path     = rtrim( wp_parse_url( $url, PHP_URL_PATH ), '/' );
-			$sso_path = rtrim( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'], '/' ) . '/wpo/sso/start';
+			$path = rtrim( wp_parse_url( $url, PHP_URL_PATH ), '/' );
 
-			if ( strcasecmp( $path, $sso_path ) === 0 ) {
+			if ( (bool) preg_match( '#(^|/)wpo/sso/start$#i', $path ) ) {
 				return true;
 			}
 
@@ -770,6 +769,33 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 			}
 
 			return isset( $args['wpo_sso_start'] ) && $args['wpo_sso_start'] === '1';
+		}
+
+		/**
+		 * Subdomain based WPMU would not support importing modules when CORS is not explicitely
+		 * enabled. Therefore the module is enqueued using the subdomain URL instead.
+		 *
+		 * @param string $asset_url The asset URL to be inspected / updated.
+		 * @return string
+		 */
+		public static function get_asset_url_for_current_site( $asset_url ) {
+
+			if ( is_multisite() && is_subdomain_install() ) {
+				$current_url = is_admin() ? admin_url() : site_url();
+
+				$asset_parts   = wp_parse_url( $asset_url );
+				$current_parts = wp_parse_url( $current_url );
+
+				if ( ! empty( $asset_parts['path'] ) && ! empty( $current_parts['host'] ) ) {
+					$scheme = ! empty( $current_parts['scheme'] ) ? $current_parts['scheme'] : 'https';
+					$host   = $current_parts['host'];
+					$port   = ! empty( $current_parts['port'] ) ? ':' . $current_parts['port'] : '';
+
+					$asset_url = $scheme . '://' . $host . $port . $asset_parts['path'];
+				}
+			}
+
+			return $asset_url;
 		}
 	}
 }

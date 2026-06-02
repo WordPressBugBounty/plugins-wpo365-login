@@ -377,14 +377,16 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			$target = esc_url_raw( $target );
 
 			if ( ! empty( $login_hint ) && filter_var( $login_hint, FILTER_VALIDATE_EMAIL ) ) {
-				$target = add_query_arg( 'login_hint', $login_hint, $target );
+				$separator = str_contains( $target, '?' ) ? '&' : '?';
+				$target   .= $separator . 'login_hint=' . rawurlencode( $login_hint );
 			}
 
 			// Memoize the current URL.
 			$current_url = Url_Helpers::get_current_url();
 
 			if ( ! empty( $current_url ) ) {
-				$target = add_query_arg( 'redirect_to', $current_url, $target );
+				$separator = str_contains( $target, '?' ) ? '&' : '?';
+				$target   .= $separator . 'redirect_to=' . rawurlencode( $current_url );
 			}
 
 			// Perform a safe redirect (only allows same-host by default).

@@ -118,7 +118,7 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 
 							$script_handle = sprintf( 'wpo365-app-%d-%s', $id, $elem_id );
 
-							wp_enqueue_script( $script_handle, $script_url, array(), $GLOBALS['WPO_CONFIG']['version'] ); // phpcs:ignore
+							wp_enqueue_script( $script_handle, Url_Helpers::get_asset_url_for_current_site( $script_url ), array(), $GLOBALS['WPO_CONFIG']['version'] ); // phpcs:ignore
 
 							wp_add_inline_script(
 								$script_handle,
