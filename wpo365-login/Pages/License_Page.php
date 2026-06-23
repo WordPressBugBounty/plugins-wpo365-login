@@ -386,7 +386,7 @@ if ( ! class_exists( '\Wpo\Pages\License_Page' ) ) {
 					float: left;
 					margin: 0 15px 15px 0;
 					max-width: 350px;
-					min-height: <?php echo( $license_is_required ? '220px' : '300px' ); ?>;
+					min-height: <?php echo( $license_is_required ? '240px' : '300px' ); ?>;
 					padding: 14px;
 					position: relative;
 					position: relative;

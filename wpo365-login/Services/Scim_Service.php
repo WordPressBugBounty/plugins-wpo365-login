@@ -91,9 +91,9 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 		 *
 		 * @since   37.0
 		 *
-		 * @param   WP_REST_Request $request Full data about the request.
+		 * @param   \WP_REST_Request $request Full data about the request.
 		 *
-		 * @return  WP_REST_Response
+		 * @return  \WP_REST_Response
 		 */
 		public static function get_items( $request ) {
 			$scim_users = array();
@@ -126,9 +126,9 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 		 *
 		 * @since   37.0
 		 *
-		 * @param   WP_REST_Request $request
+		 * @param   \WP_REST_Request $request
 		 *
-		 * @return  WP_REST_Response
+		 * @return  \WP_REST_Response
 		 */
 		public static function create_item( $request ) {
 			version_compare( Version::$current, '36.2' ) > 0 && Log_Service::write_to_custom_log( $request, 'scim' );
@@ -201,8 +201,28 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 		 * @return  void
 		 */
 		public static function get_user_by_user_name( $user_name, &$scim_users ) {
+			$wp_usr = null;
 
-			$wp_usr = \get_user_by( 'login', $user_name );
+			$user_query = new \WP_User_Query(
+				array(
+					'number'     => 1,
+					'meta_query' => array( // phpcs:ignore
+						array(
+							'key'     => 'userPrincipalName',
+							'value'   => $user_name,
+							'compare' => '=',
+						),
+					),
+				)
+			);
+
+			$results = $user_query->get_results();
+
+			if ( ! empty( $results ) ) {
+				$wp_usr = $results[0];
+			} else {
+				$wp_usr = \get_user_by( 'login', $user_name );
+			}
 
 			if ( $wp_usr !== false ) {
 				Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Found WP user ' . $user_name );
@@ -296,7 +316,7 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 		 *
 		 * @param   array $scim_usr SCIM resource as associative array.
 		 *
-		 * @return  array|WP_Error  The WP user as SCIM resource or a WP_Error if an error occurred
+		 * @return  array|\WP_Error  The WP user as SCIM resource or a WP_Error if an error occurred
 		 */
 		public static function create_user( $scim_usr ) {
 			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
@@ -378,6 +398,8 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 			// Check if the user already is in the system.
 			$wp_usr = User_Service::try_get_user_by( $wpo_usr );
 
+			$wp_usr_id = 0;
+
 			// Create a new user.
 			if ( empty( $wp_usr ) ) {
 				$wp_usr_id = User_Create_Service::create_user( $wpo_usr, true, false );
@@ -408,7 +430,7 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 		/**
 		 * @since   37.0
 		 *
-		 * @param   WP_User $wp_usr     The WordPress user that will be transformed into a SCIM User resource.
+		 * @param   \WP_User $wp_usr     The WordPress user that will be transformed into a SCIM User resource.
 		 *
 		 * @return  array|null  Associative array representing a SCIM User resource
 		 */
@@ -430,13 +452,17 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 				? $usr_meta['wpo365_active'][0]
 				: '';
 
+			$user_principal_name = is_array( $usr_meta['userPrincipalName'] ) && count( $usr_meta['userPrincipalName'] ) === 1
+				? $usr_meta['userPrincipalName'][0]
+				: $wp_usr->user_login;
+
 			$scim_usr = array(
 				'schemas'  => array( 'urn:ietf:params:scim:schemas:core:2.0:User' ),
 				'id'       => $wp_usr->ID,
 				'meta'     => array(
 					'resourceType' => 'User',
 				),
-				'userName' => $wp_usr->user_login,
+				'userName' => $user_principal_name,
 				'name'     => array(
 					'familyName' => $wp_usr->last_name,
 					'givenName'  => $wp_usr->first_name,
@@ -487,7 +513,7 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 		 *
 		 * @param  array $scim_users Array with SCIM user resources.
 		 *
-		 * @return  array|WP_Error  Associative array representing a SCIM ListResponse message
+		 * @return  array|\WP_Error  Associative array representing a SCIM ListResponse message
 		 */
 		public static function as_list_response( $scim_users ) {
 
@@ -792,6 +818,14 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 			return false;
 		}
 
+		/**
+		 *
+		 * @param array  &$user_resource
+		 * @param string $property
+		 * @param mixed  $value
+		 *
+		 * @return void
+		 */
 		private static function try_add_property( &$user_resource, $property, $value ) {
 			/**
 			 * See SCIM_Users::try_get_property for explanation
@@ -953,7 +987,7 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 		/**
 		 * Check if a given request has access to get items
 		 *
-		 * @return WP_Error|bool
+		 * @return \WP_Error|bool
 		 */
 		public static function check_permissions() {
 
@@ -997,6 +1031,12 @@ if ( ! class_exists( '\Wpo\Services\Scim_Service' ) ) {
 			return $response;
 		}
 
+		/**
+		 *
+		 * @param \WP_REST_Request $request
+		 *
+		 * @return bool
+		 */
 		private static function is_json( $request ) {
 			$content_type = $request->get_content_type();
 

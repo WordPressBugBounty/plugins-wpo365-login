@@ -414,6 +414,19 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				return;
 			}
 
+			// Bail out early.
+			if (
+				( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) ||
+				( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
+			) {
+				wp_send_json_error(
+					array(
+						'message' => 'Unauthorized. To allow anonymous access, please add this path to list of pages freed from authentication. [Blocked by WPO365]',
+					),
+					401
+				);
+			}
+
 			// Remove the SSO bypass cookie so that proceeding to Microsoft always works,
 			// regardless of whether SSO was explicitly initiated or forced by the plugin.
 			$cookie_name = defined( 'WPO_SSO_BYPASS_COOKIE' ) ? constant( 'WPO_SSO_BYPASS_COOKIE' ) : 'wordpress_wpo365_sso_bypass';

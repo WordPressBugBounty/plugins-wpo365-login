@@ -118,7 +118,7 @@ defined( 'ABSPATH' ) || die();
 			<?php if ( ! empty( $wpo_idps ) ) : ?>
 				<div class="wpo365-mssignin-spacearound">
 					<select name="selectedTenant" id="selectedTenant" class="wpo365-mssignin-select">
-						<option value="" disabled selected><?php echo esc_html( $sign_in_multi_placeholder ); ?></option>
+						<option value="" selected><?php echo esc_html( $sign_in_multi_placeholder ); ?></option>
 						<?php foreach ( $wpo_idps as $idp ) : ?>
 							<option value="<?php echo esc_html( $idp['id'] ); ?>"><?php echo esc_html( $idp['title'] ); ?></option>
 						<?php endforeach ?>

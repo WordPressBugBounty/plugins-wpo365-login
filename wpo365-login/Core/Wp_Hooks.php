@@ -91,26 +91,26 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 					add_action( 'wp_ajax_wpo365_block_direct_media_access', '\Wpo\Services\Secure_Download_Service::block_direct_media_access' );
 				}
 
-				// User sync
+				// User sync / scim.
 
-				if ( Options_Service::get_global_boolean_var( 'enable_user_sync', false ) ) {
+				if ( Options_Service::get_global_boolean_var( 'enable_user_sync', false ) || Options_Service::get_global_boolean_var( 'enable_scim', false ) ) {
 
-					if ( class_exists( '\Wpo\Sync\SyncV2_Service' ) ) {
+					if ( Options_Service::get_global_boolean_var( 'enable_user_sync', false ) && class_exists( '\Wpo\Sync\SyncV2_Service' ) ) {
+						add_filter( 'manage_users_columns', '\Wpo\Sync\SyncV2_Service::register_users_sync_columns', 10 );
+						add_filter( 'manage_users_custom_column', '\Wpo\Sync\SyncV2_Service::render_users_sync_columns', 10, 3 );
+						add_action( 'wp_ajax_wpo365_test_sync_query', '\Wpo\Sync\SyncV2_Service::test_sync_query' );
+					}
+
+					if ( class_exists( '\Wpo\Services\User_Reactivation_Service' ) ) {
+						add_action( 'admin_init', '\Wpo\Services\User_Reactivation_Service::reactivate_user', 10, 0 );
+						add_filter( 'manage_users_columns', '\Wpo\Services\User_Reactivation_Service::register_users_sync_columns', 10 );
+						add_filter( 'manage_users_custom_column', '\Wpo\Services\User_Reactivation_Service::render_users_sync_columns', 10, 3 );
+						add_filter( 'bulk_actions-users', '\Wpo\Services\User_Reactivation_Service::users_sync_bulk_actions', 10, 1 );
+						add_filter( 'handle_bulk_actions-users', '\Wpo\Services\User_Reactivation_Service::users_sync_bulk_actions_handler', 10, 3 );
+					} elseif ( Options_Service::get_global_boolean_var( 'enable_user_sync', false ) ) {
 
 						if ( method_exists( '\Wpo\Sync\SyncV2_Service', 'reactivate_user' ) ) {
 							add_action( 'admin_init', '\Wpo\Sync\SyncV2_Service::reactivate_user', 10, 0 );
-						}
-
-						if ( method_exists( '\Wpo\Sync\SyncV2_Service', 'register_users_sync_columns' ) ) {
-							add_filter( 'manage_users_columns', '\Wpo\Sync\SyncV2_Service::register_users_sync_columns', 10 );
-						}
-
-						if ( method_exists( '\Wpo\Sync\SyncV2_Service', 'render_users_sync_columns' ) ) {
-							add_filter( 'manage_users_custom_column', '\Wpo\Sync\SyncV2_Service::render_users_sync_columns', 10, 3 );
-						}
-
-						if ( method_exists( '\Wpo\Sync\SyncV2_Service', 'test_sync_query' ) ) {
-							add_action( 'wp_ajax_wpo365_test_sync_query', '\Wpo\Sync\SyncV2_Service::test_sync_query' );
 						}
 
 						if ( method_exists( '\Wpo\Sync\SyncV2_Service', 'users_sync_bulk_actions' ) ) {

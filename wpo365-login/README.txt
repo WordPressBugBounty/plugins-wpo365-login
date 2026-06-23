@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 42.10
+Stable tag: 42.11
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,19 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v42.11 =
+* Change: The plugin will no longer redirect AJAX and REST request to Microsoft but instead return a 401 Unauthorized message and terminate the connection. [LOGIN]
+* Improvement: A new hand-off mode can now be configured for protected Media Library downloads, helping improve performance and the delivery of large files. See [updated documentation](https://docs.wpo365.com/article/229-require-login-for-the-wordpress-media-folder) for details. [ESSENTIALS, PROFESSIONAL, CUSTOMERS, INTEGRATE (LOGIN+, SYNC, INTRANET)]
+* Fix: Fixed Teams silent authentication, which could fail when an internal redirect to the custom SSO endpoint interrupted the authentication response. [LOGIN]
+* Fix: The SCIM manager attribute is now returned as a complex object, in line with Entra ID expectations, to prevent provisioning errors. [SCIM, INTEGRATE, (INTRANET)]
+* Fix: Manager IDs received from Entra ID are now stored as user meta (with key "wpo365_manager_id"). When enabled, the user profile displays a link to view the corresponding WordPress manager. [SCIM, INTEGRATE (SYCN, INTRANET)]
+* Fix: the SCIM userName property's value is now sourced from Entra ID’s userPrincipalName (by default always stored as user meta with key "userPrincipalName"), replacing the WordPress username - used previously - to prevent mismatches and provisioning errors. [SCIM, INTEGRATE (INTRANET)]
+* Fix: Users deactivated in Entra ID and synchronized as inactive in WordPress are now correctly reactivated in WordPress when re-enabled in Entra ID. [SCIM, INTEGRATE (INTRANET)]
+* Fix: WPO365 Insights will now correctly log all updated user attributes when more than one is patched by the integration with Microsoft Entra ID's Application Provisioning Service. [SCIM, INTEGRATE (INTRANET)]
+* Fix: A reactivation button is now correctly displayed on the WordPress "Users" page when a user is deactivated and Entra ID Application Provisioning integration is enabled. [SCIM, INTEGRATE (INTRANET)]
+* Fix: The identity provider dropdown on the login page now consistently displays the default placeholder text when multiple providers are configured. [LOGIN]
+* Fix: Fixed broken and outdated links in the plugin wizard. [LOGIN, MAILER]
 
 = v42.10 =
 * Fix: Updated phpseclib to version 3.0.52 (was 3.0.43), which patches [CVE-2026-44167](https://app.opencve.io/cve/CVE-2026-44167). [LOGIN, MAILER]
