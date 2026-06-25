@@ -2,6 +2,7 @@
 
 namespace Wpo\Services;
 
+use Wpo\Core\Compatibility_Helpers;
 use Wpo\Core\Domain_Helpers;
 use Wpo\Core\Url_Helpers;
 use Wpo\Core\WordPress_Helpers;
@@ -663,8 +664,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			$preferred_login_url = Url_Helpers::get_preferred_login_url();
 
 			$redirect_to = ( empty( $error_page_url ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] )
-			? $preferred_login_url
-			: apply_filters( 'wpo365/goodbye/error_page_uri', $error_page_url, get_current_user_id(), $login_error_code );
+				? $preferred_login_url
+				: apply_filters( 'wpo365/goodbye/error_page_uri', $error_page_url, get_current_user_id(), $login_error_code );
 
 			if ( empty( $_SERVER['PHP_SELF'] ) ) {
 				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> $_SERVER[PHP_SELF] is empty. Please review your server configuration.' );
@@ -740,8 +741,8 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				$preferred_login_url = Url_Helpers::get_preferred_login_url();
 
 				$redirect_to = ( empty( $error_page_url ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] )
-				? $preferred_login_url
-				: apply_filters( 'wpo365/goodbye/error_page_uri', $error_page_url, get_current_user_id(), Error_Service::DEACTIVATED );
+					? $preferred_login_url
+					: apply_filters( 'wpo365/goodbye/error_page_uri', $error_page_url, get_current_user_id(), Error_Service::DEACTIVATED );
 
 				// Only add error information if redirect_to is equal to unmodified error_page_url.
 				if ( strcmp( $redirect_to, $error_page_url ) === 0 || strcmp( $redirect_to, $preferred_login_url ) === 0 ) {
@@ -928,108 +929,96 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				}
 			}
 
-			// Check if current page is homepage and can be skipped
-			$public_homepage = Options_Service::get_global_boolean_var( 'public_homepage' );
+			// Check if current page is homepage (including query string) and can be skipped.
+			if ( Options_Service::get_global_boolean_var( 'public_homepage' ) === true && $GLOBALS['WPO_CONFIG']['url_info']['is_home'] ) {
+				Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Cancelling session validation for home page because public homepage is selected' );
+				return true;
+			}
 
-			if ( $public_homepage === true && ! empty( $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] ) ) {
-				$cleaned = explode( '?', $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] )[0];
+			// Check if current page is allow-listed and can be skipped
+			$allow_listed_pages = Options_Service::get_global_list_var( 'pages_blacklist' );
 
-				// Ensure trailing slash
-				if ( substr( $cleaned, -1 ) !== '/' ) {
-					$cleaned .= '/';
+			// URLs that are always freed from authentication.
+			$mandatory_allow_listed_urls = array(
+				'error_page_url'    => Options_Service::get_global_string_var( 'error_page_url' ),
+				'custom_login_url'  => Options_Service::get_global_string_var( 'custom_login_url' ),
+				'default_login_url' => wp_login_url(),
+				'admin_ajax_url'    => site_url( 'admin-ajax.php' ),
+				'wp_cron_url'       => site_url( 'wp-cron.php' ),
+				'favicon_url'       => home_url( 'favicon.ico' ),
+				'xmlrpc'            => home_url( 'xmlrpc.php' ),
+			);
+
+			foreach ( $mandatory_allow_listed_urls as $key => $mandatory_allow_listed_url ) {
+
+				if ( empty( $mandatory_allow_listed_url ) ) {
+					continue;
 				}
 
-				if ( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] === $cleaned ) {
-					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Cancelling session validation for home page because public homepage is selected' );
+				$mandatory_allow_listed_url  = strtolower( $mandatory_allow_listed_url );
+				$mandatory_allow_listed_path = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( $mandatory_allow_listed_url, PHP_URL_PATH ) );
+
+				if ( $mandatory_allow_listed_path === '/' || $mandatory_allow_listed_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] ) {
+					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Error page URL must be a page and cannot be the root of the current website (' . $mandatory_allow_listed_path . ')' );
+				} elseif ( // Admin configured error page or custom login URL with query string.
+					stripos( $mandatory_allow_listed_path, '?' ) !== false &&
+					strcasecmp( $GLOBALS['WPO_CONFIG']['url_info']['request_uri'], $mandatory_allow_listed_path ) === 0
+				) {
+					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Found [' . $mandatory_allow_listed_path . '] thus cancelling session validation for path ' . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] );
+					return true;
+				} elseif ( // Request uri path matches with error / logged path.
+					strcasecmp( $GLOBALS['WPO_CONFIG']['url_info']['request_uri_path'], $mandatory_allow_listed_path ) === 0
+				) {
+					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Found [' . $mandatory_allow_listed_path . '] thus cancelling session validation for path ' . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] );
 					return true;
 				}
 			}
 
 			// Check if current page is blacklisted and can be skipped
-			$black_listed_pages = Options_Service::get_global_list_var( 'pages_blacklist' );
+			foreach ( $allow_listed_pages as $allow_listed_page ) {
 
-			// Always add Error Page URL (if configured)
-			$error_page_url = Options_Service::get_global_string_var( 'error_page_url' );
+				$found = array_filter(
+					$mandatory_allow_listed_urls,
+					function ( $value ) use ( $allow_listed_page ) {
+						return stripos( $value, $allow_listed_page ) !== false;
+					}
+				);
 
-			if ( ! empty( $error_page_url ) && WordPress_Helpers::stripos( $error_page_url, WordPress_Helpers::rtrim( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'], '/' ) ) === 0 ) {
-				$error_page_url  = WordPress_Helpers::rtrim( strtolower( $error_page_url ), '/' );
-				$error_page_path = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
-
-				if ( empty( $error_page_path ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] ) {
-					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Error page URL must be a page and cannot be the root of the current website (' . $error_page_path . ')' );
-				} else {
-					$black_listed_pages[] = $error_page_path;
+				if ( ! empty( $found ) ) {
+					continue;
 				}
-			}
 
-			// Always add Custom Login URL (if configured)
-			$custom_login_url = Options_Service::get_global_string_var( 'custom_login_url' );
-
-			if ( ! empty( $custom_login_url ) ) {
-				$custom_login_url  = WordPress_Helpers::rtrim( strtolower( $custom_login_url ), '/' );
-				$custom_login_path = WordPress_Helpers::rtrim( wp_parse_url( $custom_login_url, PHP_URL_PATH ), '/' );
-
-				if ( empty( $custom_login_path ) || $custom_login_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] ) {
-					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Custom Login URL must be a page and cannot be the root of the current website (' . $custom_login_path . ')' );
-				} else {
-					$black_listed_pages[] = $custom_login_path;
-				}
-			}
-
-			// Ensure default login path
-			$default_login_url_path = wp_parse_url( wp_login_url(), PHP_URL_PATH );
-
-			if ( array_search( $default_login_url_path, $black_listed_pages, true ) === false ) {
-				$black_listed_pages[] = $default_login_url_path;
-			}
-
-			// Ensure admin-ajax.php
-			$admin_ajax_path = 'admin-ajax.php';
-
-			if ( array_search( $admin_ajax_path, $black_listed_pages, true ) === true ) {
-				$black_listed_pages[] = $admin_ajax_path;
-			}
-
-			// Ensure wp-cron.php
-			$wp_cron_path = 'wp-cron.php';
-
-			if ( array_search( $wp_cron_path, $black_listed_pages, true ) === false ) {
-				$black_listed_pages[] = $wp_cron_path;
-			}
-
-			// Ensure /favicon.ico
-
-			$favicon_path = '/favicon.ico';
-
-			if ( array_search( $favicon_path, $black_listed_pages, true ) === false ) {
-				$black_listed_pages[] = $favicon_path;
-			}
-
-			Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Pages Blacklist after error page / custom login has verified' );
-			Log_Service::write_log( 'DEBUG', $black_listed_pages );
-
-			// Check if current page is blacklisted and can be skipped
-			foreach ( $black_listed_pages as $black_listed_page ) {
-
-				$black_listed_page = WordPress_Helpers::rtrim( strtolower( $black_listed_page ), '/' );
-
-				// Filter out empty or mis-configured black page entries
-				if ( empty( $black_listed_page ) || $black_listed_page === '/' || $black_listed_page === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] ) {
-					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Black listed page page must be a page and cannot be the root of the current website (' . $black_listed_page . ')' );
+				// Filter out empty or mis-configured allow-listed entries.
+				if ( empty( $allow_listed_page ) || $allow_listed_page === '/' || ( rtrim( $allow_listed_page, '/' ) . '/' ) === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] ) {
+					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Allow-listed page page must be a page and cannot be the root of the current website (' . $allow_listed_page . ')' );
 					continue;
 				}
 
 				// Correction after the plugin switched from basename to path based comparison
-				$starts_with       = substr( $black_listed_page, 0, 1 );
-				$black_listed_page = $starts_with === '/' || $starts_with === '?' ? $black_listed_page : '/' . $black_listed_page;
+				$starts_with = substr( $allow_listed_page, 0, 1 );
 
-				// Filter out any attempt to illegally bypass authentication
-				$illegal_stripos = WordPress_Helpers::stripos( $GLOBALS['WPO_CONFIG']['url_info']['request_uri'], '?/' );
-				if ( $illegal_stripos !== false && strlen( $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] ) > ( $illegal_stripos + 2 ) ) {
-					Log_Service::write_log( 'WARN', __METHOD__ . ' -> Serious attempt to try to bypass authentication using an illegal query string combination "?/" (path used: ' . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] . ')' );
-					break;
-				} elseif ( WordPress_Helpers::stripos( $GLOBALS['WPO_CONFIG']['url_info']['request_uri'], $black_listed_page ) !== false ) {
-					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Found [' . $black_listed_page . '] thus cancelling session validation for path ' . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] );
+				if ( $starts_with !== '/' ) {
+					Compatibility_Helpers::compat_warning(
+						sprintf(
+							'%s -> Please review and update the "Pages freed from authentication" list on the plugin\'s "Roles + Access" configuration page. As of version 43.0, entries must be defined as site-relative paths and start with a forward-slash (for example: "/my-page"). See https://www.wpo365.com/article/strengthening-intranet-mode-security-important-changes-to-url-matching/ for more details.',
+							__METHOD__
+						)
+					);
+				}
+
+				// Normalize $allow_listed_page.
+				$allow_listed_page = Url_Helpers::ensure_trailing_slash_path( $allow_listed_page );
+
+				if ( // Admin configured $allow_listed_page with query string.
+						stripos( $allow_listed_page, '?' ) !== false &&
+						strcasecmp( $GLOBALS['WPO_CONFIG']['url_info']['request_uri'], $allow_listed_page ) === 0
+				) {
+					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Found [' . $allow_listed_page . '] thus cancelling session validation for path ' . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] );
+					return true;
+				} elseif ( // Request uri path starts with $allow_listed_page.
+					stripos( $GLOBALS['WPO_CONFIG']['url_info']['request_uri_path'], $allow_listed_page ) === 0
+				) {
+					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Found [' . $allow_listed_page . '] thus cancelling session validation for path ' . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] );
 					return true;
 				}
 			}

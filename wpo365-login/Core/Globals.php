@@ -12,7 +12,12 @@ if ( ! class_exists( '\Wpo\Core\Globals' ) ) {
 
 	class Globals {
 
-
+		/**
+		 *
+		 * @param string $plugin_file
+		 * @param string $plugin_dir
+		 * @return void
+		 */
 		public static function set_global_vars(
 			$plugin_file,
 			$plugin_dir
@@ -57,7 +62,7 @@ if ( ! class_exists( '\Wpo\Core\Globals' ) ) {
 		 * @return array
 		 */
 		public static function get_url_info() {
-			$home   = get_option( 'home' );
+			$home   = strtolower( home_url() );
 			$scheme = ( isset( $_SERVER['HTTPS'] ) && ( $_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] === 1 ) ) ||
 				( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https' )
 				? 'https'
@@ -80,23 +85,40 @@ if ( ! class_exists( '\Wpo\Core\Globals' ) ) {
 						return ! empty( $segment );
 					}
 				);
+				// Resolve any '..' and '.' path traversal segments so that a crafted URI like
+				// /allow-listed/../protected/ cannot bypass the starts-with allow-list check.
+				$resolved = array();
+
+				foreach ( array_values( $request_uri_segments ) as $segment ) {
+					if ( $segment === '..' ) {
+						array_pop( $resolved );
+					} elseif ( $segment !== '.' ) {
+						$resolved[] = $segment;
+					}
+				}
+
+				$request_uri_segments = $resolved;
 				$request_uri          = sprintf( // Restore any trailing slashes.
 					'/%s%s',
 					implode( '/', $request_uri_segments ),
 					substr( $request_uri, -1 ) === '/' && strlen( $request_uri ) > 1 ? '/' : ''
 				);
 			}
-
-			$home_path   = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( $home, PHP_URL_PATH ) );
-			$host        = wp_parse_url( $home, PHP_URL_HOST );
-			$current_url = $scheme . '://' . $host . $request_uri;
+			$request_uri_segments = explode( '?', $request_uri );
+			$request_uri_path     = Url_Helpers::ensure_trailing_slash_path( $request_uri_segments[0] );
+			$request_uri          = count( $request_uri_segments ) === 2 ? $request_uri_path . '?' . $request_uri_segments[1] : $request_uri_path;
+			$home_path            = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( $home, PHP_URL_PATH ) );
+			$host                 = wp_parse_url( $home, PHP_URL_HOST );
+			$current_url          = $scheme . '://' . $host . $request_uri;
 
 			return array(
-				'request_uri'  => $request_uri,
-				'wp_site_url'  => Url_Helpers::ensure_trailing_slash_url( $home ),
-				'wp_site_path' => $home_path,
-				'current_url'  => $current_url,
-				'host'         => $host,
+				'request_uri'      => $request_uri,
+				'wp_site_url'      => Url_Helpers::ensure_trailing_slash_url( $home ),
+				'wp_site_path'     => $home_path,
+				'current_url'      => $current_url,
+				'host'             => $host,
+				'is_home'          => strcasecmp( $request_uri_path, $home_path ) === 0,
+				'request_uri_path' => $request_uri_path,
 			);
 		}
 	}

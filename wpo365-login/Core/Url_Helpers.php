@@ -17,25 +17,45 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 
 
 		/**
-		 * Helper method to (try) help ensure that the path segment given ends with a trailing slash.
+		 * Helper method to (try) help ensure that $path starts and ends with a trailing slash.
+		 * If $path has a query string, it won't be removed.
 		 *
 		 * @since 1.0
 		 *
-		 * @param string $path Path that should end with a slash.
+		 * @param string|null $path Path that should end with a slash.
 		 *
-		 * @return string Path with trailing slash if appropriate
+		 * @return string Path Starts and ends with trailing slashes if appropriate.
 		 */
 		public static function ensure_trailing_slash_path( $path ) {
-			$path           = WordPress_Helpers::trim( $path, '/' );
-			$path_segments  = explode( '/', $path );
-			$segments_count = count( $path_segments );
-			if ( $segments_count > 0 && WordPress_Helpers::stripos( $path_segments[ $segments_count - 1 ], '.' ) === false ) {
-				$is_root = empty( $path );
-				return $is_root
-					? '/'
-					: '/' . implode( '/', $path_segments ) . '/';
+			// Isolate any query string before normalising the path portion.
+			$query_string = '';
+			$qs_pos       = WordPress_Helpers::stripos( $path, '?' );
+
+			if ( $qs_pos !== false ) {
+				$query_string = substr( $path, $qs_pos ); // includes the leading '?'
+				$path         = substr( $path, 0, $qs_pos );
 			}
-			return '/' . $path;
+
+			// Remove any slash from start and end of $path.
+			$path = WordPress_Helpers::trim( $path, '/' );
+			// Split all segments that make up the path.
+			$path_segments = explode( '/', $path );
+			// Filter empty segments caused by '//' and re-index so count()-1 is always the last element.
+			$path_segments = array_values(
+				array_filter(
+					$path_segments,
+					function ( $item ) {
+						return ! empty( $item );
+					}
+				)
+			);
+
+			// $path ends with a file name e.g. index.php.
+			$ends_with_file = ! empty( $path_segments ) && WordPress_Helpers::stripos( $path_segments[ count( $path_segments ) - 1 ], '.' ) !== false;
+
+			return empty( $path ) // Return just '/' for root.
+				? ( empty( $query_string ) ? '/' : '/?' . substr( $query_string, 1 ) )
+				: '/' . implode( '/', $path_segments ) . ( $ends_with_file ? '' : '/' ) . $query_string;
 		}
 
 		/**

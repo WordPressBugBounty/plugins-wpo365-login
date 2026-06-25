@@ -3,6 +3,7 @@
 namespace Wpo\Services;
 
 use Wpo\Core\Compatibility_Helpers;
+use Wpo\Core\Url_Helpers;
 use Wpo\Core\WordPress_Helpers;
 use Wpo\Core\Wpmu_Helpers;
 use Wpo\Services\Log_Service;
@@ -196,13 +197,13 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 		 * @return  array   Array with snake cased options
 		 */
 		public static function get_default_options() {
-			$default_login_url_path = wp_parse_url( wp_login_url(), PHP_URL_PATH );
+			$default_login_url_path = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( wp_login_url(), PHP_URL_PATH ) );
 
 			$pages_blacklist = array(
 				'/login/',
-				'admin-ajax.php',
-				'wp-cron.php',
-				'xmlrpc.php',
+				site_url( 'admin-ajax.php' ),
+				site_url( 'wp-cron.php' ),
+				site_url( 'xmlrpc.php' ),
 				'/wp-json/wpo365/v1/',
 				$default_login_url_path,
 			);

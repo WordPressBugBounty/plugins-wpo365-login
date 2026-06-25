@@ -126,24 +126,6 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 
 			// check for user sync start request via external link
 			if ( ! empty( $_REQUEST['wpo365_sync_run'] ) ) { // phpcs:ignore
-				$auth_scenario = Options_Service::get_global_string_var( 'auth_scenario', false );
-
-				if ( $auth_scenario === 'intranet' || $auth_scenario === 'intranetAuthOnly' ) {
-					$allow_listed = Options_Service::get_global_list_var( 'pages_blacklist', false );
-
-					$found = array_filter(
-						$allow_listed,
-						function ( $path ) {
-							return stripos( $path, '?wpo365_sync_run' ) !== false;
-						}
-					);
-
-					if ( empty( $found ) ) {
-						$allow_listed[] = '?wpo365_sync_run';
-						Options_Service::add_update_option( 'pages_blacklist', $allow_listed );
-					}
-				}
-
 				add_action(
 					'init',
 					function () {

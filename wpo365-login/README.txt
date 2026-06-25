@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 42.11
+Stable tag: 43.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,10 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v43.0 =
+* BREAKING CHANGE: To address multiple vulnerabilities that could allow attackers to bypass WPO365 Intranet Mode, entries in the "Pages freed from authentication" list are now interpreted as server-relative paths. All entries must start with a forward slash (/) and are matched against the beginning of the requested URI path. Consult [this article](https://www.wpo365.com/article/strengthening-intranet-mode-security-important-changes-to-url-matching/) for details. [LOGIN, MAILER]
+* This release updates the version numbers of all premium plugins to 43.0 to align with the core plugin WPO365 | LOGIN. No functional changes were made to the premium plugins.
 
 = v42.11 =
 * Change: The plugin will no longer redirect AJAX and REST request to Microsoft but instead return a 401 Unauthorized message and terminate the connection. [LOGIN]
