@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 43.0
+Stable tag: 43.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,10 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v43.1 =
+* Fix: Fixed an issue that could prevent anonymous AJAX requests (admin-ajax.php) from working correctly on WordPress sites that configured WPO365 Intranet Mode. [LOGIN]
+* Fix: Administrators are now allowed to exclude site-relative paths that start with "/wp-admin". [LOGIN]
 
 = v43.0 =
 * BREAKING CHANGE: To address multiple vulnerabilities that could allow attackers to bypass WPO365 Intranet Mode, entries in the "Pages freed from authentication" list are now interpreted as server-relative paths. All entries must start with a forward slash (/) and are matched against the beginning of the requested URI path. Consult [this article](https://www.wpo365.com/article/strengthening-intranet-mode-security-important-changes-to-url-matching/) for details. [LOGIN, MAILER]

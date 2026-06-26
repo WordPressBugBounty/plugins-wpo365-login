@@ -201,7 +201,7 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 
 			$pages_blacklist = array(
 				'/login/',
-				site_url( 'admin-ajax.php' ),
+				admin_url( 'admin-ajax.php' ),
 				site_url( 'wp-cron.php' ),
 				site_url( 'xmlrpc.php' ),
 				'/wp-json/wpo365/v1/',
