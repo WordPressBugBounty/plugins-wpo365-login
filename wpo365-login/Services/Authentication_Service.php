@@ -391,6 +391,18 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			}
 
 			// Perform a safe redirect (only allows same-host by default).
+
+			if ( headers_sent() ) {
+				echo '<script type="text/javascript">';
+				printf( 'window.location.href="%s"', wp_kses( $target, WordPress_Helpers::get_allowed_html() ) );
+				echo '</script>';
+				echo '<noscript>';
+				printf( '<meta http-equiv="refresh" content="0;url=%s" />', wp_kses( $target, WordPress_Helpers::get_allowed_html() ) );
+				echo '</noscript>';
+				exit();
+			}
+
+			nocache_headers();
 			wp_safe_redirect( $target );
 			exit;
 		}

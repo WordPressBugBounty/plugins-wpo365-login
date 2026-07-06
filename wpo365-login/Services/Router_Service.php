@@ -124,7 +124,10 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 				}
 			}
 
-			// check for user sync start request via external link
+			/**
+			 * A public endpoint that requires possession of an unguessable job token
+			 * before any synchronization work can be performed.
+			 */
 			if ( ! empty( $_REQUEST['wpo365_sync_run'] ) ) { // phpcs:ignore
 				add_action(
 					'init',
@@ -140,6 +143,8 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 						}
 					}
 				);
+
+				return true;
 			}
 
 			return false;

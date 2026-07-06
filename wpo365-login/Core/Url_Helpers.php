@@ -323,6 +323,7 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 				exit();
 			}
 
+			nocache_headers();
 			wp_redirect( $url ); // phpcs:ignore
 			exit();
 		}
