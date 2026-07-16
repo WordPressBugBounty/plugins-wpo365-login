@@ -521,6 +521,8 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 
 			Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Fetching from ' . $url );
 
+			$response = null;
+
 			if ( WordPress_Helpers::stripos( $method, 'GET' ) === 0 ) {
 				$response = wp_remote_get(
 					$url,
@@ -800,20 +802,14 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 		 * @since 5.0
 		 *
 		 * @param   string $error_message_fragment used to write a specific error message to the log.
-		 * @return  WP_User if verified or else error response is returned to requester
+		 * @return  \WP_User if verified or else error response is returned to requester
 		 */
 		public static function verify_ajax_request( $error_message_fragment ) {
 			$error_message = '';
 
 			if ( ! is_user_logged_in() ) {
 				$error_message = 'Attempt ' . $error_message_fragment . ' by a user that is not logged on';
-			}
-
-			if (
-				Options_Service::get_global_boolean_var( 'enable_nonce_check' )
-				&& ( ! isset( $_POST['nonce'] )
-					|| ! wp_verify_nonce( $_POST['nonce'], 'wpo365_fx_nonce' ) ) // phpcs:ignore
-			) {
+			} elseif ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'wpo365_fx_nonce' ) ) { // phpcs:ignore
 				$error_message = 'Request ' . $error_message_fragment . ' has been tampered with (invalid nonce)';
 			}
 

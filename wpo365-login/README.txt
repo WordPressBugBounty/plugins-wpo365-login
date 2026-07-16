@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 43.2
+Stable tag: 43.3
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,9 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v43.3 =
+* Security Fix: Strengthened verification of certain AJAX requests to help prevent unauthorized changes to plugin settings. [ALL]
 
 = v43.2 =
 * Fix: Fixed an issue that prevented externally triggered WPO365 User Synchronization jobs from starting via the public "?wpo365_sync_run" endpoint. [INTEGRATE, CUSTOMERS (SYNC, INTRANET)]
