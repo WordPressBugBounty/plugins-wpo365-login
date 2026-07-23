@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 43.3
+Stable tag: 43.4
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,10 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v43.4 =
+* Fix: Fixed an issue on WordPress Multisite installations where content embedded from another site could fail to render when WPO365 Audiences was enabled. [ROLES + ACCESS, PROFESSIONAL, CUSTOMERS, INTEGRATE (SYNC, INTRANET)]
+* Fix: Fixed an issue where a double forward slash inside a query string value (e.g. "https://" within a redirect_to parameter) could be incorrectly collapsed to a single slash while the plugin sanitized the current request URL, which could prevent users from signing in successfully. [LOGIN, MAILER]
 
 = v43.3 =
 * Security Fix: Strengthened verification of certain AJAX requests to help prevent unauthorized changes to plugin settings. [ALL]

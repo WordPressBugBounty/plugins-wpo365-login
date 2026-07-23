@@ -429,8 +429,25 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 				);
 			}
 
-			if ( filter_var( $url, FILTER_VALIDATE_URL ) === false || WordPress_Helpers::stripos( $url, 'http' ) !== 0 ) {
+			// A value that doesn't even look like a URL was never memoized by WPO365, so this
+			// isn't an OIDC/SAML response meant for us; bail out and let the caller ignore it.
+			if ( WordPress_Helpers::stripos( $url, 'http' ) !== 0 ) {
 				return false;
+			}
+
+			// It does look like ours but fails strict validation (e.g. a reverse proxy or
+			// WAF collapsed a "//" somewhere along the way). Rather than failing the sign-in
+			// outright, fall back to the site's home URL so authentication can still complete.
+			if ( filter_var( $url, FILTER_VALIDATE_URL ) === false ) {
+				Log_Service::write_log(
+					'WARN',
+					sprintf(
+						'%s -> State/RelayState "%s" starts with "http" but is not a valid URL; falling back to the site\'s home URL so sign-in can still complete',
+						__METHOD__,
+						$url
+					)
+				);
+				$url = $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'];
 			}
 
 			$query = wp_parse_url( $url, PHP_URL_QUERY );

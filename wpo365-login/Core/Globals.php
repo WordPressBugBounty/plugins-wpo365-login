@@ -78,7 +78,14 @@ if ( ! class_exists( '\Wpo\Core\Globals' ) ) {
 			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : ''; // phpcs:ignore
 
 			if ( ! empty( $request_uri ) ) {
-				$request_uri_segments = explode( '/', $request_uri );
+				// Split off the query string first so the path-only sanitization below can
+				// never mistake a "//" inside a query value (e.g. redirect_to=https://...)
+				// for a doubled path slash.
+				$query_pos     = strpos( $request_uri, '?' );
+				$request_path  = $query_pos === false ? $request_uri : substr( $request_uri, 0, $query_pos );
+				$request_query = $query_pos === false ? '' : substr( $request_uri, $query_pos );
+
+				$request_uri_segments = explode( '/', $request_path );
 				$request_uri_segments = array_filter( // Filtering is applied to sanitize invalid URLs e.g. https://site/subsite//wp-login.php.
 					$request_uri_segments,
 					function ( $segment ) {
@@ -101,8 +108,8 @@ if ( ! class_exists( '\Wpo\Core\Globals' ) ) {
 				$request_uri          = sprintf( // Restore any trailing slashes.
 					'/%s%s',
 					implode( '/', $request_uri_segments ),
-					substr( $request_uri, -1 ) === '/' && strlen( $request_uri ) > 1 ? '/' : ''
-				);
+					substr( $request_path, -1 ) === '/' && strlen( $request_path ) > 1 ? '/' : ''
+				) . $request_query;
 			}
 			$request_uri_segments = explode( '?', $request_uri );
 			$request_uri_path     = Url_Helpers::ensure_trailing_slash_path( $request_uri_segments[0] );
