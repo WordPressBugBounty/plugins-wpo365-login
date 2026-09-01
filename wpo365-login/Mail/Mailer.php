@@ -20,13 +20,31 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 
 	class Mailer {
 
-
+		/**
+		 *
+		 * @var \PHPMailer\PHPMailer\PHPMailer
+		 */
 		public $phpmailer_data;
+
+		/**
+		 *
+		 * @var boolean
+		 */
 		public $is_ms_graph;
 
-		// See https://wordpress.org/support/topic/not-compatible-with-gravityform/#post-16554594
-		public $ErrorInfo; // phpcs:ignore
 
+		// See https://wordpress.org/support/topic/not-compatible-with-gravityform/#post-16554594
+		/**
+		 *
+		 * @var mixed
+		 */
+		public $ErrorInfo; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+
+		/**
+		 *
+		 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer
+		 * @return void
+		 */
 		public static function init( &$phpmailer ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
@@ -335,10 +353,28 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 
 			$save_sent       = Options_Service::get_global_boolean_var( 'mail_save_to_sent_items' );
 			$message_as_json = self::email_message_encode( $this->phpmailer_data->Subject, $to, $this->phpmailer_data->Body, $cc, $bcc, $reply_to, $content_type, $save_sent, $attachments, ! empty( $large_attachments ), $send_from, $internet_message_headers );
-			$query           = empty( $large_attachments )
+
+			$request_service      = Request_Service::get_instance();
+			$request              = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+			$skip_duplicate_check = $request->get_item( 'skip_duplicate_check' ); // E.g. When manually sending again or sending a test-email.
+
+			if ( empty( $skip_duplicate_check ) && self::is_duplicate_message( $message_as_json ) ) {
+				$log_message = sprintf(
+					'Email with subject [%s] to [%s] was not sent because an identical message was detected within the last 60 seconds (duplicate suppressed)',
+					$this->phpmailer_data->Subject, // phpcs:ignore
+					self::implode_to( $to )
+				);
+				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $log_message ) );
+				self::update_mail_log( $log_message, false, 'WARN', false );
+				return true;
+			} else {
+				$request->remove_item( '$skip_duplicate_check' );
+			}
+
+			$query        = empty( $large_attachments )
 				? sprintf( '/users/%s/sendMail', rawurlencode( $sender ) )
 				: sprintf( '/users/%s/messages', rawurlencode( $sender ) );
-			$access_token    = Mail_Authorization_Helpers::get_mail_access_token( $scope );
+			$access_token = Mail_Authorization_Helpers::get_mail_access_token( $scope );
 
 			if ( is_wp_error( $access_token ) ) {
 				$message_sent_result = $access_token;
@@ -374,12 +410,14 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 			if ( $message_sent_result['response_code'] < 200 || $message_sent_result['response_code'] > 299 ) {
 
 				if ( $message_sent_result['response_code'] === 429 ) {
+					$retry_after = isset( $message_sent_result['retry_after'] ) ? $message_sent_result['retry_after'] : null;
 					$log_message = sprintf(
-						'%s [Error: %s]',
+						'%s [Error: %s]%s',
 						$error_message,
-						'Microsoft Graph throttled the request due to rate limits. If the (premium) auto-retry feature is enabled on the plugin\'s "Mail" configuration page, WPO365 will retry sending your email automatically. Use the (premium) "Mail Audit Log" or "WPO365 Insights" to monitor the status of sent messages.'
+						'Microsoft Graph throttled the request due to rate limits. If the (premium) auto-retry feature is enabled on the plugin\'s "Mail" configuration page, WPO365 will retry sending your email automatically. Use the (premium) "Mail Audit Log" or "WPO365 Insights" to monitor the status of sent messages.',
+						$retry_after !== null ? sprintf( ' [Retry-After: %ds]', $retry_after ) : ''
 					);
-					self::update_mail_log( $log_message, false, 'ERROR', true );
+					self::update_mail_log( $log_message, false, 'ERROR', true, $retry_after );
 					return false;
 				}
 
@@ -501,6 +539,14 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 			remove_all_filters( 'wp_mail_from' );
 			add_filter( 'wp_mail_from', '\Wpo\Mail\Mailer::mail_from', 10, 1 );
 
+			/**
+			 * Avoid manually sent test-emails to be caught in the duplicated-check.
+			 */
+
+			$request_service = Request_Service::get_instance();
+			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+			$request->set_item( 'skip_duplicate_check', 'true' );
+
 			return wp_mail( $_to, $subject, $content, $headers, $attachments );
 		}
 
@@ -594,40 +640,104 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 				)
 			);
 
-			$response = wp_remote_request(
-				$url,
-				array(
-					'body'      => $body,
-					'method'    => $method,
-					'headers'   => $headers,
-					'sslverify' => $skip_ssl_verify,
-				)
-			);
+			/**
+			 * @since 43.5 Honor Microsoft Graph's Retry-After guidance for throttled (429 /
+			 * ApplicationThrottled) responses with a short, bounded, synchronous retry. A missing
+			 * Retry-After header, or one that exceeds $max_wait, is not retried here at all -
+			 * the caller gets the 429 back immediately, same as before this change.
+			 */
+			$max_attempts = apply_filters( 'wpo365/mail/mg_fetch_max_attempts', 3 );
+			$max_wait     = apply_filters( 'wpo365/mail/mg_fetch_max_retry_wait', 5 );
+			$attempt      = 0;
+			$retry_after  = null;
 
-			if ( is_wp_error( $response ) ) {
-				$error_message = sprintf(
-					'%s -> Error occured whilst fetching from Microsoft Graph (%s): %s',
-					__METHOD__,
+			do {
+				++$attempt;
+
+				$response = wp_remote_request(
 					$url,
-					$response->get_error_message()
+					array(
+						'body'      => $body,
+						'method'    => $method,
+						'headers'   => $headers,
+						'sslverify' => $skip_ssl_verify,
+					)
 				);
 
-				$error_code = $response->get_error_code();
+				if ( is_wp_error( $response ) ) {
+					$error_message = sprintf(
+						'%s -> Error occured whilst fetching from Microsoft Graph (%s): %s',
+						__METHOD__,
+						$url,
+						$response->get_error_message()
+					);
 
-				if ( empty( $error_code ) ) {
-					$error_code = 'GraphFetchException';
+					$error_code = $response->get_error_code();
+
+					if ( empty( $error_code ) ) {
+						$error_code = 'GraphFetchException';
+					}
+
+					return new \WP_Error( $error_code, $error_message );
 				}
 
-				return new \WP_Error( $error_code, $error_message );
+				$response_body = wp_remote_retrieve_body( $response );
+				$response_body = json_decode( $response_body, true );
+				$http_code     = wp_remote_retrieve_response_code( $response );
+				$throttled     = $http_code === 429 || ( isset( $response_body['error']['code'] ) && $response_body['error']['code'] === 'ApplicationThrottled' );
+
+				if ( ! $throttled ) {
+					break;
+				}
+
+				$retry_after     = self::get_retry_after_seconds( $response );
+				$can_retry_again = $attempt < $max_attempts && $retry_after !== null && $retry_after <= $max_wait;
+
+				if ( ! $can_retry_again ) {
+					break;
+				}
+
+				Log_Service::write_log(
+					'WARN',
+					sprintf(
+						'%s -> Microsoft Graph throttled the request (429); retrying in %d second(s) [attempt %d/%d]: %s',
+						__METHOD__,
+						$retry_after,
+						$attempt,
+						$max_attempts,
+						$url
+					)
+				);
+
+				sleep( $retry_after );
+			} while ( true );
+
+			return array(
+				'payload'       => $response_body,
+				'response_code' => $http_code,
+				'retry_after'   => $retry_after,
+			);
+		}
+
+		/**
+		 * Parses a numeric (seconds) Retry-After header value from a Microsoft Graph response.
+		 * Graph returns an integer-seconds value for throttling responses; the HTTP-date form
+		 * is not handled since Graph doesn't use it for this purpose.
+		 *
+		 * @since 43.5
+		 *
+		 * @param array $response Raw response as returned by wp_remote_request().
+		 *
+		 * @return int|null
+		 */
+		private static function get_retry_after_seconds( $response ) {
+			$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+
+			if ( empty( $retry_after ) || ! is_numeric( $retry_after ) ) {
+				return null;
 			}
 
-			$body      = wp_remote_retrieve_body( $response );
-			$body      = json_decode( $body, true );
-			$http_code = wp_remote_retrieve_response_code( $response );
-			return array(
-				'payload'       => $body,
-				'response_code' => $http_code,
-			);
+			return absint( $retry_after );
 		}
 
 		/**
@@ -635,12 +745,15 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 		 *
 		 * @since 24.0
 		 *
-		 * @param mixed $log_message
-		 * @param bool  $success
-		 * @param mixed $log_level
+		 * @param string   $log_message
+		 * @param bool     $success
+		 * @param string   $log_level
+		 * @param bool     $count_attempt
+		 * @param int|null $retry_after Seconds Microsoft Graph asked us to wait before retrying, when known (since 43.5).
+		 *
 		 * @return void
 		 */
-		public static function update_mail_log( $log_message, $success, $log_level, $count_attempt ) {
+		public static function update_mail_log( $log_message, $success, $log_level, $count_attempt, $retry_after = null ) {
 			$request_service = Request_Service::get_instance();
 			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 			$mail_log_id     = $request->get_item( 'mail_log_id' );
@@ -649,7 +762,7 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 			if ( $count_attempt ) {
 
 				if ( ! $success ) {
-					do_action( 'wpo365/mail/sent/fail', $log_message );
+					do_action( 'wpo365/mail/sent/fail', $log_message, $retry_after );
 				} else {
 					do_action( 'wpo365/mail/sent', $log_message );
 				}
@@ -746,6 +859,8 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 		 * Checks whether the instantiated PHP Mailer is the WPO365 Mailer.
 		 *
 		 * @since   21.6
+		 *
+		 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer
 		 *
 		 * @return void
 		 */
@@ -911,6 +1026,22 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 			return $result;
 		}
 
+		/**
+		 *
+		 * @param string $subject
+		 * @param array  $to
+		 * @param string $content
+		 * @param array  $cc
+		 * @param array  $bcc
+		 * @param array  $reply_to
+		 * @param string $content_type
+		 * @param bool   $save_sent
+		 * @param array  $attachments
+		 * @param bool   $draft
+		 * @param string $send_from
+		 * @param array  $headers
+		 * @return string|false
+		 */
 		private static function email_message_encode( $subject, $to, $content, $cc = array(), $bcc = array(), $reply_to = array(), $content_type = 'Text', $save_sent = false, $attachments = array(), $draft = false, $send_from = null, $headers = array() ) {
 			if ( $draft ) {
 				$message = array(
@@ -988,6 +1119,85 @@ if ( ! class_exists( '\Wpo\Mail\Mailer' ) ) {
 			return wp_json_encode( $message );
 		}
 
+		/**
+		 * Returns true when an identical message (same JSON payload) was already sent within the last 60 seconds.
+		 * Uses a direct DB read/write against wp_options to bypass any object-cache layer that could serve stale data.
+		 *
+		 * @since 43.1
+		 *
+		 * @param string $message_json The JSON-encoded message payload about to be sent to Microsoft Graph.
+		 *
+		 * @return bool True if a duplicate is detected and the send should be suppressed.
+		 */
+		private static function is_duplicate_message( $message_json ) {
+			global $wpdb;
+
+			$option_name = 'wpo365_mail_fingerprints';
+			$ttl         = 60;
+			$now         = time();
+			$hash        = md5( $message_json );
+
+			// Read directly from the DB — skips Redis/Memcached object cache entirely.
+			$raw = $wpdb->get_var( // phpcs:ignore
+				$wpdb->prepare(
+					"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1",
+					$option_name
+				)
+			);
+
+			$fingerprints = array();
+
+			if ( ! empty( $raw ) ) {
+				$decoded = maybe_unserialize( $raw );
+
+				if ( is_array( $decoded ) ) {
+					$fingerprints = $decoded;
+				}
+			}
+
+			// Remove entries older than $ttl seconds.
+			foreach ( $fingerprints as $stored_hash => $timestamp ) {
+				if ( ( $now - $timestamp ) >= $ttl ) {
+					unset( $fingerprints[ $stored_hash ] );
+				}
+			}
+
+			$is_duplicate = isset( $fingerprints[ $hash ] );
+
+			if ( ! $is_duplicate ) {
+				$fingerprints[ $hash ] = $now;
+			}
+
+			// Persist the updated (pruned + possibly extended) list back to the DB.
+			$serialized = maybe_serialize( $fingerprints );
+
+			if ( $raw === null ) {
+				$wpdb->insert( // phpcs:ignore
+					$wpdb->options,
+					array(
+						'option_name'  => $option_name,
+						'option_value' => $serialized,
+						'autoload'     => 'no',
+					)
+				);
+			} else {
+				$wpdb->update( // phpcs:ignore
+					$wpdb->options,
+					array( 'option_value' => $serialized ),
+					array( 'option_name' => $option_name )
+				);
+			}
+
+			wp_cache_delete( $option_name, 'options' );
+
+			return $is_duplicate;
+		}
+
+		/**
+		 *
+		 * @param array $to
+		 * @return string
+		 */
 		private static function implode_to( $to ) {
 			$result = array();
 

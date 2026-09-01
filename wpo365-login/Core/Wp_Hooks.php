@@ -55,6 +55,7 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				add_action( 'wp_ajax_wpo365_copy_main_site_options', '\Wpo\Services\Ajax_Service::copy_main_site_options' );
 				add_action( 'wp_ajax_wpo365_switch_wpmu_mode', '\Wpo\Services\Ajax_Service::switch_wpmu_mode' );
 				add_action( 'wp_ajax_wpo365_send_test_alert', '\Wpo\Services\Ajax_Service::send_test_alert' );
+				add_action( 'wp_ajax_wpo365_obfuscate_sensitive_options', '\Wpo\Services\Ajax_Service::obfuscate_sensitive_options' );
 
 				// Graph mailer
 
@@ -143,6 +144,9 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 					\Wpo\Services\Password_Credentials_Service::ensure_check_password_credentials_expiration();
 				}
 
+				// Ensure WP Cron job to obtain a new mail refresh token once a day is added.
+				\Wpo\Mail\Mail_Authorization_Helpers::ensure_get_mail_refresh_token();
+
 				// SCIM specific WP AJAX endpoints
 				if ( Options_Service::get_global_boolean_var( 'enable_scim' ) && method_exists( '\Wpo\Services\Scim_Service', 'generate_scim_secret_token' ) ) {
 					add_action( 'wp_ajax_wpo365_generate_scim_secret_token', '\Wpo\Services\Scim_Service::generate_scim_secret_token' );
@@ -156,6 +160,10 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				// Set up the dashboard widget.
 				add_action( 'wp_dashboard_setup', '\Wpo\Insights\Dashboard_Service::insights_widget' );
 			} // End admin stuff
+
+			// Rewrite instructions — available to all logged-in users (e.g. authors, editors).
+			add_action( 'wp_ajax_wpo365_get_rewrite_instructions', '\Wpo\Services\Ajax_Service::get_rewrite_instructions' );
+			add_action( 'wp_ajax_wpo365_save_rewrite_instructions', '\Wpo\Services\Ajax_Service::save_rewrite_instructions' );
 
 			if ( Options_Service::get_global_boolean_var( 'insights_alerts_enabled' ) && class_exists( '\Wpo\Insights\Event_Notify_Service' ) ) {
 				add_action(
@@ -179,6 +187,9 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 
 			// WP Cron job triggered action to check for each registered application whether its secret will epxire soon.
 			add_action( 'wpo_check_password_credentials_expiration', '\Wpo\Services\Password_Credentials_Service::check_password_credentials_expiration' );
+
+			// WP Cron job triggered action to obtain a new mail refresh token once a day.
+			add_action( 'wpo365_get_mail_refresh_token', '\Wpo\Mail\Mail_Authorization_Helpers::get_mail_refresh_token' );
 
 			// Auth.-only
 			if ( class_exists( '\Wpo\Services\Auth_Only_Service' ) ) {
@@ -323,6 +334,13 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 			add_action(
 				'login_form',
 				function () {
+					// The custom /wpo/login route already renders its own SSO button explicitly
+					// (Login_Renderer::render_sso_button()) before firing this hook for 2FA-plugin
+					// compatibility - skip here to avoid a duplicate button.
+					if ( get_query_var( 'wpo_login' ) === '1' ) {
+						return;
+					}
+
 					$login_button = \Wpo\Core\Shortcode_Helpers::login_button();
 					echo $login_button; // phpcs:ignore -- Output already escaped.
 				},
@@ -454,7 +472,20 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 
 			// Register the /wpo/sso/start custom SSO endpoint.
 			add_action( 'init', '\Wpo\Services\Router_Service::add_sso_start_rewrite_rule' );
+
+			// WordPress's own Permalinks-settings save flushes rewrite rules later in the same
+			// request than 'init' fires, which can race with this self-heal check. Re-running
+			// it on this dedicated hook (fired right after a changed structure is saved) closes
+			// that window instead of waiting for the next unrelated page load.
+			add_action( 'permalink_structure_changed', '\Wpo\Services\Router_Service::add_sso_start_rewrite_rule' );
+
 			add_filter( 'query_vars', '\Wpo\Services\Router_Service::add_sso_start_query_var' );
+
+			// Register the /wpo/login custom login route (Login/ is not shipped in every
+			// plugin build, hence the class_exists guard).
+			if ( class_exists( '\Wpo\Login\Login_Service_Provider' ) ) {
+				( new \Wpo\Login\Login_Service_Provider( new \Wpo\Login\Login_Url_Service() ) )->add_hooks();
+			}
 
 			// Add custom wp query vars
 			add_filter( 'query_vars', '\Wpo\Core\Url_Helpers::add_query_vars_filter' );
@@ -550,7 +581,7 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				add_action( 'wpo365/user/updated', '\Wpo\Insights\Event_Service::user_updated__handler', 10, 1 );
 				add_action( 'wpo365/user/updated/fail', '\Wpo\Insights\Event_Service::user_updated_fail__handler', 10, 2 );
 				add_action( 'wpo365/mail/sent', '\Wpo\Insights\Event_Service::mail_sent__handler', 10, 1 );
-				add_action( 'wpo365/mail/sent/fail', '\Wpo\Insights\Event_Service::mail_sent_fail__handler', 10, 1 );
+				add_action( 'wpo365/mail/sent/fail', '\Wpo\Insights\Event_Service::mail_sent_fail__handler', 10, 2 );
 				add_action( 'wpo365/alert/submitted', '\Wpo\Insights\Event_Service::notification_sent__handler', 10, 3 );
 				add_action( 'wpo365/alert/submitted/fail', '\Wpo\Insights\Event_Service::notification_sent_fail__handler', 10, 3 );
 			}
@@ -600,6 +631,11 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				add_action( 'wpo365/oidc/authenticated_only', $set_mlda_cookie );
 				add_action( 'wpo365/oidc/authenticated', $set_mlda_cookie );
 				add_action( 'wpo365/saml/authenticated', $set_mlda_cookie );
+			}
+
+			// Enqueue wpo365-rewriteai scripts and styles when the feature is enabled.
+			if ( Options_Service::get_global_boolean_var( 'use_rewrite_ai' ) ) {
+				add_action( 'enqueue_block_editor_assets', '\Wpo\Core\Script_Helpers::enqueue_rewriteai' );
 			}
 		}
 

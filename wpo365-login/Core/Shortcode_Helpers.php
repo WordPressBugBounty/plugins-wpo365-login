@@ -75,6 +75,8 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 							}
 
 							$app_type = $app_instance->appType; // phpcs:ignore
+							$app_file = '';
+							$css_file = '';
 							$elem_id  = uniqid();
 
 							switch ( $app_type ) {
@@ -108,6 +110,10 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 								case 'sea':
 									$app_file = $is_premium ? 'cbs.js' : 'cbsBasic.js';
 									break;
+								case 'sai':
+									$app_file = 'aichat.js';
+									$css_file = 'aichat.css';
+									break;
 								default:
 									$app_file = '';
 							}
@@ -139,6 +145,44 @@ if ( ! class_exists( '\Wpo\Core\Shortcode_Helpers' ) ) {
 								) . ';',
 								'before'
 							);
+
+							if ( ! empty( $css_file ) ) {
+								$style_handle = sprintf( 'wpo365-app_css-%d-%s', $id, $elem_id );
+								wp_enqueue_style( $style_handle, trailingslashit( plugins_url( $plugin_folder ) ) . 'apps/dist/' . $css_file, array(), $GLOBALS['WPO_CONFIG']['version'] );
+							}
+
+							$config_styles = null;
+
+							if ( is_object( $app_instance->config ) && ! empty( $app_instance->config->styles ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+								$config_styles = (array) $app_instance->config->styles; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+							} elseif ( is_array( $app_instance->config ) && ! empty( $app_instance->config['styles'] ) ) {
+								$config_styles = $app_instance->config['styles'];
+							}
+
+							if ( ! empty( $config_styles ) && is_array( $config_styles ) ) {
+								$declarations = '';
+
+								foreach ( $config_styles as $prop => $value ) {
+									$prop  = sanitize_text_field( (string) $prop );
+									$value = sanitize_text_field( (string) $value );
+
+									if ( $prop !== '' && $value !== '' ) {
+										$declarations .= sprintf( "  %s: %s;\n", $prop, $value );
+									}
+								}
+
+								if ( $declarations !== '' ) {
+									if ( ! wp_style_is( 'wpo365-sai-styles', 'registered' ) ) {
+										wp_register_style( 'wpo365-sai-styles', false ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+										wp_enqueue_style( 'wpo365-sai-styles' );
+									}
+
+									wp_add_inline_style(
+										'wpo365-sai-styles',
+										sprintf( "#%s {\n%s}", $elem_id, $declarations )
+									);
+								}
+							}
 
 							return sprintf( '<div id="%s" class="wpo365Apps"></div>', $elem_id );
 						}

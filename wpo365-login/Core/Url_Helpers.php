@@ -184,7 +184,17 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		 * @return array Assoc. array with custom login url (possibly empty string) and default login url.
 		 */
 		public static function get_login_urls() {
-			$default_login_url = \wp_login_url();
+			// Deliberately unfiltered: wp_login_url() may be pointed at the custom
+			// /wpo/login route by the login_url filter, but this needs to keep meaning
+			// the actual native wp-login.php URL for is_wp_login() to recognise it.
+			// site_url() itself isn't a safe way to dodge that filter, though - it runs
+			// through WordPress's own 'site_url' filter, which plugins such as WPML also
+			// hook to inject a language segment (e.g. /en/wp-login.php). That would only
+			// ever match the browser's actual, un-prefixed wp-login.php request by luck of
+			// substring position, not by design - built from get_option('siteurl') instead
+			// so every one of get_login_urls()'s callers (all of which only ever compare
+			// paths, never render this as a clickable link) sees the real, unprefixed path.
+			$default_login_url = untrailingslashit( get_option( 'siteurl' ) ) . '/wp-login.php';
 			$custom_login_url  = Options_Service::get_global_string_var( 'custom_login_url' );
 
 			// Custom login url must be an absolute URL
@@ -226,9 +236,17 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		public static function get_preferred_login_url() {
 			$login_urls = self::get_login_urls();
 
-			return ! empty( $login_urls['custom_login_url'] )
-				? $login_urls['custom_login_url']
-				: $login_urls['default_login_url'];
+			if ( ! empty( $login_urls['custom_login_url'] ) ) {
+				return $login_urls['custom_login_url'];
+			}
+
+			// default_login_url is deliberately unfiltered (see get_login_urls()), so the
+			// custom /wpo/login route is preferred here explicitly rather than relying on it.
+			if ( class_exists( '\Wpo\Login\Login_Url_Service' ) && Options_Service::get_global_boolean_var( 'use_custom_login_route' ) ) {
+				return ( new \Wpo\Login\Login_Url_Service() )->get_login_url();
+			}
+
+			return $login_urls['default_login_url'];
 		}
 
 		/**
@@ -262,7 +280,13 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 			$default_login_url_path     = wp_parse_url( $login_urls['default_login_url'], PHP_URL_PATH );
 			$default_login_url_detected = ! empty( $default_login_url_path ) && WordPress_Helpers::stripos( $uri, $default_login_url_path ) !== false;
 
-			return ( $custom_login_url_detected || $default_login_url_detected );
+			$wpo_login_route_detected = false;
+
+			if ( class_exists( '\Wpo\Login\Login_Url_Service' ) && Options_Service::get_global_boolean_var( 'use_custom_login_route' ) ) {
+				$wpo_login_route_detected = ( new \Wpo\Login\Login_Url_Service() )->is_login_url( $uri );
+			}
+
+			return ( $custom_login_url_detected || $default_login_url_detected || $wpo_login_route_detected );
 		}
 
 		/**
@@ -502,9 +526,18 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 
 			// Check whether WordPress is installed in subdirectory
 
-			if ( ! empty( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] ) ) {
+			if ( ! empty( $GLOBALS['WPO_CONFIG']['url_info']['wp_home_path_unfiltered'] ) ) {
+				$wp_core_path      = $GLOBALS['WPO_CONFIG']['url_info']['wp_core_path'];
+				$redirect_url_path = wp_parse_url( $validated_redirect_url, PHP_URL_PATH );
+				$is_wp_core_url    = ! empty( $redirect_url_path ) && (
+					WordPress_Helpers::stripos( $redirect_url_path, $wp_core_path . 'wp-admin/' ) === 0
+					|| WordPress_Helpers::stripos( $redirect_url_path, $wp_core_path . 'wp-login.php' ) === 0
+				);
 
-				if ( WordPress_Helpers::stripos( $validated_redirect_url, $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] ) === false ) {
+				// If this site is a (sub) site or is installed in a folder then ensure that $validated_redirect_url
+				// contains this path. The unfiltered home URL is used to avoid issues introduced by multi-lingual plugins
+				// such as WPML.
+				if ( ! $is_wp_core_url && WordPress_Helpers::stripos( $validated_redirect_url, $GLOBALS['WPO_CONFIG']['url_info']['wp_home_path_unfiltered'] ) === false ) {
 					$validated_redirect_url = $aad_redirect_url;
 				}
 			}
@@ -775,7 +808,7 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		 * @return bool
 		 */
 		public static function is_sso_start_url( $url ) {
-			$path = rtrim( wp_parse_url( $url, PHP_URL_PATH ), '/' );
+			$path = WordPress_Helpers::rtrim( wp_parse_url( $url, PHP_URL_PATH ), '/' );
 
 			if ( (bool) preg_match( '#(^|/)wpo/sso/start$#i', $path ) ) {
 				return true;

@@ -50,6 +50,16 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 				return true;
 			}
 
+			// Serve the built-in /wpo/loggedout page (Login/ is not shipped in every plugin
+			// build, hence the class_exists guard). Recognised here - not inside
+			// Authentication_Service::skip_authentication() - so authenticate_request() is
+			// never even scheduled for this request; nothing should ever conditionally force
+			// SSO onto the one page whose entire job is being a safe landing spot.
+			if ( class_exists( '\Wpo\Login\Login_Router' ) && \Wpo\Login\Login_Router::detect_loggedout_endpoint() ) {
+				add_action( 'init', '\Wpo\Login\Login_Router::route_loggedout' );
+				return true;
+			}
+
 			$request_service = Request_Service::get_instance();
 			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 

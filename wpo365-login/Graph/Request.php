@@ -32,7 +32,9 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 		 * - query (string)         -> e.g. demo@wpo365/photo/$value
 		 * - scope (string)         -> the permission scope required for the query e.g. https://graph.microsoft.com/User.Read.All.
 		 *
-		 * @param WP_REST_Request $rest_request The request object.
+		 * @param \WP_REST_Request $rest_request The request object.
+		 * @param string           $endpoint
+		 *
 		 * @return array|WP_Error
 		 */
 		public static function get( $rest_request, $endpoint ) {
@@ -65,6 +67,16 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			if ( ! empty( $data['http_request_args'] ) ) {
 				$request->set_item( 'http_request_args', $data['http_request_args'] );
 				add_filter( 'http_request_args', '\Wpo\Graph\Request::add_http_request_args', 10, 2 );
+				unset( $data['http_request_args'] );
+			}
+
+			// The client may define a timeout e.g. when waiting for Copilot response.
+			if ( ! empty( $body['timeout'] ) ) {
+				$timeout = filter_var( $body['timeout'], FILTER_VALIDATE_INT );
+
+				if ( $timeout !== false ) {
+					$request->set_item( 'timeout', $timeout );
+				}
 			}
 
 			$result = Graph_Service::fetch( $query, $method, $binary, $headers, $use_delegated, false, $data, $scope );
@@ -109,6 +121,8 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 		 * to circumvent CORS issues.
 		 *
 		 * @since 17.0
+		 *
+		 * @param \WP_REST_Request $rest_request
 		 *
 		 * @return array|WP_Error
 		 */
@@ -310,6 +324,8 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 		 *
 		 * @since 40.0
 		 *
+		 * @param \WP_REST_Request $rest_request
+		 *
 		 * @return array|WP_Error
 		 */
 		public static function batch( $rest_request ) {
@@ -351,6 +367,9 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 				: 'beta';
 			$url           = sprintf( 'https://graph.microsoft.com/%s/$batch', $graph_version );
 
+			$app_only_scope = '';
+			$role           = '';
+
 			if ( $application ) {
 				$scope_host     = WordPress_Helpers::stripos( $scope, 'https://' ) !== false ? wp_parse_url( $scope, PHP_URL_HOST ) : 'graph.microsoft.com';
 				$tld            = Options_Service::get_aad_option( 'tld' );
@@ -367,7 +386,7 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 
 			if ( is_wp_error( $access_token ) ) {
 				Log_Service::write_log( 'WARN', sprintf( '%s -> %s', __METHOD__, $access_token->get_error_message() ) );
-				return new \WP_Error( 'not_authorized', $access_token->get_access_token(), array( 'status' => 403 ) );
+				return new \WP_Error( 'not_authorized', $access_token->get_error_message(), array( 'status' => 403 ) );
 			}
 
 			$headers['Authorization'] = sprintf( 'Bearer %s', $access_token->access_token );
@@ -445,6 +464,8 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 		 *
 		 * @since 17.0
 		 *
+		 * @param \WP_REST_Request $rest_request
+		 *
 		 * @return array|WP_Error
 		 */
 		public static function token( $rest_request ) {
@@ -500,6 +521,9 @@ if ( ! class_exists( '\Wpo\Graph\Request' ) ) {
 			$url         = isset( $_POST['url'] ) ? sanitize_text_field( urldecode( $_POST['url'] ) ) : ''; // phpcs:ignore
 			$application = isset( $_POST['application'] ) ? filter_var( wp_unslash( $_POST['application'] ), FILTER_VALIDATE_BOOLEAN ) : false; // phpcs:ignore
 			$scope       = isset( $_POST['scope'] ) ? sanitize_text_field( urldecode( $_POST['scope'] ) ) : ''; // phpcs:ignore
+
+			$app_only_scope = '';
+			$role           = '';
 
 			if ( $application ) {
 				$scope_host     = WordPress_Helpers::stripos( $scope, 'https://' ) !== false ? wp_parse_url( $scope, PHP_URL_HOST ) : 'graph.microsoft.com';

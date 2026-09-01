@@ -90,6 +90,32 @@ if ( ! class_exists( '\Wpo\Services\Notifications_Service' ) ) {
 					}
 				}
 
+				if ( class_exists( '\Wpo\Login\Login_Url_Service' ) && Options_Service::get_global_boolean_var( 'use_custom_login_route' ) ) {
+					$login_url_service = new \Wpo\Login\Login_Url_Service();
+
+					if ( $login_url_service->is_pretty_permalinks_enabled() === false ) {
+						$title       = __( 'WPO365 custom login route', 'wpo365-login' );
+						$footer      = '- Marco van Wieren | Downloads by van Wieren | <a href="https://www.wpo365.com/">https://www.wpo365.com/</a>';
+						$notice_type = 'warning';
+						$hide_image  = true;
+
+						$message = sprintf(
+							/* translators: 1: Clickable link - do not translate */
+							__( 'The custom login route requires pretty permalinks to serve a clean URL. Please %1$s to update your permalink structure, or the login route will fall back to a query-string URL.', 'wpo365-login' ),
+							sprintf(
+								'<a href="options-permalink.php">%s</a>',
+								/* translators: Link caption e.g. "click here" */
+								__( 'click here', 'wpo365-login' )
+							)
+						);
+
+						ob_start();
+						include $GLOBALS['WPO_CONFIG']['plugin_dir'] . '/templates/admin-notifications.php';
+						$content = ob_get_clean();
+						echo '' . wp_kses( $content, WordPress_Helpers::get_allowed_html() );
+					}
+				}
+
 				if ( isset( $_GET['page'] ) && WordPress_Helpers::trim( sanitize_text_field( $_GET['page'] ) ) === 'wpo365-wizard' ) { // phpcs:ignore
 
 					if ( $GLOBALS['WPO_CONFIG']['plugin'] === 'wpo365-login/wpo365-login.php' ) {

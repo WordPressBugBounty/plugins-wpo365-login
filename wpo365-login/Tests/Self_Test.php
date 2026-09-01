@@ -167,6 +167,8 @@ if ( ! class_exists( '\Wpo\Tests\Self_Test' ) ) {
 				}
 			}
 
+			$options['WPO_AUTH_SCENARIO'] = defined( 'WPO_AUTH_SCENARIO' ) ? constant( 'WPO_AUTH_SCENARIO' ) : '';
+
 			$test_result->data      = $options;
 			$test_result->more_info = '';
 			return $test_result;

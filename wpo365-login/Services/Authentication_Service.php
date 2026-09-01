@@ -68,6 +68,15 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				// If multiple IdPs have been configured then the user must first select one
 				if ( ! empty( Wp_Config_Service::get_multiple_idps() ) ) {
 					Log_Service::write_log( 'DEBUG', sprintf( '%s -> Multiple IdPs have been configured and the user has not selected one and therefore he / she is redirected to the login page instead', __METHOD__ ) );
+
+					// goodbye() only preserves redirect_to via state/relay_state (not set yet -
+					// no IdP has been chosen so no SSO flow has started) or $_REQUEST['redirect_to']
+					// (not set for a plain page visit either); without this, the originally
+					// requested URL is lost and the user lands on the default page after signing in.
+					if ( empty( $_REQUEST['redirect_to'] ) ) { // phpcs:ignore
+						$_REQUEST['redirect_to'] = Url_Helpers::get_current_url(); // phpcs:ignore
+					}
+
 					self::goodbye( Error_Service::NO_IDP_SELECTED );
 					exit();
 				}
@@ -432,6 +441,10 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 				( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) ||
 				( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
 			) {
+				if ( ! headers_sent() ) {
+					nocache_headers();
+				}
+
 				wp_send_json_error(
 					array(
 						'message' => 'Unauthorized. To allow anonymous access, please add this path to list of pages freed from authentication. [Blocked by WPO365]',
@@ -671,13 +684,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 		public static function goodbye( $login_error_code, $login_error = true ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
-			$error_page_url      = Options_Service::get_global_string_var( 'error_page_url' );
-			$error_page_path     = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
-			$preferred_login_url = Url_Helpers::get_preferred_login_url();
-
-			$redirect_to = ( empty( $error_page_url ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] )
-				? $preferred_login_url
-				: apply_filters( 'wpo365/goodbye/error_page_uri', $error_page_url, get_current_user_id(), $login_error_code );
+			list( $redirect_to, $login_errors_added ) = self::get_loggedout_redirect_to( $login_error_code );
 
 			if ( empty( $_SERVER['PHP_SELF'] ) ) {
 				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> $_SERVER[PHP_SELF] is empty. Please review your server configuration.' );
@@ -699,9 +706,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			unset( $_COOKIE[ SECURE_AUTH_COOKIE ] );
 			unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
 
-			// Only add error information if redirect_to is equal to unmodified error_page_url.
-			if ( strcmp( $redirect_to, $error_page_url ) === 0 || strcmp( $redirect_to, $preferred_login_url ) === 0 ) {
-				$redirect_to = add_query_arg( 'login_errors', $login_error_code, $redirect_to );
+			if ( $login_errors_added ) {
 
 				/**
 				 * @since 34.3 Adding the redirect_to query arg to enable the user to recover from the error
@@ -723,6 +728,51 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			}
 
 			Url_Helpers::force_redirect( $redirect_to );
+		}
+
+		/**
+		 * Shared by goodbye() and is_deactivated() - both compute the safe landing URL for a
+		 * failed sign-in or a deactivated account identically: the built-in /wpo/loggedout page
+		 * when Login_Url_Service::should_use_builtin_loggedout_page() says so, the admin's
+		 * configured error_page_url (unless it happens to equal the site's home page, in which
+		 * case the login page is used instead), or the site's preferred login page as the
+		 * ultimate fallback - then decides whether login_errors belongs on that URL. Not reused
+		 * by Logout_Service::send_to_custom_logout_page(), which has no login-page fallback (it
+		 * declines to redirect at all when no error page applies) and a simpler login_errors
+		 * condition - forcing it through this same helper would need extra parameters that
+		 * wouldn't clarify anything for either caller.
+		 *
+		 * @since 43.x
+		 *
+		 * @param string $login_error_code
+		 * @return array{0: string, 1: bool} [$redirect_to, $login_errors_added] - the second
+		 *                                    element tells goodbye() whether to also preserve
+		 *                                    redirect_to/state on top; is_deactivated() has no
+		 *                                    such use for it.
+		 */
+		private static function get_loggedout_redirect_to( $login_error_code ) {
+			$error_page_url             = Options_Service::get_global_string_var( 'error_page_url' );
+			$error_page_path            = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
+			$preferred_login_url        = Url_Helpers::get_preferred_login_url();
+			$use_builtin_loggedout_page = class_exists( '\Wpo\Login\Login_Url_Service' ) && ( new \Wpo\Login\Login_Url_Service() )->should_use_builtin_loggedout_page();
+
+			if ( $use_builtin_loggedout_page ) {
+				$redirect_to = ( new \Wpo\Login\Login_Url_Service() )->get_loggedout_url();
+			} elseif ( empty( $error_page_url ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_home_path_unfiltered'] ) {
+				$redirect_to = $preferred_login_url;
+			} else {
+				$redirect_to = apply_filters( 'wpo365/goodbye/error_page_uri', $error_page_url, get_current_user_id(), $login_error_code );
+			}
+
+			// Only add error information if redirect_to is the built-in loggedout page, or
+			// equal to unmodified error_page_url, or the login page.
+			$login_errors_added = $use_builtin_loggedout_page || strcmp( $redirect_to, $error_page_url ) === 0 || strcmp( $redirect_to, $preferred_login_url ) === 0;
+
+			if ( $login_errors_added ) {
+				$redirect_to = add_query_arg( 'login_errors', $login_error_code, $redirect_to );
+			}
+
+			return array( $redirect_to, $login_errors_added );
 		}
 
 		/**
@@ -748,18 +798,9 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 					exit();
 				}
 
-				$error_page_url      = Options_Service::get_global_string_var( 'error_page_url' );
-				$error_page_path     = WordPress_Helpers::rtrim( wp_parse_url( $error_page_url, PHP_URL_PATH ), '/' );
-				$preferred_login_url = Url_Helpers::get_preferred_login_url();
-
-				$redirect_to = ( empty( $error_page_url ) || $error_page_path === $GLOBALS['WPO_CONFIG']['url_info']['wp_site_path'] )
-					? $preferred_login_url
-					: apply_filters( 'wpo365/goodbye/error_page_uri', $error_page_url, get_current_user_id(), Error_Service::DEACTIVATED );
-
-				// Only add error information if redirect_to is equal to unmodified error_page_url.
-				if ( strcmp( $redirect_to, $error_page_url ) === 0 || strcmp( $redirect_to, $preferred_login_url ) === 0 ) {
-					$redirect_to = add_query_arg( 'login_errors', Error_Service::DEACTIVATED, $redirect_to );
-				}
+				// Second element (whether login_errors was added) is unused here - unlike
+				// goodbye(), is_deactivated() has no state/redirect_to to preserve on top of it.
+				list( $redirect_to ) = self::get_loggedout_redirect_to( Error_Service::DEACTIVATED );
 
 				Url_Helpers::force_redirect( $redirect_to );
 			}
@@ -912,7 +953,7 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 					$cookie = wp_unslash( $_COOKIE[ $cookie_name ] ); // phpcs:ignore
 
 					// Remove sso-bypass-cookie when data is posted to the login page (unless user is resetting their password)
-					if ( ! empty( $_REQUEST ) && $action !== 'lostpassword' && $action !== 'rp' && $action !== 'resetpass' ) { // phpcs:ignore
+					if ( ! empty( $_POST ) && $action !== 'lostpassword' && $action !== 'rp' && $action !== 'resetpass' ) { // phpcs:ignore
 						setcookie( $cookie_name, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, $secure );
 						unset( $_COOKIE[ $cookie_name ] );
 					}
@@ -928,11 +969,13 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has not configured a mandatory secret key to bypass SSO' );
 				} elseif ( strlen( $bypass_key ) < 32 ) {
 					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but the length of the mandatory secret key to bypass SSO is less than 32 characters' );
-				} elseif ( empty( $error_page ) ) {
+				} elseif ( empty( $error_page ) && ! class_exists( '\Wpo\Login\Login_Url_Service' ) ) {
+					// error_page is only truly mandatory when there's no built-in fallback to
+					// use instead - see Login_Url_Service::should_use_builtin_loggedout_page().
 					Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Administrator has enabled SSO for the login page but has not configured a mandatory error page' );
 				} elseif ( is_user_logged_in() ) { // Admin has configured to enable SSO for the login page but user is already logged-in.
 					Url_Helpers::goto_after();
-					} elseif ( isset( $_GET[ $bypass_key ] ) ) { // phpcs:ignore
+				} elseif ( isset( $_GET[ $bypass_key ] ) ) { // phpcs:ignore
 					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> A request for the login page will be allowed pass-thru [cookie will be set]' );
 					setcookie( $cookie_name, $bypass_key, 0, COOKIEPATH, COOKIE_DOMAIN, $secure );
 					return true;
@@ -951,14 +994,19 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			$allow_listed_pages = Options_Service::get_global_list_var( 'pages_blacklist' );
 
 			// URLs that are always freed from authentication.
+			// default_login_url is deliberately read via get_login_urls() (unfiltered) rather
+			// than wp_login_url() directly, since the login_url filter may point the latter at
+			// the custom /wpo/login route - this list must still recognise the real wp-login.php.
 			$mandatory_allow_listed_urls = array(
 				'error_page_url'    => Options_Service::get_global_string_var( 'error_page_url' ),
 				'custom_login_url'  => Options_Service::get_global_string_var( 'custom_login_url' ),
-				'default_login_url' => wp_login_url(),
+				'default_login_url' => Url_Helpers::get_login_urls()['default_login_url'],
 				'admin_ajax_url'    => admin_url( 'admin-ajax.php' ),
 				'wp_cron_url'       => site_url( 'wp-cron.php' ),
-				'favicon_url'       => home_url( 'favicon.ico' ),
-				'xmlrpc'            => home_url( 'xmlrpc.php' ),
+				// home_url() can be filtered by plugins such as WPML to add a language segment (e.g. /en/favicon.ico),
+				// which would never match the browser's actual, un-prefixed request for /favicon.ico and force authentication (intranet).
+				'favicon_url'       => untrailingslashit( get_option( 'home' ) ) . '/favicon.ico',
+				'xmlrpc'            => site_url( 'xmlrpc.php' ),
 			);
 
 			foreach ( $mandatory_allow_listed_urls as $key => $mandatory_allow_listed_url ) {
@@ -979,9 +1027,32 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Found [' . $mandatory_allow_listed_path . '] thus cancelling session validation for path ' . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] );
 					return true;
 				} elseif ( // Request uri path matches with error / logged path.
+					// This is an EXACT path match - unlike the (starts-with) pages_blacklist
+					// check further down. A multilingual plugin (e.g. WPML) that redirects, say,
+					// /wp-login.php or /favicon.ico to a language-prefixed variant (e.g.
+					// /en/wp-login.php) will therefore NOT match here, and can force
+					// authentication on paths that are meant to always be exempt. Deliberately
+					// left as an exact match rather than a looser (e.g. suffix) match, to keep
+					// this mandatory allow-list narrow and predictable; the documented workaround
+					// is to add each language-prefixed variant explicitly to "Pages freed from
+					// authentication" (pages_blacklist) instead.
 					strcasecmp( $GLOBALS['WPO_CONFIG']['url_info']['request_uri_path'], $mandatory_allow_listed_path ) === 0
 				) {
 					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Found [' . $mandatory_allow_listed_path . '] thus cancelling session validation for path ' . $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] );
+					return true;
+				}
+			}
+
+			// The custom /wpo/login route (when enabled) is protected the same way the native
+			// login page is above. Checked separately because its plain-permalink fallback
+			// (?wpo_login=1) has no distinguishing path for the path-based loop above to match.
+			// redirect_on_login (handled earlier in this method) remains the only way to force
+			// SSO onto it.
+			if ( class_exists( '\Wpo\Login\Login_Url_Service' ) && Options_Service::get_global_boolean_var( 'use_custom_login_route' ) ) {
+				$is_wpo_login_route = ( new \Wpo\Login\Login_Url_Service() )->is_login_url( $GLOBALS['WPO_CONFIG']['url_info']['request_uri'] );
+
+				if ( $is_wpo_login_route ) {
+					Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Cancelling session validation for the custom login route' );
 					return true;
 				}
 			}

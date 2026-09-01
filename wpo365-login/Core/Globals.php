@@ -111,21 +111,25 @@ if ( ! class_exists( '\Wpo\Core\Globals' ) ) {
 					substr( $request_path, -1 ) === '/' && strlen( $request_path ) > 1 ? '/' : ''
 				) . $request_query;
 			}
-			$request_uri_segments = explode( '?', $request_uri );
-			$request_uri_path     = Url_Helpers::ensure_trailing_slash_path( $request_uri_segments[0] );
-			$request_uri          = count( $request_uri_segments ) === 2 ? $request_uri_path . '?' . $request_uri_segments[1] : $request_uri_path;
-			$home_path            = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( $home, PHP_URL_PATH ) );
-			$host                 = wp_parse_url( $home, PHP_URL_HOST );
-			$current_url          = $scheme . '://' . $host . $request_uri;
+			$request_uri_segments    = explode( '?', $request_uri );
+			$request_uri_path        = Url_Helpers::ensure_trailing_slash_path( $request_uri_segments[0] );
+			$request_uri             = count( $request_uri_segments ) === 2 ? $request_uri_path . '?' . $request_uri_segments[1] : $request_uri_path;
+			$home_path               = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( $home, PHP_URL_PATH ) );
+			$host                    = wp_parse_url( $home, PHP_URL_HOST );
+			$current_url             = $scheme . '://' . $host . $request_uri;
+			$wp_core_path            = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( site_url(), PHP_URL_PATH ) );
+			$wp_home_path_unfiltered = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( get_option( 'home' ), PHP_URL_PATH ) );
 
 			return array(
-				'request_uri'      => $request_uri,
-				'wp_site_url'      => Url_Helpers::ensure_trailing_slash_url( $home ),
-				'wp_site_path'     => $home_path,
-				'current_url'      => $current_url,
-				'host'             => $host,
-				'is_home'          => strcasecmp( $request_uri_path, $home_path ) === 0,
-				'request_uri_path' => $request_uri_path,
+				'request_uri'             => $request_uri,
+				'wp_site_url'             => Url_Helpers::ensure_trailing_slash_url( $home ),
+				'wp_site_path'            => $home_path,
+				'wp_core_path'            => $wp_core_path, // Path where WordPress is installed e.g. /wp.
+				'wp_home_path_unfiltered' => $wp_home_path_unfiltered, // The home_url filter may be used by plugins such as WPML.
+				'current_url'             => $current_url,
+				'host'                    => $host,
+				'is_home'                 => strcasecmp( $request_uri_path, $home_path ) === 0,
+				'request_uri_path'        => $request_uri_path,
 			);
 		}
 	}

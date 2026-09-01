@@ -13,7 +13,6 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 
 	class Script_Helpers {
 
-
 		/**
 		 * Helper to enqueue the pintra redirect script.
 		 *
@@ -114,28 +113,33 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 			$wpo365_errors = Wpmu_Helpers::mu_get_transient( 'wpo365_errors' );
 
 			$props = array(
-				'addOns'             => wp_json_encode( $addons, JSON_FORCE_OBJECT ),
-				'adminUrl'           => get_site_url( null, '/wp-admin' ),
-				'autoRetryOk'        => ! Options_Service::get_global_boolean_var( 'mail_auto_retry' ) || wp_next_scheduled( 'wpo_process_unsent_messages' ) !== false,
-				'availableGroups'    => wp_json_encode( $itthinx_groups ),
-				'availablePostTypes' => wp_json_encode( $post_types ),
-				'availableRoles'     => wp_json_encode( $wp_roles->roles ),
-				'extensions'         => $extensions,
-				'ina'                => is_network_admin(),
-				'ssoConfigured'      => Options_Service::is_wpo365_configured(),
-				'ldCourses'          => wp_json_encode( $learndash_courses ),
-				'ldGroups'           => wp_json_encode( $learndash_groups ),
-				'licNotices'         => wp_json_encode( $lic_notices ),
-				'pluginsUrl'         => plugins_url(),
-				'nonce'              => wp_create_nonce( 'wpo365_fx_nonce' ),
-				'restNonce'          => wp_create_nonce( 'wp_rest' ),
-				'scimSecretDefined'  => defined( 'WPO_SCIM_TOKEN' ),
-				'siteUrl'            => get_home_url(),
-				'wpConfigAad'        => ! empty( Wp_Config_Service::get_single_idp() ),
-				'wpConfigMultiple'   => ! empty( Wp_Config_Service::get_multiple_idps() ),
-				'wpConfigOverrides'  => ! empty( Wp_Config_Service::get_options_overrides() ),
-				'wpmu'               => is_multisite() ? ( Options_Service::mu_use_subsite_options() ? 'wpmuDedicated' : 'wpmuShared' ) : 'wpmuNone',
-				'wpoHealthMessages'  => wp_json_encode( $wpo365_errors ),
+				'addOns'               => wp_json_encode( $addons, JSON_FORCE_OBJECT ),
+				'adminUrl'             => get_site_url( null, '/wp-admin' ),
+				'authScenarioInternet' => defined( 'WPO_AUTH_SCENARIO' ) && constant( 'WPO_AUTH_SCENARIO' ) === 'internet',
+				'autoRetryOk'          => ! Options_Service::get_global_boolean_var( 'mail_auto_retry' ) || wp_next_scheduled( 'wpo_process_unsent_messages' ) !== false,
+				'availableGroups'      => wp_json_encode( $itthinx_groups ),
+				'availablePostTypes'   => wp_json_encode( $post_types ),
+				'availableRoles'       => wp_json_encode( $wp_roles->roles ),
+				'extensions'           => $extensions,
+				'ina'                  => is_network_admin(),
+				'ssoConfigured'        => Options_Service::is_wpo365_configured(),
+				'ldCourses'            => wp_json_encode( $learndash_courses ),
+				'ldGroups'             => wp_json_encode( $learndash_groups ),
+				'licNotices'           => wp_json_encode( $lic_notices ),
+				'pluginsUrl'           => plugins_url(),
+				'nonce'                => wp_create_nonce( 'wpo365_fx_nonce' ),
+				'restNonce'            => wp_create_nonce( 'wp_rest' ),
+				'scimSecretDefined'    => defined( 'WPO_SCIM_TOKEN' ),
+				// Deliberately unfiltered - get_home_url() can be filtered by plugins such as
+				// WPML to add a language segment, but this value feeds many wizard-suggested
+				// URLs (redirect URIs, REST API calls, the sync-run endpoint) that must match
+				// the site's real, language-neutral address.
+				'siteUrl'              => untrailingslashit( get_option( 'home' ) ),
+				'wpConfigAad'          => ! empty( Wp_Config_Service::get_single_idp() ),
+				'wpConfigMultiple'     => ! empty( Wp_Config_Service::get_multiple_idps() ),
+				'wpConfigOverrides'    => ! empty( Wp_Config_Service::get_options_overrides() ),
+				'wpmu'                 => is_multisite() ? ( Options_Service::mu_use_subsite_options() ? 'wpmuDedicated' : 'wpmuShared' ) : 'wpmuNone',
+				'wpoHealthMessages'    => wp_json_encode( $wpo365_errors ),
 			);
 
 			wp_enqueue_script( 'wizardjs', Url_Helpers::get_asset_url_for_current_site( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) . 'apps/dist/wizard.js' ), array(), $GLOBALS['WPO_CONFIG']['version'], true );
@@ -145,7 +149,7 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 				'window.wpo365 = window.wpo365 || {}; window.wpo365.wizard = ' . wp_json_encode(
 					array(
 						'nonce'          => wp_create_nonce( 'wpo365_fx_nonce' ),
-						'wpAjaxAdminUrl' => admin_url() . 'admin-ajax.php',
+						'wpAjaxAdminUrl' => admin_url( 'admin-ajax.php' ),
 						'props'          => $props,
 					)
 				) . '; window.wpo365.blocks = ' . wp_json_encode(
@@ -178,6 +182,53 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 			}
 		}
 
+		public static function enqueue_rewriteai() {
+			$plugin_url = apply_filters( 'wpo365/apps/rewriteai/path', '' );
+
+			if ( empty( $plugin_url ) ) {
+				return;
+			}
+
+			wp_enqueue_script(
+				'wpo365-rewriteai-js',
+				trailingslashit( $plugin_url ) . 'apps/dist/rewriteai.js',
+				array(
+					'wp-element',
+					'wp-data',
+					'wp-blocks',
+					'wp-dom-ready',
+					'wp-notices',
+					'wp-edit-post',
+					'wp-block-editor',
+					'wp-components',
+					'wp-plugins',
+				),
+				$GLOBALS['WPO_CONFIG']['version'],
+				true
+			);
+
+			wp_add_inline_script(
+				'wpo365-rewriteai-js',
+				'window.wpo365 = window.wpo365 || {}; window.wpo365.rewriteai = ' . wp_json_encode(
+					array(
+						'nonce'    => wp_create_nonce( 'wpo365_fx_nonce' ),
+						'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
+						'apiNonce' => wp_create_nonce( 'wp_rest' ),
+						'apiUrl'   => trailingslashit( $GLOBALS['WPO_CONFIG']['url_info']['wp_site_url'] ) . 'wp-json/wpo365/v1/graph',
+						'timeout'  => Options_Service::get_global_numeric_var( 'rewrite_ai_timeout' ),
+					)
+				),
+				'before'
+			);
+
+			wp_enqueue_style(
+				'wpo365-rewriteai-css',
+				trailingslashit( $plugin_url ) . 'apps/dist/rewriteai.css',
+				array(),
+				$GLOBALS['WPO_CONFIG']['version']
+			);
+		}
+
 		/**
 		 * Helper to load the pintraredirectjs script asynchronously.
 		 *
@@ -194,8 +245,25 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 			}
 
 			if ( $handle === 'wizardjs' || WordPress_Helpers::stripos( $handle, 'wpo365-app' ) === 0 || $handle === 'newuserjs' ) {
-				$tag = preg_replace( '/\s+type\s*=\s*(["\']).*?\1/i', '', $tag );
-				$tag = str_replace( '></script>', ' type="module"></script>', $tag );
+
+				if ( ! preg_match_all( '/<script\b[^>]*>.*?<\/script>/is', $tag, $matches ) ) {
+					return $tag;
+				}
+
+				// There can be  multiple script tags in a tag e.g. when an inline script is added.
+				$scripts = $matches[0];
+
+				foreach ( $scripts as &$script_html ) {
+
+					if ( preg_match( '/\bsrc\s*=\s*(["\']).*?\1/i', $script_html ) ) {
+						$script_html = preg_replace( '/\s+type\s*=\s*(["\']).*?\1/i', '', $script_html );
+						$script_html = preg_replace( '/<script\b/i', '<script type="module"', $script_html, 1 );
+					}
+				}
+
+				unset( $script_html );
+
+				$tag = implode( "\n", $scripts );
 			}
 
 			return $tag;

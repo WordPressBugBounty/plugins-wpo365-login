@@ -230,7 +230,8 @@ if ( ! class_exists( '\Wpo\Mail\Mail_Authorization_Helpers' ) ) {
 		 *
 		 * @since   19.0
 		 *
-		 * @param   bool $delete_delegated  If true the current delegated configuration will be deleted.
+		 * @param bool $delete_delegated  If true the current delegated configuration will be deleted.
+		 * @param bool $delete_app_only
 		 *
 		 * @return  stdClass    Calls with two boolean members indicating whether app-only and delegated access have been configured.
 		 */
@@ -397,6 +398,8 @@ if ( ! class_exists( '\Wpo\Mail\Mail_Authorization_Helpers' ) ) {
 		 *
 		 * @since   19.0
 		 *
+		 * @param string $scope
+		 *
 		 * @return  array|WP_Error An access token or otherwise a WP_Error object
 		 */
 		public static function get_mail_access_token( $scope ) {
@@ -455,10 +458,87 @@ if ( ! class_exists( '\Wpo\Mail\Mail_Authorization_Helpers' ) ) {
 		}
 
 		/**
+		 * Ensures the WP Cron job that obtains a new mail refresh token (or a fresh
+		 * application-only access token) once a day is scheduled when the Graph Mailer
+		 * feature is enabled, and ensures it is unscheduled when it is not.
+		 *
+		 * @since 43.x
+		 *
+		 * @return void
+		 */
+		public static function ensure_get_mail_refresh_token() {
+			$is_scheduled = wp_next_scheduled( 'wpo365_get_mail_refresh_token' );
+
+			if ( ! Options_Service::get_global_boolean_var( 'use_graph_mailer' ) ) {
+
+				if ( $is_scheduled ) {
+					wp_clear_scheduled_hook( 'wpo365_get_mail_refresh_token' );
+				}
+
+				delete_site_transient( 'wpo365_get_mail_refresh_token_hook_ensured' );
+				return;
+			}
+
+			$last_time = get_site_transient( 'wpo365_get_mail_refresh_token_hook_ensured' );
+
+			if ( empty( $last_time ) && ! $is_scheduled ) {
+				wp_schedule_event( strtotime( '03:00:00' ), 'daily', 'wpo365_get_mail_refresh_token' );
+				set_site_transient( 'wpo365_get_mail_refresh_token_hook_ensured', array( 'last_checked' => time() ) );
+			}
+		}
+
+		/**
+		 * WP Cron callback that obtains a new mail access token (and, for delegated
+		 * permissions, a new refresh token) once a day so that a 90-day inactivity
+		 * window can never make the stored refresh token expire.
+		 *
+		 * @since 43.x
+		 *
+		 * @return void
+		 */
+		public static function get_mail_refresh_token() {
+			Log_Service::write_log( 'DEBUG', sprintf( '##### -> %s', __METHOD__ ) );
+
+			if ( ! Options_Service::get_global_boolean_var( 'use_graph_mailer' ) ) {
+				return;
+			}
+
+			$mail_auth_configuration = self::get_mail_auth_configuration( false, false );
+
+			if ( ! $mail_auth_configuration->delegated_authorized && ! $mail_auth_configuration->app_only_authorized ) {
+				return;
+			}
+
+			$mail_access_token = self::get_mail_access_token( 'Mail.Send' );
+
+			if ( is_wp_error( $mail_access_token ) ) {
+				Log_Service::write_log(
+					'WARN',
+					sprintf(
+						'%s -> Could not obtain a fresh mail access/refresh token: %s',
+						__METHOD__,
+						$mail_access_token->get_error_message()
+					)
+				);
+			} else {
+				Log_Service::write_log(
+					'DEBUG',
+					sprintf(
+						'%s -> Successfully obtained a fresh mail access/refresh token [type: %s]',
+						__METHOD__,
+						$mail_access_token['type']
+					)
+				);
+			}
+		}
+
+		/**
 		 * Gets the cached access token if not yet expired or otherwise tries to refresh it using a
 		 * refresh token.
 		 *
 		 * @since   19.0
+		 *
+		 * @param string $scope
 		 *
 		 * @return  string|WP_Error An access token or otherwise a WP_Error object
 		 */

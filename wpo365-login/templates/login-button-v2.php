@@ -29,7 +29,7 @@ defined( 'ABSPATH' ) || die();
 
 		.wpo365-mssignin-wrapper:hover {
 			<?php
-			if ( ! $button_dont_zoom ) {
+			if ( ! $button_dont_zoom && empty( $wpo_idps ) ) {
 				echo 'transform: scale(1.05);';
 			}
 			?>
@@ -45,6 +45,13 @@ defined( 'ABSPATH' ) || die();
 		.wpo365-mssignin-select {
 			width: 100%;
 			height: 41px;
+			transition: border-color 0.2s, background-color 0.2s;
+			padding-left: 10px;
+		}
+
+		#selectedTenant.wpo365-mssignin-select-invalid {
+			border-color: #d13438 !important;
+			background-color: #fdf2f2 !important;
 		}
 
 		.wpo365-mssignin-wrapper form {
@@ -126,7 +133,12 @@ defined( 'ABSPATH' ) || die();
 				</div>
 			<?php endif ?>
 			<div class="wpo365-mssignin-spacearound">
-				<button class="wpo365-mssignin-button" type="button" onclick="window.location=getWpoSsoUrl()" aria-label="<?php echo esc_html( $sign_in_with_microsoft ); ?>">
+				<button
+					class="wpo365-mssignin-button"
+					type="button"
+					id="wpo365SignInButton"
+					onclick="<?php echo ! empty( $wpo_idps ) ? 'wpoHandleSignInButtonClick()' : 'window.location=getWpoSsoUrl()'; ?>"
+					aria-label="<?php echo esc_html( $sign_in_with_microsoft ); ?>">
 					<?php if ( empty( $button_hide_logo ) ) : ?>
 						<div class="wpo365-mssignin-logo">
 							<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21">
@@ -141,6 +153,30 @@ defined( 'ABSPATH' ) || die();
 					<div class="wpo365-mssignin-label"><?php echo esc_html( $sign_in_with_microsoft ); ?></div>
 				</button>
 			</div>
+			<?php if ( ! empty( $wpo_idps ) ) : ?>
+				<script>
+					( function () {
+						var wpoTenantSelect = document.getElementById( 'selectedTenant' );
+
+						if ( ! wpoTenantSelect ) {
+							return;
+						}
+
+						wpoTenantSelect.addEventListener( 'change', function () {
+							wpoTenantSelect.classList.remove( 'wpo365-mssignin-select-invalid' );
+						} );
+
+						window.wpoHandleSignInButtonClick = function () {
+							if ( ! wpoTenantSelect.value ) {
+								wpoTenantSelect.classList.add( 'wpo365-mssignin-select-invalid' );
+								return;
+							}
+
+							window.location = getWpoSsoUrl();
+						};
+					} )();
+				</script>
+			<?php endif ?>
 		<?php endif ?>
 	</div>
 </div>

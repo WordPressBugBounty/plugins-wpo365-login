@@ -103,6 +103,10 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 				unset( $camel_case_options['graphAllowGetToken'] );
 			}
 
+			if ( array_key_exists( 'loginCssVars', $camel_case_options ) && class_exists( '\Wpo\Login\Login_Style_Service' ) ) {
+				$camel_case_options['loginCssVars'] = \Wpo\Login\Login_Style_Service::reconcile_css_vars( $camel_case_options['loginCssVars'] );
+			}
+
 			$options_as_json = wp_json_encode( $camel_case_options );
 			self::ajax_response( 'OK', '', '', $options_as_json );
 		}
@@ -151,6 +155,41 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 			self::verify_posted_data( array( 'settings' ) ); // -> wp_die
 			$reset   = isset( $_POST['reset'] ) && $_POST['reset'] == 'true' ? true : false; // phpcs:ignore
 			$updated = Options_Service::update_options( $_POST['settings'], false, $reset ); // phpcs:ignore
+			self::ajax_response( $updated === true ? 'OK' : 'NOK', '', '', null );
+		}
+
+		/**
+		 * Toggles use_wp_config and either destructs the sensitive Entra ID
+		 * options currently stored in the database (when turned on) or restores
+		 * them from the WPO_AAD_<blog id> / WPO_IDPS_<blog id> wp-config.php
+		 * constant (when turned off).
+		 *
+		 * @since   43.5
+		 *
+		 * @return void
+		 */
+		public static function obfuscate_sensitive_options() {
+			// Verify AJAX request
+			$current_user = self::verify_ajax_request( 'to obfuscate the wpo365-login Entra ID options' );
+
+			if ( Permissions_Helpers::user_is_admin( $current_user ) === false ) {
+				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> User has no permission to obfuscate wpo365_options from AJAX service' );
+				wp_die();
+			}
+
+			self::verify_posted_data( array( 'use_wp_config' ) ); // -> wp_die
+			$use_wp_config = filter_var( $_POST['use_wp_config'], FILTER_VALIDATE_BOOLEAN ); // phpcs:ignore
+
+			if ( $use_wp_config && empty( Wp_Config_Service::get_single_idp() ) && empty( Wp_Config_Service::get_multiple_idps() ) ) {
+				self::ajax_response(
+					'NOK',
+					'',
+					'Cannot obfuscate the Entra ID options because wp-config.php does not define WPO_AAD_<blog id> or WPO_IDPS_<blog id>.',
+					null
+				);
+			}
+
+			$updated = Options_Service::set_use_wp_config( $use_wp_config );
 			self::ajax_response( $updated === true ? 'OK' : 'NOK', '', '', null );
 		}
 
@@ -545,6 +584,7 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 				$warning = sprintf( '%s -> Error occured whilst fetching from %s:  Method %s not implemented', __METHOD__, $url, $method );
 				Log_Service::write_log( 'WARN', $warning );
 				self::ajax_response( 'NOK', '', $warning, null ); // -> wp_die
+				exit();
 			}
 
 			if ( is_wp_error( $response ) ) {
@@ -793,6 +833,85 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 			$ok            = $update_result ? 'OK' : 'NOK';
 
 			self::ajax_response( $ok, '', '', null );
+		}
+
+		/**
+		 * Gets the Copilot rewrite instructions saved for the current user.
+		 *
+		 * @since 43.0
+		 *
+		 * @return void
+		 */
+		public static function get_rewrite_instructions() {
+			$current_user = self::verify_ajax_request( 'to get Copilot rewrite instructions' );
+
+			if ( ! user_can( $current_user->ID, 'edit_posts' ) ) {
+				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> User has no permission to get Copilot rewrite instructions' );
+				wp_die();
+			}
+
+			$enterprise_instructions = Options_Service::get_global_string_var( 'rewrite_ai_instructions' );
+			$prefs                   = get_user_meta( $current_user->ID, 'wpo365_rewrite_preferences', true );
+
+			// Backward compat: migrate the old single-string instructions key.
+			if ( ! is_array( $prefs ) ) {
+				$old_instructions = get_user_meta( $current_user->ID, 'wpo365_rewrite_instructions', true );
+				$personal         = $old_instructions ? array( 'instructions' => $old_instructions ) : null;
+			} else {
+				$personal = $prefs;
+			}
+
+			self::ajax_response(
+				'OK',
+				'',
+				'',
+				array(
+					'enterprise' => $enterprise_instructions ? $enterprise_instructions : '',
+					'personal'   => $personal,
+				)
+			);
+		}
+
+		/**
+		 * Saves the Copilot rewrite instructions for the current user.
+		 *
+		 * @since 43.0
+		 *
+		 * @return void
+		 */
+		public static function save_rewrite_instructions() {
+			$current_user = self::verify_ajax_request( 'to save Copilot rewrite instructions' );
+
+			if ( ! user_can( $current_user->ID, 'edit_posts' ) ) {
+				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> User has no permission to save Copilot rewrite instructions' );
+				wp_die();
+			}
+
+			$allowed_lengths   = array( 'shorter', 'same', 'longer' );
+			$allowed_tones     = array( 'formal', 'neutral', 'casual', 'friendly' );
+			$allowed_audiences = array( 'general', 'technical', 'executive', 'marketing' );
+
+			$prefs = get_user_meta( $current_user->ID, 'wpo365_rewrite_preferences', true );
+			$prefs = is_array( $prefs ) ? $prefs : array();
+
+			if ( isset( $_POST['instructions'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				$prefs['instructions'] = sanitize_textarea_field( wp_unslash( $_POST['instructions'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			}
+
+			if ( isset( $_POST['length'] ) && in_array( $_POST['length'], $allowed_lengths, true ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				$prefs['length'] = sanitize_text_field( wp_unslash( $_POST['length'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			}
+
+			if ( isset( $_POST['tone'] ) && in_array( $_POST['tone'], $allowed_tones, true ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				$prefs['tone'] = sanitize_text_field( wp_unslash( $_POST['tone'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			}
+
+			if ( isset( $_POST['audience'] ) && in_array( $_POST['audience'], $allowed_audiences, true ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				$prefs['audience'] = sanitize_text_field( wp_unslash( $_POST['audience'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			}
+
+			update_user_meta( $current_user->ID, 'wpo365_rewrite_preferences', $prefs );
+			self::ajax_response( 'OK', '', '', null );
 		}
 
 		/**

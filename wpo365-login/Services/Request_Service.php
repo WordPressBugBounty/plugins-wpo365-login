@@ -36,8 +36,18 @@ if ( ! class_exists( '\Wpo\Services\Request_Service' ) ) {
 			if ( $create_new_request ) {
 				$request = self::$instance->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 
-				if ( ! empty( $_REQUEST['idp_id'] ) ) { // phpcs:ignore
-					$idp_id = sanitize_text_field( $_REQUEST['idp_id'] ); // phpcs:ignore
+				/**
+				 * $_REQUEST's composition depends on the host's request_order php.ini directive and may
+				 * not include $_GET. A GET-navigated /wpo/sso/start?...&idp_id=... request (e.g. the
+				 * Teams/iframe popup redirect built by pintra-redirect.js) can therefore arrive with
+				 * idp_id only in the query string, missing from $_REQUEST on such hosts. $_GET and $_POST
+				 * themselves are always populated correctly regardless of request_order, so check those
+				 * directly instead of relying on $_REQUEST.
+				 */
+				$idp_id = ! empty( $_POST['idp_id'] ) ? $_POST['idp_id'] : ( ! empty( $_GET['idp_id'] ) ? $_GET['idp_id'] : null ); // phpcs:ignore
+
+				if ( ! empty( $idp_id ) ) {
+					$idp_id = sanitize_text_field( $idp_id );
 					$request->set_item( 'idp_id', $idp_id );
 				}
 

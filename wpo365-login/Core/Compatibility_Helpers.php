@@ -130,6 +130,29 @@ if ( ! class_exists( '\Wpo\Core\Compatibility_Helpers' ) ) {
 					$upgrade_actions[] = 'client_side_redirect';
 					Options_Service::add_update_option( 'upgrade_actions', $upgrade_actions );
 				}
+
+				/**
+				 * @since 43.x  "Use custom Logged Out Page" (use_custom_logged_out_page) is a
+				 * new option that decides whether error_page_url is used at all. Existing
+				 * installs that already configured an error_page_url before this option
+				 * existed should keep using it, so this one-time check turns the new option on
+				 * for them; new installs (and sites where error_page_url was never configured)
+				 * get the new default of false, meaning the built-in /wpo/loggedout page is
+				 * used instead. Deliberately a one-time migration rather than inferred on every
+				 * wizard load, so that explicitly unchecking the option later - while a stale
+				 * error_page_url value happens to still be present - is never silently
+				 * overridden back to true.
+				 */
+
+				if ( ! in_array( 'use_custom_logged_out_page_default', $upgrade_actions, true ) ) {
+
+					if ( ! empty( Options_Service::get_global_string_var( 'error_page_url' ) ) ) {
+						Options_Service::add_update_option( 'use_custom_logged_out_page', true );
+					}
+
+					$upgrade_actions[] = 'use_custom_logged_out_page_default';
+					Options_Service::add_update_option( 'upgrade_actions', $upgrade_actions );
+				}
 			}
 		}
 	}

@@ -152,6 +152,22 @@ if ( ! class_exists( '\Wpo\Graph\Controller' ) ) {
 
 			register_rest_route(
 				$graph_namespace,
+				'/copilot',
+				array(
+					array(
+						'methods'             => \WP_REST_Server::CREATABLE,
+						'callback'            => function ( $request ) {
+							return Request::get( $request, '/copilot' );
+						},
+						'permission_callback' => function ( $request ) {
+							return $this->check_permissions( $request, true );
+						},
+					),
+				)
+			);
+
+			register_rest_route(
+				$graph_namespace,
 				'/proxy',
 				array(
 					array(

@@ -2,8 +2,8 @@
 /**
  *  Plugin Name: WPO365 | LOGIN
  *  Plugin URI: https://wordpress.org/plugins/wpo365-login
- *  Description: WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Profiles, SharePoint, PowerBI.
- *  Version: 43.4
+ *  Description: Seamless Microsoft Entra | Ext. ID | B2C | M365 Integration for WordPress. For SSO, Mail, Roles, Access, Sync, Copilot, SharePoint, PowerBI.
+ *  Version: 44.0
  *  Author: marco@wpo365.com
  *  Author URI: https://www.wpo365.com
  *  License: GPL2+
@@ -30,13 +30,20 @@ if ( ! class_exists( '\Wpo\Login' ) ) {
 
 	class Login {
 
-
+		/**
+		 *
+		 * @var \Wpo\Services\Dependency_Service
+		 */
 		private $dependencies;
 
 		public function __construct() {
 			$this->deactivation_hooks();
 			add_action( 'plugins_loaded', array( $this, 'init' ), 1 );
 			add_filter( 'cron_schedules', '\Wpo\Core\Cron_Helpers::add_cron_schedules', 10, 1 ); // phpcs:ignore
+		}
+
+		public function get_plugin_url() {
+			return plugin_dir_url( __FILE__ );
 		}
 
 		public function init() {
@@ -47,7 +54,26 @@ if ( ! class_exists( '\Wpo\Login' ) ) {
 				add_action( 'init', '\Wpo\Services\Router_Service::add_sso_start_rewrite_rule' );
 				add_filter( 'query_vars', '\Wpo\Services\Router_Service::add_sso_start_query_var' );
 
-				if ( ! Router_Service::detect_sso_start_endpoint() ) {
+				// A direct hit on the custom login route (/wpo/login, /wpo/loggedout -
+				// premium-only, hence the class_exists guard) must also escape the early return
+				// below, the same way a direct hit on /wpo/sso/start already does - otherwise
+				// Login_Service_Provider::add_hooks() (and therefore Login_Router::handle_request(),
+				// the actual page renderer) would never run for those requests. Unlike the
+				// sso_start pair above, Login_Router::add_rewrite_rule()/add_loggedout_rewrite_rule()
+				// are NOT registered here too: they call Options_Service internally (via
+				// Login_Url_Service::should_use_builtin_loggedout_page()), which needs
+				// Globals::set_global_vars()/Options_Service::ensure_options_cache() to have
+				// already run - neither has, at this point, when $skip_init is about to return
+				// early. Registering them here would make them fire later anyway (WordPress's
+				// 'init' action runs regardless of $skip_init), hitting
+				// "Undefined global variable $WPO_CONFIG". They're only needed - and only safe to
+				// call - once $this->load() actually runs, which registers them itself via
+				// Wp_Hooks::add_wp_hooks() -> Login_Service_Provider::add_hooks(), early enough
+				// (still during 'plugins_loaded', before WordPress's own 'init' action fires) to
+				// take effect for the very same request.
+				$is_custom_login_route_endpoint = class_exists( '\Wpo\Login\Login_Router' ) && \Wpo\Login\Login_Router::detect_login_or_loggedout_endpoint();
+
+				if ( ! Router_Service::detect_sso_start_endpoint() && ! $is_custom_login_route_endpoint ) {
 					return;
 				}
 			}
@@ -135,6 +161,15 @@ if ( ! class_exists( '\Wpo\Login' ) ) {
 					}
 				);
 			}
+
+			// Delete the mail refresh token cron job
+			register_deactivation_hook(
+				__FILE__,
+				function () {
+					wp_clear_scheduled_hook( 'wpo365_get_mail_refresh_token' );
+					delete_site_transient( 'wpo365_get_mail_refresh_token_hook_ensured' );
+				}
+			);
 
 			register_deactivation_hook(
 				__FILE__,

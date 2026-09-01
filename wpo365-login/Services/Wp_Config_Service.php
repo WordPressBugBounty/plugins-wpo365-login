@@ -400,6 +400,8 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 		/**
 		 * Export the options as a parseable string that can be used in wp-config.php.
 		 *
+		 * @param bool $aad_options_only
+		 *
 		 * @return string|WP_Error
 		 */
 		public static function get_parseable_options( $aad_options_only ) {
@@ -531,6 +533,7 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 					'b2c_domain_name',
 					'b2c_policy_name',
 					'b2c_signup_policy',
+					'login_hide_form_secret',
 					'oidc_flow',
 					'oidc_response_mode',
 					'redirect_on_login_secret',
@@ -538,19 +541,25 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 					'saml_base_url',
 					'saml_idp_entity_id',
 					'saml_idp_meta_data_url',
+					'saml_idp_sls_binding',
 					'saml_idp_sls_url',
+					'saml_idp_ssos_binding',
 					'saml_idp_ssos_url',
+					'saml_sp_acs_binding',
 					'saml_sp_acs_url',
 					'saml_sp_entity_id',
+					'saml_sp_sls_binding',
 					'saml_sp_sls_url',
 					'saml_x509_cert',
 					'tenant_id',
 					'tld',
+					'wp_rest_aad_application_id',
 					'wp_rest_aad_application_id_uri',
 				),
 				'bools'   => array(
 					'b2c_allow_multiple_policies',
 					'b2c_enable_signup',
+					'multi_tenanted',
 					'redirect_url_strict',
 					'use_app_only_token',
 				),
@@ -649,6 +658,8 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 		 * Get a global string option from the global options cache.
 		 *
 		 * @param string $option_name
+		 * @param array  $options
+		 *
 		 * @return string
 		 */
 		private static function get_string_option( $option_name, $options ) {
@@ -663,6 +674,8 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 		 * Get a global boolean option from the global options cache.
 		 *
 		 * @param string $option_name
+		 * @param array  $options
+		 *
 		 * @return boolean
 		 */
 		private static function get_boolean_option( $option_name, $options ) {

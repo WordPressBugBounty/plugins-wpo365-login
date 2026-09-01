@@ -44,13 +44,13 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 			 * using an app-only context.
 			 */
 
-			$use_b2c        = Options_Service::get_global_boolean_var( 'use_b2c' );
-			$use_saml       = Options_Service::get_global_boolean_var( 'use_saml' );
-			$multi_tenanted = Options_Service::get_global_boolean_var( 'multi_tenanted' );
+			$use_b2c         = Options_Service::get_global_boolean_var( 'use_b2c' );
+			$use_saml        = Options_Service::get_global_boolean_var( 'use_saml' );
+			$multi_tenanted  = Options_Service::get_global_boolean_var( 'multi_tenanted' );
+			$request_service = Request_Service::get_instance();
+			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 
 			if ( $multi_tenanted ) {
-				$request_service         = Request_Service::get_instance();
-				$request                 = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 				$id_token                = $request->get_item( 'id_token' );
 				$oidc_user_is_logging_in = ! empty( $id_token );
 
@@ -166,39 +166,57 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 				: self::GRAPH_VERSION
 			);
 
-			$url = self::REST_API . $graph_version . $query;
-
+			$url             = self::REST_API . $graph_version . $query;
 			$skip_ssl_verify = ! Options_Service::get_global_boolean_var( 'skip_host_verification' );
+			$timeout         = $request->get_item( 'timeout' );
 
 			Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Fetching from ' . $url );
 
 			if ( WordPress_Helpers::stripos( $method, 'GET' ) === 0 ) {
+				$args = array(
+					'method'    => 'GET',
+					'headers'   => $_headers,
+					'sslverify' => $skip_ssl_verify,
+				);
+
+				if ( ! empty( $timeout ) ) {
+					$args['timeout'] = $timeout;
+				}
+
 				$response = wp_remote_get(
 					$url,
-					array(
-						'method'    => 'GET',
-						'headers'   => $_headers,
-						'sslverify' => $skip_ssl_verify,
-					)
+					$args
 				);
 			} elseif ( WordPress_Helpers::stripos( $method, 'POST' ) === 0 ) {
+				$args = array(
+					'body'      => $post_fields,
+					'headers'   => $_headers,
+					'sslverify' => $skip_ssl_verify,
+				);
+
+				if ( ! empty( $timeout ) ) {
+					$args['timeout'] = $timeout;
+				}
+
 				$response = wp_remote_post(
 					$url,
-					array(
-						'body'      => $post_fields,
-						'headers'   => $_headers,
-						'sslverify' => $skip_ssl_verify,
-					)
+					$args
 				);
 			} elseif ( WordPress_Helpers::stripos( $method, 'PATCH' ) === 0 ) {
+				$args = array(
+					'body'      => $post_fields,
+					'method'    => 'PATCH',
+					'headers'   => $_headers,
+					'sslverify' => $skip_ssl_verify,
+				);
+
+				if ( ! empty( $timeout ) ) {
+					$args['timeout'] = $timeout;
+				}
+
 				$response = wp_remote_post(
 					$url,
-					array(
-						'body'      => $post_fields,
-						'method'    => 'PATCH',
-						'headers'   => $_headers,
-						'sslverify' => $skip_ssl_verify,
-					)
+					$args
 				);
 			} else {
 				return new \WP_Error( 'NotImplementedException', 'Error occured whilst fetching from Microsoft Graph: Method ' . $method . ' not implemented' );

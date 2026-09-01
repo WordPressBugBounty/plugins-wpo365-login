@@ -109,7 +109,7 @@ if ( ! class_exists( '\Wpo\Services\Error_Service' ) ) {
 				self::PRIVATE_PAGE     => __( 'The page you requested requires you to sign in first.', 'wpo365-login' ),
 				self::NOT_CONFIGURED   => __( 'SSO (WPO365) not configured yet. Please contact your System Administrator.', 'wpo365-login' ),
 				self::NOT_FROM_DOMAIN  => __( 'Access Denied. Please contact your System Administrator.', 'wpo365-login' ),
-				self::NOT_IN_GROUP     => __( 'Access Denied. Please contact your System Administrator.', 'wpo365-login' ),
+				self::NOT_IN_GROUP     => __( 'User not in group. Please contact your System Administrator.', 'wpo365-login' ),
 				self::SAML2_ERROR      => __( 'SAML authentication error.', 'wpo365-login' ),
 				self::TAMPERED_WITH    => __( 'Your login might be tampered with. Please contact your System Administrator.', 'wpo365-login' ),
 				self::USER_NOT_FOUND   => __( 'Could not create or retrieve your login. Please contact your System Administrator.', 'wpo365-login' ),

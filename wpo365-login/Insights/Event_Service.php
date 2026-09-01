@@ -152,6 +152,13 @@ if ( ! class_exists( '\Wpo\Insights\Event_Service' ) ) {
 		 * @return void
 		 */
 		public static function user_loggedin_fail__handler( $error ) {
+
+			// Not an actual failure - just prompts the user to pick an IdP - so it shouldn't
+			// be logged/alerted like a genuine sign-in failure (e.g. NOT_IN_GROUP, TAMPERED_WITH).
+			if ( $error === Error_Service::NO_IDP_SELECTED ) {
+				return;
+			}
+
 			$request_service = Request_Service::get_instance();
 			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 			$wpo_user        = $request->get_item( 'wpo_usr' );
@@ -275,13 +282,19 @@ if ( ! class_exists( '\Wpo\Insights\Event_Service' ) ) {
 			self::add_event( $event );
 		}
 
-		public static function mail_sent_fail__handler( $log_message ) {
+		public static function mail_sent_fail__handler( $log_message, $retry_after = null ) {
 			$request_service = Request_Service::get_instance();
 			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 			$mail_log_id     = $request->get_item( 'mail_log_id' );
-			$data            = ! empty( $mail_log_id ) ? array( 'id' => '|' . $mail_log_id . '|' ) : null;
-			$user            = self::get_event_user();
-			$event           = new Event( 'wpo365/mail/sent', 'MAIL', $user, $data, $log_message, 'ERROR', 'NOK' );
+			$data            = ! empty( $mail_log_id ) ? array( 'id' => '|' . $mail_log_id . '|' ) : array();
+
+			if ( $retry_after !== null ) {
+				$data['retryAfter'] = $retry_after;
+			}
+
+			$data  = empty( $data ) ? null : $data;
+			$user  = self::get_event_user();
+			$event = new Event( 'wpo365/mail/sent', 'MAIL', $user, $data, $log_message, 'ERROR', 'NOK' );
 			self::add_event( $event );
 
 			Options_Service::get_global_boolean_var( 'insights_alerts_mail' ) && do_action( 'wpo365/insights/notify', $log_message, 'MAIL' );

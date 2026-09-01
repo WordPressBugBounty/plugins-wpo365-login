@@ -197,13 +197,14 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 		 * @return  array   Array with snake cased options
 		 */
 		public static function get_default_options() {
-			$default_login_url_path = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( wp_login_url(), PHP_URL_PATH ) );
+			// Unfiltered on purpose - see Url_Helpers::get_login_urls() for why wp_login_url()
+			// itself can no longer be trusted to return the native wp-login.php path.
+			$default_login_url_path = Url_Helpers::ensure_trailing_slash_path( wp_parse_url( Url_Helpers::get_login_urls()['default_login_url'], PHP_URL_PATH ) );
 
 			$pages_blacklist = array(
-				'/login/',
-				admin_url( 'admin-ajax.php' ),
-				site_url( 'wp-cron.php' ),
-				site_url( 'xmlrpc.php' ),
+				wp_parse_url( admin_url( 'admin-ajax.php' ), PHP_URL_PATH ),
+				wp_parse_url( site_url( 'wp-cron.php' ), PHP_URL_PATH ),
+				wp_parse_url( site_url( 'xmlrpc.php' ), PHP_URL_PATH ),
 				'/wp-json/wpo365/v1/',
 				$default_login_url_path,
 			);
@@ -586,13 +587,21 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 				'app_only_application_secret',
 				'application_id',
 				'application_secret',
+				'login_hide_form_secret',
 				'mail_application_id',
 				'mail_application_secret',
 				'nonce_secret',
 				'redirect_on_login_secret',
+				'saml_idp_entity_id',
+				'saml_idp_meta_data_url',
+				'saml_idp_sls_url',
+				'saml_idp_ssos_url',
+				'saml_sp_entity_id',
 				'saml_x509_cert',
 				'scim_secret_token',
 				'tenant_id',
+				'wp_rest_aad_application_id_uri',
+				'wp_rest_aad_application_id',
 			);
 		}
 
@@ -615,11 +624,19 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 			$options['app_only_application_secret']    = 'See wp-config.php';
 			$options['application_id']                 = '00000000-0000-0000-0000-000000000000';
 			$options['application_secret']             = 'See wp-config.php';
+			$options['b2c_custom_domain']              = 'See wp-config.php';
+			$options['b2c_domain_name']                = 'See wp-config.php';
+			$options['b2c_policy_name']                = 'See wp-config.php';
+			$options['b2c_signup_policy']              = 'See wp-config.php';
+			$options['login_hide_form_secret']         = 'See wp-config.php';
 			$options['mail_application_id']            = '00000000-0000-0000-0000-000000000000';
 			$options['mail_application_secret']        = 'See wp-config.php';
 			$options['mail_redirect_url']              = 'See wp-config.php';
 			$options['mail_tenant_id']                 = '00000000-0000-0000-0000-000000000000';
+			$options['oidc_flow']                      = 'See wp-config.php';
+			$options['oidc_response_mode']             = 'See wp-config.php';
 			$options['redirect_url']                   = 'See wp-config.php';
+			$options['redirect_on_login_secret']       = 'See wp-config.php';
 			$options['saml_base_url']                  = 'See wp-config.php';
 			$options['saml_idp_entity_id']             = 'See wp-config.php';
 			$options['saml_idp_meta_data_url']         = 'See wp-config.php';
@@ -634,8 +651,70 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 			$options['saml_sp_sls_url']                = 'See wp-config.php';
 			$options['saml_x509_cert']                 = 'See wp-config.php';
 			$options['tenant_id']                      = '00000000-0000-0000-0000-000000000000';
+			$options['tld']                            = 'See wp-config.php';
 			$options['wp_rest_aad_application_id_uri'] = 'See wp-config.php';
 			$options['wp_rest_aad_application_id']     = '00000000-0000-0000-0000-000000000000';
+		}
+
+		/**
+		 * Toggles use_wp_config. When enabled, sensitive Entra ID options in the
+		 * database are destructively replaced with placeholders (persisted
+		 * immediately, rather than waiting for the in-memory cache in
+		 * ensure_options_cache() to be rebuilt on a future request). When
+		 * disabled, those options are restored from the WPO_AAD_<blog id> /
+		 * WPO_IDPS_<blog id> wp-config.php constant that remained authoritative
+		 * while use_wp_config was on.
+		 *
+		 * @since   43.5
+		 *
+		 * @param   bool $use_wp_config
+		 * @return  bool
+		 */
+		public static function set_use_wp_config( $use_wp_config ) {
+			$updated_options = array( 'use_wp_config' => $use_wp_config );
+
+			if ( $use_wp_config ) {
+				self::remove_aad_options( $updated_options );
+				return self::update_options( $updated_options, true );
+			}
+
+			$wpo_idps = Wp_Config_Service::get_multiple_idps();
+			$source   = false;
+
+			if ( ! empty( $wpo_idps ) ) {
+				$default_idps = array_values(
+					array_filter(
+						$wpo_idps,
+						function ( $idp ) {
+							return ! empty( $idp['default'] ) && $idp['default'] === true;
+						}
+					)
+				);
+
+				if ( count( $default_idps ) === 1 ) {
+					$source = $default_idps[0];
+				}
+			}
+
+			if ( empty( $source ) ) {
+				$source = Wp_Config_Service::get_single_idp();
+			}
+
+			if ( ! empty( $source ) ) {
+				$restorable_keys = array_merge(
+					Wp_Config_Service::get_aad_option_keys()['strings'],
+					Wp_Config_Service::get_aad_option_keys()['bools'],
+					Wp_Config_Service::get_mail_option_keys()
+				);
+
+				foreach ( $restorable_keys as $key ) {
+					if ( isset( $source[ $key ] ) ) {
+						$updated_options[ $key ] = $source[ $key ];
+					}
+				}
+			}
+
+			return self::update_options( $updated_options, true );
 		}
 
 		/**

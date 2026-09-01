@@ -1,18 +1,18 @@
 === WPO365 | SEAMLESS WORDPRESS + MICROSOFT INTEGRATION (WPO365 | LOGIN) ===
 Contributors: wpo365
-Tags: Microsoft, SSO, PowerBI, Sharepoint, Email
+Tags: Microsoft, SSO, PowerBI, SharePoint, Email
 Requires at least: 5.0
-Tested up to: 7.0
-Stable tag: 43.4
+Tested up to: 7.1
+Stable tag: 44.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Sync, SharePoint, PowerBI.
+Seamless Microsoft Entra | Ext. ID | B2C | M365 Integration for WordPress. For SSO, Mail, Roles, Access, Sync, Copilot, SharePoint, PowerBI.
 
 == Description ==
 
-WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital Workplace. For SSO, Mail, Roles, Access, Sync, SharePoint, PowerBI.
+Seamless Microsoft Entra | Ext. ID | B2C | M365 Integration for WordPress. For SSO, Mail, Roles, Access, Sync, Copilot, SharePoint, PowerBI.
 
 = SINGLE SIGN-ON (SSO) =
 
@@ -33,10 +33,15 @@ WordPress + Microsoft Entra | Ext. ID | B2C | M365 Integration for your Digital 
 = MAIL =
 
 - **Send emails using Microsoft Graph** instead of SMTP from your WordPress website [more](https://www.wpo365.com/feature/send-mail-using-ms-graph/)
-- Choose between a Microsoft 365 account or a personal Microsoft account, like Hotmail.com or Outlook.com, to send WordPress emails
+- Choose between delegated (send mail as a user) and application-level (send mail as any user) type permissions.
+- Or: Select either a Microsoft 365 account or a personal Microsoft account, like Hotmail.com or Outlook.com, to send WordPress emails.
+- Or: Configure [RBAC for Exchange Online](https://learn.microsoft.com/en-us/Exchange/permissions-exo/application-rbac) and authorize as an application but with a limited scope e.g. one specific mailbox.
 - Send as **HTML**
 - Save to the **Sent Items** folder
 - Support for **file attachments**
+- Daily refresh of Microsoft Graph access and refresh token
+- Auto-flagging and suppression of duplicate emails
+- Auto-retry when throttled (HTTP 429)
 
 = SCIM =
 
@@ -83,7 +88,11 @@ https://youtu.be/S9tiASl1nH0
 
 **ADD FUNCTIONALITY WITH PREMIUM EXTENSIONS**
 
-The features below can be unlocked with [premium addOns and bundles](https://www.wpo365.com/pricing/).
+Features below can be unlocked with [premium WPO365 plugins](https://www.wpo365.com/pricing/).
+
+= SINGLE SIGN-ON (SSO) =
+
+- **Hide the WordPress login page** "/wp-login.php" and replace with a fully customizable login / logged-out page. [more](https://www.wpo365.com/feature/configure-a-custom-login-page-and-hide-wp-login-php/)
 
 = SYNC =
 
@@ -114,6 +123,11 @@ The features below can be unlocked with [premium addOns and bundles](https://www
 - Assign WordPress roles by Entra Groups, Entra User Attributes, Domains and / or App Roles [more](https://www.wpo365.com/feature/roles-access/)
 - Restrict access to site / pages by Entra Groups, Domains and / or WPO365 Audiences [more](https://www.wpo365.com/feature/roles-access/)
 - Redirect after login by Entra Groups and / or Domains [more](https://www.wpo365.com/feature/roles-access/)
+
+= COPILOT =
+
+- Copilot Rewrite will help authors to generate improved versions of their content without leaving WordPress [more](https://www.wpo365.com/feature/copilot-rewrite-for-wordpress/)
+- Use Copilot Chat for WordPress and embed directly in your WordPress intranet or extranet [more](https://www.wpo365.com/feature/copilot-chat-for-wordpress/)
 
 = LEARNDASH =
 
@@ -205,16 +219,20 @@ Please check out [our Getting Started page](https://docs.wpo365.com/category/21-
 Please check out [our online FAQs](https://docs.wpo365.com/category/26-support) for answers to commonly asked questions.
 
 == Screenshots ==
-1. Microsoft / Azure AD based Single Sign-on
-2. Embedded Power BI for WordPress
-3. Embedded SharePoint Online Documents for WordPress
-4. Embedded SharePoint Online Search for WordPress
-5. Employee Directory
-6. Support for Azure AD B2B and Azure AD B2C
-7. Sending WordPress email using Microsoft Graph
-8. Synchronizing users from Azure AD to WordPress
-9. Embed WordPress in a Teams Tab or App
-10. Assign WordPress roles / Deny access based on Azure AD groups
+1. Microsoft Entra ID based Single Sign-on (SSO).
+2. Hide WordPress Login and custom login route / page.
+3. Support for Azure AD B2C / Entra External ID.
+4. Send WordPress emails using Microsoft Graph.
+5. Co-pilot Rewrite for WordPress (block editor).
+6. Synchronize users from Entra ID to WordPress.
+7. WP role assignment and access rules for Entra ID groups.
+8. Apps to embed Microsoft 365 services in WordPress.
+9. Embed Power BI for WordPress (configuration).
+10. Embed Power BI content in WordPress.
+11. Embed SharePoint Library in WordPress.
+12. Embed Outlook / Exchange calendar in WordPress (date picker).
+13. Embed Outlook / Exchange calendar in WordPress (list view).
+
 
 == Upgrade Notice ==
 
@@ -223,6 +241,34 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v44.0 =
+
+* Support for WordPress 7.1. [ALL]
+* Feature: Use **Copilot Rewrite** - a block-editor sidebar tool - to rewrite selected content blocks (paragraphs, headings, lists, quotes, code, and more) with AI assistance, including support for personal and organization-wide rewrite instructions. [ESSENTIALS, PROFESSIONAL, INTEGRATE (LOGIN+, SYNC, INTRANET)] [Read more](https://www.wpo365.com/feature/copilot-rewrite-for-wordpress/)
+* Feature: **Copilot Chat** is a new app that lets visitors have an AI-powered conversation grounded in your organization's Microsoft 365 / SharePoint content, embeddable anywhere on your WordPress site - with conversation export, retry-on-failure, source attributions, and custom styling support. [APPS, INTEGRATE (INTRANET)] [Read more](https://www.wpo365.com/feature/copilot-chat-for-wordpress/)
+* Feature: Enable a fully customizable **WordPress Login Page** at https://{your website}/wpo/Login and optionally hide the classic WordPress page "/wp-login.php", with an option to hide the username / password form, custom branding, layout (single or split-column), colors, logo, custom title / description text, and translatable labels. [ESSENTIALS, PROFESSIONAL, INTEGRATE (LOGIN+, SYNC, INTRANET)] [Read more](https://www.wpo365.com/feature/configure-a-custom-login-page-and-hide-wp-login-php/)
+* Feature: Added a matching custom **"Logged Out" page** ('/wpo/loggedout') that can be used as the default landing page after sign-out or an SSO sign-in error, without needing a separately configured error page. [ESSENTIALS, PROFESSIONAL, INTEGRATE (LOGIN+, SYNC, INTRANET)]
+* Improvement: A fully redesigned, more compact calendar list layout with a day-badge, and a combined start/end time column. Events that span multiple days or last all day are now displayed more clearly, showing correct start / end dates and an "All day event" label instead of confusing time ranges. [LOGIN, APPS, INTEGRATE (INTRANET)] [Updated screenshots](https://www.wpo365.com/feature/add-outlook-or-exchange-calendars-to-wordpress/)
+* Improvement: The plugin will now - on a daily base - automatically refresh the Microsoft Graph mail connection's access and refresh token, so outgoing mail no longer risks failing due to a long-expired token after periods of low activity. [LOGIN, MAILER] Consult the update [tutorial](https://tutorials.wpo365.com/courses/email-configure-microsoft-graph-mailer/lessons/update-wpo365-authorize-connect-to-microsoft-graph/)
+* Improvement: Added automatic detection and suppression of duplicate outgoing emails sent within a short time window. [LOGIN, MAILER] [Read more](https://tutorials.wpo365.com/courses/email-configure-microsoft-graph-mailer/lessons/improve-the-reliability-of-sending-wordpress-emails/)
+* Improvement: The existing "obfuscate Entra ID options" switch - that will delete sensitive Entra ID settings from the database once they're defined in 'wp-config.php' when toggled on - is now capable of automatically restoring those settings if switched off again. [ANY PREMIUM] [Read more](https://tutorials.wpo365.com/courses/wp-config-php-single-identity-provider-idp/lessons/delete-sensitive-entra-id-options-from-the-database/)
+* Improvement: Added an optimized mobile layout option (portrait or landscape) for embedded Power BI reports on narrow screens. [APPS, INTEGRATE (INTRANET)]
+* Improvement: The "Sign in with Microsoft" button - when multiple identity providers are configured - now highlights the identity-provider dropdown in red if you try to sign in without picking one, instead of just leaving the button disabled with no explanation. [LOGIN]
+* Improvement: The "block direct Media Folder access" feature now (again) support a "Secure Download Mode" for Litespeed servers (requires additional server-configuration - consult online documentation). [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMER (LOGIN+, SYNC, INTRANET)]
+* Improvement: Added "Default LD assignment scope" as an additional option to configure default LearnDash course and group assignments, so you can control whether those assignments should be applied to new users only, instead of always being applied to all users. [ROLES + ACCESS, PROFESSIONAL, INTEGRATE, CUSTOMERS (SYNC, INTRANET)] [Read more](https://docs.wpo365.com/article/184-learndash-integration)
+* Improvement: The plugin's built-in "Send WordPress emails using Microsoft Graph" feature nows honor a "Retry-After" header - when Microsoft Graph throttles a request - with a short automatic retry, instead of failing immediately. [LOGIN, MAILER]
+* Improvement: If you have configured multiple Identity Providers, you can now configure the "Allow users from other tenants" setting individually for each identity provider in wp-config.php. [LOGIN]
+* Fix: Tested for compatibility with multilingual plugins that add language-specific URL paths, such as "/en" and "/nl". [LOGIN]
+* Fix: The start / end date and time of Calendar app events are now correctly translated to the user's timezone. [LOGIN, APPS, INTEGRATE (INTRANET)]
+* Fix: The "Access Denied" message shown to users blocked for not belonging to a required group has been corrected to a more accurate, specific message. [ROLES + ACCESS, PROFESSIONAL, INTEGRATE, CUSTOMERS (SYNC, INTRANET)]
+* Fix: The wizard no longer shows a misleading "invalid secret" warning for a masked secret field when Entra ID options have been obfuscated. [ANY PREMIUM]
+* Fix: Identified a bug where selecting a specific identity provider from a multi-tenant sign-in dropdown when "Use client-side redirect" has been selected, would drop the selected Identity Provider, incorrectly falling back to the default identity provider. [LOGIN]
+* Fix: On a WordPress Multisite installation, the "block direct Media Folder access" feature would generate a download-authorization cookie for one network site and replay it when connected to another network site. Now the service includes a host check, when validating the cookie. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMER (LOGIN+, SYNC, INTRANET)]
+* Fix: A new installation of the WPO365 | LOGIN plugin will no longer produce an initial "List of pages freed from authentication" with absolute URLs but with site relative paths instead - to prevent a WPO365 Health Message from showing up. [LOGIN]
+* Fix: The SSO bypass cookie (set by the plugin when SSO for the login page is enabled and the correct secret has been added to the login page URL) was being cleared immediately after being set under certain circumstances, preventing the bypass from working beyond the first page load. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: If you have configured multiple Identity Providers, the plugin can now refresh access tokens for users who signed in using a non-default Identity Provider. [LOGIN]
+* This release updates the version numbers of all premium plugins to 44.0 to align with the core plugin WPO365 | LOGIN.
 
 = v43.4 =
 * Fix: Fixed an issue on WordPress Multisite installations where content embedded from another site could fail to render when WPO365 Audiences was enabled. [ROLES + ACCESS, PROFESSIONAL, CUSTOMERS, INTEGRATE (SYNC, INTRANET)]

@@ -36,15 +36,22 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 		public static function get_access_token( $scope ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
-			$request_service     = Request_Service::get_instance();
-			$request             = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
-			$tld                 = Options_Service::get_aad_option( 'tld' );
+			$request_service = Request_Service::get_instance();
+			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+			$current_user_id = \get_current_user_id();
+
+			// Non-null only when the signed-in user's own WPO_IDPS_<blog_id> entry (via their
+			// wpo365_idp_id) differs from whatever ensure_aad_options() resolved for this
+			// request - keeps a delegated/refresh token request on the same Entra ID app its
+			// refresh token was actually issued by. See resolve_users_own_idp() for details.
+			$idp_override = self::resolve_users_own_idp( $current_user_id );
+
+			$tld                 = $idp_override !== null ? $idp_override['tld'] : Options_Service::get_aad_option( 'tld' );
 			$tld                 = empty( $tld ) ? '.com' : $tld;
 			$scope               = urldecode( $scope );
 			$scope               = str_replace( '.com', $tld, $scope );
-			$client_secret       = Options_Service::get_aad_option( 'application_secret' );
-			$application_id      = Options_Service::get_aad_option( 'application_id' );
-			$current_user_id     = \get_current_user_id();
+			$client_secret       = $idp_override !== null ? $idp_override['application_secret'] : Options_Service::get_aad_option( 'application_secret' );
+			$application_id      = $idp_override !== null ? $idp_override['application_id'] : Options_Service::get_aad_option( 'application_id' );
 			$user_is_logging_in  = ! empty( $request->get_item( 'id_token' ) ) || ! empty( $request->get_item( 'encoded_id_token' ) );
 			$access_token_errors = $request->get_item( 'access_token_errors' );
 			$access_token_errors = empty( $access_token_errors ) ? array() : $access_token_errors;
@@ -100,13 +107,13 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 			 * @since 24.0 Filters the AAD Redirect URI e.g. to set it dynamically to the current host.
 			 */
 
-			$redirect_uri = Options_Service::get_aad_option( 'redirect_url' );
+			$redirect_uri = $idp_override !== null ? $idp_override['redirect_url'] : Options_Service::get_aad_option( 'redirect_url' );
 			$redirect_uri = apply_filters( 'wpo365/aad/redirect_uri', $redirect_uri );
 
 			if ( WordPress_Helpers::stripos( $scope, 'https://analysis.windows.net/powerbi/api/.default' ) === 0 ) {
 				$params = array(
 					'client_id'     => $application_id,
-					'client_secret' => Options_Service::get_aad_option( 'application_secret' ),
+					'client_secret' => $client_secret,
 					'client_info'   => 1,
 					'scope'         => $scope,
 					'grant_type'    => 'client_credentials',
@@ -114,7 +121,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 			} else {
 				$params = array(
 					'client_id'     => $application_id,
-					'client_secret' => Options_Service::get_aad_option( 'application_secret' ),
+					'client_secret' => $client_secret,
 					'redirect_uri'  => $redirect_uri,
 					'scope'         => 'offline_access ' . $scope,
 				);
@@ -179,22 +186,22 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 
 			Log_Service::write_log( 'DEBUG', __METHOD__ . ' -> Requesting access token for ' . $scope );
 
-			$directory_id   = Options_Service::get_aad_option( 'tenant_id' );
-			$multi_tenanted = Options_Service::get_global_boolean_var( 'multi_tenanted' ) && ! Options_Service::get_global_boolean_var( 'use_b2c' );
+			$directory_id   = $idp_override !== null ? $idp_override['tenant_id'] : Options_Service::get_aad_option( 'tenant_id' );
+			$use_b2c        = $idp_override !== null ? $idp_override['use_b2c'] : Options_Service::get_global_boolean_var( 'use_b2c' );
+			$use_ciam       = $idp_override !== null ? $idp_override['use_ciam'] : Options_Service::get_global_boolean_var( 'use_ciam' );
+			$multi_tenanted = ( $idp_override !== null ? $idp_override['multi_tenanted'] : Options_Service::get_global_boolean_var( 'multi_tenanted' ) ) && ! $use_b2c;
 
 			if ( $multi_tenanted === true ) {
 				$directory_id = 'common';
 			}
 
-			if ( Options_Service::get_global_boolean_var( 'use_ciam' ) ) {
-				$domain_name       = Options_Service::get_aad_option( 'b2c_domain_name' );
+			if ( $use_ciam ) {
+				$domain_name       = $idp_override !== null ? $idp_override['b2c_domain_name'] : Options_Service::get_aad_option( 'b2c_domain_name' );
 				$host_name_portion = sprintf( '%s.ciamlogin', $domain_name );
 			} else {
 				$host_name_portion = 'login.microsoftonline';
 			}
 
-			$tld             = Options_Service::get_aad_option( 'tld' );
-			$tld             = empty( $tld ) ? '.com' : $tld;
 			$authorize_url   = sprintf(
 				'https://%s%s/%s/oauth2/v2.0/token',
 				$host_name_portion,
@@ -283,7 +290,70 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 		}
 
 		/**
+		 * Returns $current_user_id's own WPO_IDPS_<blog id> entry (via their wpo365_idp_id
+		 * user meta) when it differs from the default, so a delegated token always targets
+		 * the Entra ID app the user's cached refresh token was issued by. Kept local here
+		 * rather than in Wp_Config_Service::ensure_aad_options(), which is also used for
+		 * app-only/no-user contexts where overriding by the current WP user would be wrong.
+		 *
+		 * Returns null (use the existing resolution as-is) when there's no logged-in user,
+		 * no multi-IdP wp-config, no saved wpo365_idp_id, or no unambiguous match. A field
+		 * missing on the matched entry falls back to the corresponding global option.
+		 *
+		 * @since 43.x
+		 *
+		 * @param int $current_user_id
+		 * @return array|null
+		 */
+		private static function resolve_users_own_idp( $current_user_id ) {
+			if ( empty( $current_user_id ) ) {
+				return null;
+			}
+
+			$wpo_idps = Wp_Config_Service::get_multiple_idps();
+
+			if ( empty( $wpo_idps ) ) {
+				return null;
+			}
+
+			$idp_id = get_user_meta( $current_user_id, 'wpo365_idp_id', true );
+
+			if ( empty( $idp_id ) ) {
+				return null;
+			}
+
+			$filtered_idps = array_values(
+				array_filter(
+					$wpo_idps,
+					function ( $idp ) use ( $idp_id ) {
+						return ! empty( $idp['id'] ) && strcasecmp( $idp['id'], $idp_id ) === 0;
+					}
+				)
+			);
+
+			if ( count( $filtered_idps ) !== 1 ) {
+				return null;
+			}
+
+			$idp = $filtered_idps[0];
+
+			return array(
+				'application_id'     => isset( $idp['application_id'] ) ? $idp['application_id'] : Options_Service::get_global_string_var( 'application_id' ),
+				'application_secret' => isset( $idp['application_secret'] ) ? $idp['application_secret'] : Options_Service::get_global_string_var( 'application_secret' ),
+				'redirect_url'       => isset( $idp['redirect_url'] ) ? $idp['redirect_url'] : Options_Service::get_global_string_var( 'redirect_url' ),
+				'tenant_id'          => isset( $idp['tenant_id'] ) ? $idp['tenant_id'] : Options_Service::get_global_string_var( 'tenant_id' ),
+				'tld'                => ! empty( $idp['tld'] ) ? $idp['tld'] : Options_Service::get_global_string_var( 'tld' ),
+				'b2c_domain_name'    => isset( $idp['b2c_domain_name'] ) ? $idp['b2c_domain_name'] : Options_Service::get_global_string_var( 'b2c_domain_name' ),
+				'use_b2c'            => isset( $idp['tenant_type'] ) ? ( $idp['tenant_type'] === 'b2c' ) : Options_Service::get_global_boolean_var( 'use_b2c' ),
+				'use_ciam'           => isset( $idp['tenant_type'] ) ? ( $idp['tenant_type'] === 'ciam' ) : Options_Service::get_global_boolean_var( 'use_ciam' ),
+				'multi_tenanted'     => isset( $idp['multi_tenanted'] ) ? (bool) $idp['multi_tenanted'] : Options_Service::get_global_boolean_var( 'multi_tenanted' ),
+			);
+		}
+
+		/**
 		 * @since 11.0
+		 *
+		 * @param string $scope
 		 */
 		private static function get_cached_access_token( $scope ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
@@ -348,6 +418,8 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 
 		/**
 		 * @since 11.0
+		 *
+		 * @param array $access_tokens
 		 */
 		public static function save_access_tokens( $access_tokens ) {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
@@ -443,6 +515,11 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 			$tld   = $use_mail_config ? Options_Service::get_mail_option( 'mail_tld' ) : Options_Service::get_aad_option( 'tld' );
 			$tld   = empty( $tld ) ? '.com' : $tld;
 			$scope = str_replace( '.com', $tld, $scope );
+
+			// Avoids "possibly undefined" below; always assigned first when actually used.
+			$mail_directory_id       = null;
+			$mail_application_id     = null;
+			$mail_application_secret = null;
 
 			if (
 				$use_mail_config || ( Options_Service::get_global_boolean_var( 'use_graph_mailer' )
@@ -792,7 +869,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 		 *
 		 * @since   5.2
 		 *
-		 * @return  (stdClass|NULL)  Refresh token or an empty string if not found or when expired
+		 * @return  (\stdClass|NULL)  Refresh token or an empty string if not found or when expired
 		 */
 		private static function get_refresh_token() {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
@@ -843,7 +920,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 		 *
 		 * @since 5.1
 		 *
-		 * @param stdClass $refresh_token Access token as standard object (from json).
+		 * @param \stdClass $refresh_token Access token as standard object (from json).
 		 * @return void
 		 */
 		public static function save_refresh_token( $refresh_token ) {
@@ -871,7 +948,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 		 *
 		 * @since 5.2
 		 *
-		 * @return (stdClass|NULL)
+		 * @return (\stdClass|NULL)
 		 */
 		public static function get_authorization_code() {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
@@ -908,7 +985,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 		 *
 		 * @since 5.1
 		 *
-		 * @param stdClass $authorization_code Access token as standard object (from json).
+		 * @param \stdClass $authorization_code Access token as standard object (from json).
 		 * @return void
 		 */
 		public static function save_authorization_code( $authorization_code ) {
