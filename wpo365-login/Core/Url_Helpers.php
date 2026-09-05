@@ -851,5 +851,125 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 
 			return $asset_url;
 		}
+
+		/**
+		 * Disables the TLS ALPN extension for requests to Microsoft's login / Graph endpoints,
+		 * when the 'disable_alpn' option is enabled. Some hosts (e.g. those running OpenSSL >= 3.5
+		 * with the X25519MLKEM768 post-quantum key exchange group enabled by default) produce a
+		 * ClientHello that Microsoft's edge does not handle correctly, causing a bogus HTTP 404
+		 * instead of a TLS handshake error. Hooked unconditionally onto 'http_api_curl'; gated on
+		 * the option here (rather than at hook-registration time) so that
+		 * Url_Helpers::maybe_recover_from_microsoft_tls_404() can flip the option on and have it
+		 * take effect on an immediate retry within the same request.
+		 *
+		 * Deliberately does NOT also force CURLOPT_HTTP_VERSION to 1.0 (an earlier version of this
+		 * method did): HTTP/1.0 has no keep-alive semantics, so the server closes the connection
+		 * immediately after responding, and if it doesn't send a clean TLS close_notify first (many
+		 * don't, for performance), OpenSSL 3.x surfaces that as "cURL error 56: SSL_read: ...
+		 * unexpected eof while reading" instead of tolerating it - this was observed breaking
+		 * Microsoft Graph calls on a host that was never affected by the ALPN issue in the first
+		 * place. The original field-reported workaround only ever disabled ALPN; that's all this
+		 * does now.
+		 *
+		 * @since 44.1
+		 *
+		 * @param mixed $handle cURL handle used by the WP_Http_Curl transport (resource on PHP 7.x, CurlHandle on PHP 8.0+).
+		 * @param array $parsed_args Unused. Required by the http_api_curl action signature.
+		 * @param string $url Request URL.
+		 * @return void
+		 */
+		public static function disable_alpn_for_microsoft_hosts( $handle, $parsed_args, $url ) { // phpcs:ignore
+			if ( ! Options_Service::get_global_boolean_var( 'disable_alpn', false ) ) {
+				return;
+			}
+
+			$host = wp_parse_url( $url, PHP_URL_HOST );
+
+			if ( self::is_microsoft_login_host( $host ) || $host === 'graph.microsoft.com' ) {
+				curl_setopt( $handle, CURLOPT_SSL_ENABLE_ALPN, false ); // phpcs:ignore
+			}
+		}
+
+		/**
+		 * Watches responses from Microsoft's SSO/token endpoints for the bare "Not Found."
+		 * HTTP 404 caused by the ALPN/PQ-TLS ClientHello issue (see disable_alpn_for_microsoft_hosts()
+		 * above). Deliberately requires the exact bare "Not Found." body (not just a 404 status) -
+		 * this filter fires for ANY plugin's request to these hosts, not only WPO365's own, and a
+		 * genuine Microsoft identity-platform error (from WPO365 or anyone else) is always a JSON
+		 * body with an AADSTS error code, never a bare non-JSON "Not Found.". Without this, some
+		 * unrelated plugin's own legitimate 404 against the same host could flip 'disable_alpn' on
+		 * and cause WPO365 to blindly replay that other plugin's request, which may not be safe to
+		 * repeat (e.g. a non-idempotent call). On first sighting, turns 'disable_alpn' on and
+		 * replays the exact same request once.
+		 * If the replay comes back with a different status than 404 (including a legitimate
+		 * application-level error), that is itself evidence the TLS-layer issue is gone, so the
+		 * option is kept and a warning is logged. If the replay reproduces the same 404 (or the
+		 * connection fails outright), there is no evidence the fix helped, so the option is reverted.
+		 * Deliberately scoped to the SSO/token hosts only, not graph.microsoft.com, where a 404 is
+		 * a common and legitimate response (e.g. a user without a profile photo) rather than a sign
+		 * of this specific bug.
+		 *
+		 * Note: this filter only ever runs with an array $response (WordPress applies 'http_response'
+		 * on the success path only and returns a WP_Error early), so the retry's outcome is evaluated
+		 * directly from wp_remote_request()'s return value here rather than via a second, recursive
+		 * pass through this same filter - a recursive WP_Error retry would never re-enter this filter
+		 * to be evaluated.
+		 *
+		 * @since 44.1
+		 *
+		 * @param array  $response WordPress HTTP API response.
+		 * @param array  $parsed_args Request args as dispatched; replayed verbatim on retry.
+		 * @param string $url Request URL.
+		 * @return array
+		 */
+		public static function maybe_recover_from_microsoft_tls_404( $response, $parsed_args, $url ) {
+			$host = wp_parse_url( $url, PHP_URL_HOST );
+
+			if ( ! self::is_microsoft_login_host( $host ) ) {
+				return $response;
+			}
+
+			if ( wp_remote_retrieve_response_code( $response ) !== 404
+				|| WordPress_Helpers::trim( wp_remote_retrieve_body( $response ) ) !== 'Not Found.'
+				|| Options_Service::get_global_boolean_var( 'disable_alpn', false ) ) {
+				return $response;
+			}
+
+			Options_Service::add_update_option( 'disable_alpn', true );
+			$retry_response = wp_remote_request( $url, $parsed_args );
+
+			if ( is_wp_error( $retry_response ) || wp_remote_retrieve_response_code( $retry_response ) === 404 ) {
+				// Same failure signature (or the connection failed outright) -> the fix did not help.
+				Options_Service::add_update_option( 'disable_alpn', false );
+				return $response;
+			}
+
+			// Status changed from 404 to something else -> the TLS-layer issue is resolved,
+			// whatever surfaces now (200 or a legitimate application-level error) is unrelated.
+			Log_Service::write_log( 'WARN', 'Possible OpenSSL post-quantum TLS (X25519MLKEM768) issue detected. Automatically enabled "(cURL) Disable ALPN"' );
+
+			return $retry_response;
+		}
+
+		/**
+		 * True if $host is one of Microsoft's login/token endpoints, across any national cloud
+		 * (global '.com', US Government/GCC High '.us', or any other Entra ID cloud Microsoft may
+		 * add in future) - matched by hostname pattern rather than this site's own configured
+		 * 'tld'/'mail_tld' options. Deliberately does not read those options: a) the URL was
+		 * already built by our own code using one of those two settings, so a pattern match is
+		 * just as precise for recognising it, and b) reading them here would depend on
+		 * Options_Service's per-request cache being populated, which it is not for every
+		 * request - e.g. Options_Service::get_mail_option() logs an ERROR whenever
+		 * 'use_graph_mailer' is disabled, and this method is called on every 'http_response'
+		 * site-wide, not just for Microsoft-bound requests.
+		 *
+		 * @since 44.1
+		 *
+		 * @param string|null $host
+		 * @return bool
+		 */
+		private static function is_microsoft_login_host( $host ) {
+			return $host === 'login.windows.net' || (bool) preg_match( '/^login\.microsoftonline\.[a-z]{2,}$/i', (string) $host );
+		}
 	}
 }

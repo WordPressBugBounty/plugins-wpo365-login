@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, SharePoint, Email
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 44.0
+Stable tag: 44.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -241,6 +241,10 @@ Please check the [online change log](https://www.wpo365.com/change-log/) for upg
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v44.1 =
+
+* Fix: Microsoft's infrastructure is currently incompatible with OpenSSL 3.5 and higher's new default settings (as shipped with e.g. Debian 13), which could make sign-in or Microsoft Graph requests unexpectedly fail with a "Not Found" error on affected web hosts (e.g. IONOS / Fasthosts) - the plugin now automatically detects this and works around it. [LOGIN, MAILER]
 
 = v44.0 =
 

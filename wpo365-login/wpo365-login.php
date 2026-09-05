@@ -3,7 +3,7 @@
  *  Plugin Name: WPO365 | LOGIN
  *  Plugin URI: https://wordpress.org/plugins/wpo365-login
  *  Description: Seamless Microsoft Entra | Ext. ID | B2C | M365 Integration for WordPress. For SSO, Mail, Roles, Access, Sync, Copilot, SharePoint, PowerBI.
- *  Version: 44.0
+ *  Version: 44.1
  *  Author: marco@wpo365.com
  *  Author URI: https://www.wpo365.com
  *  License: GPL2+

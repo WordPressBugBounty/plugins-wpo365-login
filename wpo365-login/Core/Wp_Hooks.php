@@ -591,6 +591,13 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				add_action( 'http_api_curl', '\Wpo\Services\Log_Service::enable_curl_logging', 10, 3 );
 			}
 
+			// To disable ALPN for requests to Microsoft's login / Graph endpoints
+			// (option check happens inside the callback so a runtime option flip below takes effect immediately)
+			add_action( 'http_api_curl', '\Wpo\Core\Url_Helpers::disable_alpn_for_microsoft_hosts', 10, 3 );
+
+			// To auto-detect and self-heal the ALPN/PQ-TLS issue against Microsoft's SSO/token endpoints
+			add_filter( 'http_response', '\Wpo\Core\Url_Helpers::maybe_recover_from_microsoft_tls_404', 10, 3 );
+
 			// To exit whenever the username entered is not in the WPO_ADMINS list
 			if ( Options_Service::get_global_boolean_var( 'prevent_non_admin_login', false ) && defined( 'WPO_ADMINS' ) ) {
 				add_filter( 'authenticate', '\Wpo\Core\Permissions_Helpers::is_wpo_admin', 1, 3 );
