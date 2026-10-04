@@ -14,7 +14,6 @@ return array(
     'Wpo\\Mail\\' => array($baseDir . '/Mail'),
     'Wpo\\Insights\\' => array($baseDir . '/Insights'),
     'Wpo\\Graph\\' => array($baseDir . '/Graph'),
-    'Wpo\\Firebase\\' => array($baseDir . '/Firebase/JWT'),
     'Wpo\\Core\\' => array($baseDir . '/Core'),
     'Wpo\\Blocks\\' => array($baseDir . '/Blocks'),
     'Wpo\\Apps365\\Api\\' => array($baseDir . '/apps365/api'),

@@ -132,7 +132,7 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 					add_action(
 						'admin_notices',
 						function () use ( $lic_notice ) {
-							printf( '<div class="notice notice-error" style="margin-left: 2px;"><p>%s</p></div>', wp_kses( $lic_notice, WordPress_Helpers::get_allowed_html() ) );
+							printf( '<div class="notice notice-error" style="margin-left: 2px; background-color: #ffffff;"><p>%s</p></div>', wp_kses( $lic_notice, WordPress_Helpers::get_allowed_html() ) );
 						},
 						10,
 						0
@@ -140,7 +140,7 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 					add_action(
 						'network_admin_notices',
 						function () use ( $lic_notice ) {
-							printf( '<div class="notice notice-error" style="margin-left: 2px;"><p>%s</p></div>', wp_kses( $lic_notice, WordPress_Helpers::get_allowed_html() ) );
+							printf( '<div class="notice notice-error" style="margin-left: 2px; background-color: #ffffff;"><p>%s</p></div>', wp_kses( $lic_notice, WordPress_Helpers::get_allowed_html() ) );
 						},
 						10,
 						0
@@ -558,7 +558,7 @@ if ( ! class_exists( '\Wpo\Core\Plugin_Helpers' ) ) {
 				\sprintf( 'https://www.wpo365.com/?edd_action=check_license&license=%s&item_id=%s&url=%s', $license_key, $extension['store_item_id'], $url ),
 				array(
 					'timeout'   => 15,
-					'sslverify' => false,
+					'sslverify' => ! Options_Service::get_global_boolean_var( 'skip_host_verification' ),
 				)
 			);
 

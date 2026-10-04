@@ -796,6 +796,74 @@ if ( ! class_exists( '\Wpo\Core\Url_Helpers' ) ) {
 		}
 
 		/**
+		 * Compares a requested URL with an endpoint that the administrator added to the list of allowed
+		 * endpoints (see WP Admin > WPO365 > Integration).
+		 *
+		 * Scheme, host and port must be equal and only the path is compared as a prefix, because an
+		 * allow-listed endpoint e.g. https://graph.microsoft.com/_/drives must keep matching a URL e.g.
+		 * https://graph.microsoft.com/_/drives/{id}/root:/file.txt:/content. Comparing the URL and the
+		 * allow-listed endpoint as plain strings instead - as WPO365 did until version 45.0 - would also
+		 * match https://graph.microsoft.com@attacker.tld/ and https://graph.microsoft.com.attacker.tld/,
+		 * both of which resolve to a host of the caller's choosing.
+		 *
+		 * Both arguments are expected to be normalized already e.g. /v1.0/ and /beta/ replaced by /_/.
+		 *
+		 * @since 45.0
+		 *
+		 * @param string $url              The (absolute) URL requested.
+		 * @param string $allowed_endpoint The (absolute) endpoint that was added to the list of allowed endpoints.
+		 *
+		 * @return bool True if the URL requested matches the allow-listed endpoint.
+		 */
+		public static function endpoint_matches( $url, $allowed_endpoint ) {
+			$url              = WordPress_Helpers::trim( strval( $url ) );
+			$allowed_endpoint = WordPress_Helpers::trim( strval( $allowed_endpoint ) );
+
+			// An empty allow-listed endpoint would otherwise match every URL (PHP's stripos returns 0 for an empty needle).
+			if ( empty( $url ) || empty( $allowed_endpoint ) ) {
+				return false;
+			}
+
+			$url_parts     = wp_parse_url( $url );
+			$allowed_parts = wp_parse_url( $allowed_endpoint );
+
+			if ( empty( $url_parts ) || empty( $allowed_parts ) || empty( $url_parts['host'] ) || empty( $allowed_parts['host'] ) ) {
+				return false;
+			}
+
+			$url_scheme     = ! empty( $url_parts['scheme'] ) ? strtolower( $url_parts['scheme'] ) : '';
+			$allowed_scheme = ! empty( $allowed_parts['scheme'] ) ? strtolower( $allowed_parts['scheme'] ) : '';
+
+			// Only http(s) destinations are ever requested on behalf of a caller.
+			if ( ! in_array( $url_scheme, array( 'http', 'https' ), true ) || $url_scheme !== $allowed_scheme ) {
+				return false;
+			}
+
+			if ( strcasecmp( $url_parts['host'], $allowed_parts['host'] ) !== 0 ) {
+				return false;
+			}
+
+			$default_port = $url_scheme === 'https' ? 443 : 80;
+			$url_port     = ! empty( $url_parts['port'] ) ? intval( $url_parts['port'] ) : $default_port;
+			$allowed_port = ! empty( $allowed_parts['port'] ) ? intval( $allowed_parts['port'] ) : $default_port;
+
+			if ( $url_port !== $allowed_port ) {
+				return false;
+			}
+
+			$allowed_path = ! empty( $allowed_parts['path'] ) ? WordPress_Helpers::rtrim( $allowed_parts['path'], '/' ) : '';
+
+			// An allow-listed endpoint without a path allows any path on that host.
+			if ( empty( $allowed_path ) ) {
+				return true;
+			}
+
+			$url_path = ! empty( $url_parts['path'] ) ? $url_parts['path'] : '';
+
+			return WordPress_Helpers::stripos( $url_path, $allowed_path ) === 0;
+		}
+
+		/**
 		 * Returns true when an arbitrary URL points to the /wpo/sso/start endpoint.
 		 * Used to prevent redirect_to loops: if the OAuth state encodes the SSO start
 		 * URL, the user would land back here after returning from Microsoft.

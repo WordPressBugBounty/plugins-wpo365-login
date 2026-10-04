@@ -521,12 +521,8 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 			$mail_application_id     = null;
 			$mail_application_secret = null;
 
-			if (
-				$use_mail_config || ( Options_Service::get_global_boolean_var( 'use_graph_mailer' )
-					&& ! empty( $role )
-					&& ( WordPress_Helpers::stripos( $role, 'Mail.Send' ) !== false || WordPress_Helpers::stripos( $role, 'Mail.ReadWrite' ) !== false )
-				)
-			) {
+			// Mail credentials only when explicitly requested, never inferred from a caller-supplied role.
+			if ( $use_mail_config ) {
 				$mail_directory_id       = Options_Service::get_mail_option( 'mail_tenant_id' );
 				$mail_application_id     = Options_Service::get_mail_option( 'mail_application_id' );
 				$mail_application_secret = Options_Service::get_mail_option( 'mail_application_secret' );
@@ -743,7 +739,7 @@ if ( ! class_exists( '\Wpo\Services\Access_Token_Service' ) ) {
 
 			foreach ( $access_token->roles as $key => $access_token_role ) {
 
-				if ( WordPress_Helpers::stripos( $access_token_role, $role ) !== false ) {
+				if ( strcasecmp( $access_token_role, $role ) === 0 ) {
 					return true;
 				}
 			}

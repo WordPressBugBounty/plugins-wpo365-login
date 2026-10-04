@@ -138,6 +138,10 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 					}
 				}
 
+				// Warn about configuration options that are no longer supported.
+				Compatibility_Helpers::check_deprecated_graph_options();
+				Compatibility_Helpers::check_unsupported_media_folder_protection();
+
 				// Ensure WP Cron job to check for each registered application whether its secret will epxire soon is added.
 
 				if ( class_exists( '\Wpo\Services\Password_Credentials_Service' ) ) {
@@ -638,6 +642,18 @@ if ( ! class_exists( '\Wpo\Core\Wp_Hooks' ) ) {
 				add_action( 'wpo365/oidc/authenticated_only', $set_mlda_cookie );
 				add_action( 'wpo365/oidc/authenticated', $set_mlda_cookie );
 				add_action( 'wpo365/saml/authenticated', $set_mlda_cookie );
+
+				// Also on a page response, so that the images on that page already carry the cookie.
+				if ( method_exists( '\Wpo\Services\Secure_Download_Service', 'maybe_set_cookie' ) ) {
+					add_action(
+						'template_redirect',
+						function () {
+							$service = new \Wpo\Services\Secure_Download_Service();
+							$service->maybe_set_cookie();
+						},
+						1
+					);
+				}
 			}
 
 			// Enqueue wpo365-rewriteai scripts and styles when the feature is enabled.

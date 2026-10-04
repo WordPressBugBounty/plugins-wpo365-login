@@ -34,9 +34,16 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 		 * @param   boolean $prefetch Is deprecated since 11.0 when the method will figure out what it can use to obtain a delegated token.
 		 * @param   string  $post_fields
 		 * @param   string  $scope
+		 * @param   string  $log_level
+		 * @param   boolean $allow_delegated_fallback Whether an app-only request that cannot be authorized may
+		 *                                            be retried with the permissions of the current user. Pass
+		 *                                            false when the caller explicitly asked for application-level
+		 *                                            permissions, so that a missing application permission
+		 *                                            surfaces as an error instead of silently using someone's
+		 *                                            own - possibly different - permissions.
 		 * @return  array|WP_Error JSON string as associative array or false
 		 */
-		public static function fetch( $query, $method = 'GET', $binary = false, $headers = array(), $use_delegated = false, $prefetch = false, $post_fields = '', $scope = 'https://graph.microsoft.com/user.read', $log_level = 'WARN' ) {
+		public static function fetch( $query, $method = 'GET', $binary = false, $headers = array(), $use_delegated = false, $prefetch = false, $post_fields = '', $scope = 'https://graph.microsoft.com/user.read', $log_level = 'WARN', $allow_delegated_fallback = true ) {
 			Log_Service::write_log( 'DEBUG', sprintf( '%s -> Requesting data from Microsoft Graph using query "%s" and scope "%s"', __METHOD__, $query, $scope ) );
 
 			/**
@@ -102,16 +109,19 @@ if ( ! class_exists( '\Wpo\Services\Graph_Service' ) ) {
 				$tld            = ! empty( $tld ) ? $tld : '.com';
 				$scope_host     = str_replace( '.com', $tld, $scope_host );
 				$app_only_scope = "https://$scope_host/.default";
-				$scope_segments = explode( '/', $scope );
+				$scope_segments = explode( '/', rtrim( $scope, '/' ) );
 				$role           = array_pop( $scope_segments );
 
 				if ( strcasecmp( $role, 'User.Read' ) === 0 ) {
 					$role = 'User.Read.All';
 				}
 
-				$access_token = Access_Token_Service::get_app_only_access_token( $app_only_scope, $role, $use_mail_config );
+				// A malformed (e.g. trailing-slash) scope must not silently skip the role check.
+				$access_token = empty( $role )
+					? new WP_Error( 'InvalidArgumentException', 'Scope does not resolve to a role.' )
+					: Access_Token_Service::get_app_only_access_token( $app_only_scope, $role, $use_mail_config );
 
-				if ( is_wp_error( $access_token ) && $user_has_delegated_access ) {
+				if ( is_wp_error( $access_token ) && $user_has_delegated_access && $allow_delegated_fallback ) {
 					Log_Service::write_log( $log_level, sprintf( '%s -> no application role found to match scope %s for query %s therefore falling back to delegated permissions', __METHOD__, $scope, $query ) );
 					$access_token = Access_Token_Service::get_access_token( $scope );
 				}

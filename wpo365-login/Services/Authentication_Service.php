@@ -821,27 +821,26 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 			 * @since   31.0    Skip authentication for specific IP addresses
 			 */
 
-			$ip_addresses = Options_Service::get_global_list_var( 'skip_ips' );
+			if ( self::is_ip_freed_from_authentication() ) {
+				Log_Service::write_log( 'DEBUG', sprintf( '%s -> Skipping authentication because the user\'s IP address is in the list of IP addresses freed from authentication', __METHOD__ ) );
+				return true;
+			}
 
-			if ( ! empty( $ip_addresses ) ) {
-				$remote_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+			/**
+			 * @since   45.0    A request for a Media Folder item (see Secure_Download_Proxy.php) may be allowed by the
+			 *                  wpo365/media/skip_authentication filter. The outcome is stored as 1 / 0, so that
+			 *                  Secure_Download_Service can reuse it instead of evaluating the filter again.
+			 */
 
-				if ( filter_var( $remote_address, FILTER_VALIDATE_IP ) !== false ) {
+			if ( defined( 'WPO365_SECURE_DOWNLOAD' ) && constant( 'WPO365_SECURE_DOWNLOAD' ) === true ) {
+				$request_service           = Request_Service::get_instance();
+				$request                   = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
+				$media_skip_authentication = apply_filters( 'wpo365/media/skip_authentication', false ) === true;
+				$request->set_item( 'media_skip_authentication', $media_skip_authentication ? 1 : 0 );
 
-					foreach ( $ip_addresses as $ip_address ) {
-
-						if ( filter_var( $ip_address, FILTER_VALIDATE_IP ) !== false && strcasecmp( $ip_address, $remote_address ) === 0 ) {
-							Log_Service::write_log(
-								'DEBUG',
-								sprintf(
-									'%s -> Skipping authentication because the user\'s IP address %s is in the list of IP addresses freed from authentication',
-									__METHOD__,
-									$remote_address
-								)
-							);
-							return true;
-						}
-					}
+				if ( $media_skip_authentication ) {
+					Log_Service::write_log( 'DEBUG', sprintf( '%s -> Skipping authentication because the wpo365/media/skip_authentication filter allows this request for a Media Folder item', __METHOD__ ) );
+					return true;
 				}
 			}
 
@@ -1202,6 +1201,37 @@ if ( ! class_exists( '\Wpo\Services\Authentication_Service' ) ) {
 					self::authenticate_request( true );
 				}
 			}
+		}
+
+		/**
+		 * Whether the current request comes from one of the "IP addresses freed from authentication".
+		 *
+		 * @since   45.0    Previously part of skip_authentication().
+		 *
+		 * @return  bool
+		 */
+		public static function is_ip_freed_from_authentication() {
+			$ip_addresses = Options_Service::get_global_list_var( 'skip_ips' );
+
+			if ( empty( $ip_addresses ) ) {
+				return false;
+			}
+
+			$remote_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+
+			if ( filter_var( $remote_address, FILTER_VALIDATE_IP ) === false ) {
+				return false;
+			}
+
+			foreach ( $ip_addresses as $ip_address ) {
+
+				if ( filter_var( $ip_address, FILTER_VALIDATE_IP ) !== false && strcasecmp( $ip_address, $remote_address ) === 0 ) {
+					Log_Service::write_log( 'DEBUG', sprintf( '%s -> IP address %s is in the list of IP addresses freed from authentication', __METHOD__, $remote_address ) );
+					return true;
+				}
+			}
+
+			return false;
 		}
 	}
 }

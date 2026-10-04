@@ -37,7 +37,7 @@ if ( ! class_exists( '\Wpo\Services\Notifications_Service' ) ) {
 
 					$notification = sprintf(
 						/* translators: 1: Number of users 2: Target tenant type e.g. AAD B2C or Entra Ext. ID */
-						'<div id="message" class="updated notice is-dismissable"><p>' . __( 'Created / updated %1$d users in %2$s', 'wpo365-login' ) . '</p></div>',
+						'<div id="message" class="updated notice is-dismissable" style="background-color: #ffffff;"><p>' . __( 'Created / updated %1$d users in %2$s', 'wpo365-login' ) . '</p></div>',
 						$users_sent,
 						$target_ciam
 					);
@@ -50,7 +50,7 @@ if ( ! class_exists( '\Wpo\Services\Notifications_Service' ) ) {
 
 					$notification = sprintf(
 						/* translators: Number of users */
-						'<div id="message" class="updated notice is-dismissable"><p>' . __( 'Reactivated %d users', 'wpo365-login' ) . '</p></div>',
+						'<div id="message" class="updated notice is-dismissable" style="background-color: #ffffff;"><p>' . __( 'Reactivated %d users', 'wpo365-login' ) . '</p></div>',
 						$users_reactivated
 					);
 

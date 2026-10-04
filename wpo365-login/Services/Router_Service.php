@@ -92,6 +92,17 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 				}
 
 				if ( ! empty( $_REQUEST['id_token'] ) ) { // phpcs:ignore
+
+					/**
+					 * @since 45.0  With the authorization code flow WPO365 asks Microsoft for a code only (response_type=code)
+					 *              and gets the ID token from the token endpoint. A posted ID token was then not requested by
+					 *              WPO365 - it is either a replay attempt or meant for another plugin - and is left alone.
+					 */
+					if ( $mode !== 'selfTest' && strcasecmp( Options_Service::get_aad_option( 'oidc_flow' ), 'code' ) === 0 ) {
+						Log_Service::write_log( 'WARN', sprintf( '%s -> Ignoring an ID token that was posted to this website, because WPO365 is configured for the authorization code flow', __METHOD__ ) );
+						return false;
+					}
+
 					$id_token = sanitize_text_field( wp_unslash( $_REQUEST['id_token'] ) ); //phpcs:ignore
 
 					if ( Id_Token_Service::check_audience( $id_token ) === true ) {
@@ -282,11 +293,7 @@ if ( ! class_exists( '\Wpo\Services\Router_Service' ) ) {
 		public static function route_openidconnect_token() {
 			Log_Service::write_log( 'DEBUG', '##### -> ' . __METHOD__ );
 
-			if ( Options_Service::get_global_boolean_var( 'use_id_token_parser_v2' ) && \class_exists( '\Wpo\Services\Id_Token_Service_Deprecated' ) ) {
-				\Wpo\Services\Id_Token_Service_Deprecated::process_openidconnect_token();
-			} else {
-				Id_Token_Service::process_openidconnect_token();
-			}
+			Id_Token_Service::process_openidconnect_token();
 
 			$wpo_usr = Authentication_Service::authenticate_oidc_user();
 			Url_Helpers::goto_after( $wpo_usr );

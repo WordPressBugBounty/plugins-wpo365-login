@@ -94,6 +94,36 @@ if ( ! class_exists( '\Wpo\Tests\Test_Access_Tokens' ) ) {
 		}
 
 		/**
+		 * ACCESS TOKENS -> TOKEN SERVICE
+		 */
+		public function test_token_service_delegated_only() {
+
+			if (
+				Options_Service::get_global_boolean_var( 'graph_allow_token_retrieval' ) === false
+				&& Options_Service::get_global_boolean_var( 'graph_allow_get_token' ) === false
+			) {
+				return;
+			}
+
+			if ( empty( $this->delegated_access_token ) || ! $this->delegated_access_token_test_result->passed ) {
+				return;
+			}
+
+			$test_result         = new Test_Result( 'The WPO365 token service only hands out access tokens with the permissions of the user who requested them.', Test_Result::CAPABILITY_ACCESS_TOKENS, Test_Result::SEVERITY_BLOCKING );
+			$test_result->passed = true;
+
+			$roles = Access_Token_Service::get_application_roles( $this->delegated_access_token->access_token );
+
+			if ( ! empty( $roles ) ) {
+				$test_result->passed    = false;
+				$test_result->message   = 'Apps may request an (oauth) access token and the token that WPO365 would hand out carries application-level permissions. An access token with application-level permissions must never reach a browser. Go to WP Admin > WPO365 > Integration and uncheck \'Apps may request (delegated) oauth access tokens\', and report this to support@wpo365.com.';
+				$test_result->more_info = 'https://docs.wpo365.com/article/23-integration';
+			}
+
+			return $test_result;
+		}
+
+		/**
 		 * ACCESS TOKENS -> PERMISSIONS
 		 */
 		public function test_access_token_static_permissions_openid() {

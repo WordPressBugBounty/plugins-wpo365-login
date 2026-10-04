@@ -149,6 +149,54 @@ if ( ! class_exists( '\Wpo\Services\Jwt_Token_Service' ) ) {
 		}
 
 		/**
+		 * Gets the OpenID configuration that the identity provider publishes, e.g. for its signing keys (jwks_uri) or
+		 * for the issuer of its tokens. Cached for a day per URL.
+		 *
+		 * @since   45.0
+		 *
+		 * @param   string|null $b2c_policy     The B2C user flow (policy) to use instead of the configured one.
+		 * @param   bool        $multi_tenanted Whether to get Entra ID's multi-tenant ("common") configuration.
+		 *
+		 * @return  object|null The configuration, or null when it could not be retrieved (the error is logged).
+		 */
+		public static function get_openid_configuration( $b2c_policy = null, $multi_tenanted = false ) {
+			$open_id_config_url = self::get_openid_configuration_url( $b2c_policy, $multi_tenanted );
+			$cache_key          = 'wpo365_oidc_config_' . md5( $open_id_config_url );
+			$open_id_config     = get_site_transient( $cache_key );
+
+			if ( is_object( $open_id_config ) && ! empty( $open_id_config->jwks_uri ) ) {
+				return $open_id_config;
+			}
+
+			Log_Service::write_log( 'DEBUG', __METHOD__ . " -> Trying to retrieve the Open ID configuration $open_id_config_url" );
+
+			$response = wp_remote_get(
+				$open_id_config_url,
+				array(
+					'method'    => 'GET',
+					'sslverify' => ! Options_Service::get_global_boolean_var( 'skip_host_verification' ),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> Error occured whilst retrieving the Open ID configuration: ' . $response->get_error_message() );
+				return null;
+			}
+
+			$open_id_config = json_decode( wp_remote_retrieve_body( $response ) );
+
+			if ( \json_last_error() !== JSON_ERROR_NONE || ! isset( $open_id_config->jwks_uri ) ) {
+				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> jwks_uri property not found [ ' . \json_last_error_msg() . ' ]' );
+				Log_Service::write_log( 'DEBUG', $response );
+				return null;
+			}
+
+			set_site_transient( $cache_key, $open_id_config, DAY_IN_SECONDS );
+
+			return $open_id_config;
+		}
+
+		/**
 		 * Tries to retrieve the JSON Web Key Set issued for the current tenant and application either from cache or
 		 * by loading the JWKS from the jwks_uri specified in the open-id configuration for the current tenant.
 		 *
@@ -243,10 +291,24 @@ if ( ! class_exists( '\Wpo\Services\Jwt_Token_Service' ) ) {
 				return $jwks_uri;
 			}
 
-			/**
-			 * Get the JSON Web Key Sets URI (jwks_uri) from the openid configuration.
-			 */
+			// Get the JSON Web Key Sets URI (jwks_uri) from the openid configuration.
+			$open_id_config = self::get_openid_configuration();
 
+			return ! empty( $open_id_config->jwks_uri ) ? $open_id_config->jwks_uri : null;
+		}
+
+		/**
+		 * The URL of the OpenID configuration of the identity provider in use - Entra ID, Azure AD B2C or Entra External
+		 * ID (CIAM) - or of the mail configuration while a mail account is being authorized.
+		 *
+		 * @since   45.0    Extracted from get_json_web_key_sets_uri.
+		 *
+		 * @param   string|null $b2c_policy     The B2C user flow (policy) to use instead of the configured one.
+		 * @param   bool        $multi_tenanted Whether to use Entra ID's multi-tenant ("common") configuration.
+		 *
+		 * @return  string
+		 */
+		private static function get_openid_configuration_url( $b2c_policy, $multi_tenanted ) {
 			$request_service = Request_Service::get_instance();
 			$request         = $request_service->get_request( $GLOBALS['WPO_CONFIG']['request_id'] );
 
@@ -258,7 +320,7 @@ if ( ! class_exists( '\Wpo\Services\Jwt_Token_Service' ) ) {
 
 			if ( ! $use_mail_config && Options_Service::get_global_boolean_var( 'use_b2c' ) && \class_exists( '\Wpo\Services\Id_Token_Service_B2c' ) ) {
 				$b2c_domain_name = Options_Service::get_aad_option( 'b2c_domain_name' );
-				$b2c_policy_name = Options_Service::get_aad_option( 'b2c_policy_name' );
+				$b2c_policy_name = ! empty( $b2c_policy ) ? $b2c_policy : Options_Service::get_aad_option( 'b2c_policy_name' );
 
 				/**
 				 * @since   20.x    Support for custom b2c login domain e.g. login.contoso.com
@@ -272,8 +334,10 @@ if ( ! class_exists( '\Wpo\Services\Jwt_Token_Service' ) ) {
 					$b2c_domain = sprintf( 'https://%s', trailingslashit( $b2c_domain ) );
 				}
 
-				$open_id_config_url = "$b2c_domain$directory_id/$b2c_policy_name/v2.0/.well-known/openid-configuration";
-			} elseif ( ! $use_mail_config && Options_Service::get_global_boolean_var( 'use_ciam' ) ) {
+				return "$b2c_domain$directory_id/$b2c_policy_name/v2.0/.well-known/openid-configuration";
+			}
+
+			if ( ! $use_mail_config && Options_Service::get_global_boolean_var( 'use_ciam' ) ) {
 				$domain_name = Options_Service::get_aad_option( 'b2c_domain_name' );
 				$ciam_domain = Options_Service::get_aad_option( 'b2c_custom_domain' );
 
@@ -283,46 +347,22 @@ if ( ! class_exists( '\Wpo\Services\Jwt_Token_Service' ) ) {
 					$ciam_domain = sprintf( 'https://%s', trailingslashit( $ciam_domain ) );
 				}
 
-				$open_id_config_url = "$ciam_domain$directory_id/v2.0/.well-known/openid-configuration";
-			} else {
-				$tld                = Options_Service::get_aad_option( 'tld' );
-				$tld                = ! empty( $tld ) ? $tld : '.com';
-				$open_id_config_url = sprintf(
-					'https://login.microsoftonline%s/%s/v2.0/.well-known/openid-configuration?appid=%s',
-					$tld,
-					$directory_id,
-					$application_id
-				);
+				return "$ciam_domain$directory_id/v2.0/.well-known/openid-configuration";
 			}
 
-			Log_Service::write_log( 'DEBUG', __METHOD__ . " -> Trying to retrieve the Open ID configuration for the designated tenant and application $open_id_config_url" );
+			$tld = Options_Service::get_aad_option( 'tld' );
+			$tld = ! empty( $tld ) ? $tld : '.com';
 
-			$skip_ssl_verify = ! Options_Service::get_global_boolean_var( 'skip_host_verification' );
+			if ( $multi_tenanted ) {
+				return sprintf( 'https://login.microsoftonline%s/common/v2.0/.well-known/openid-configuration', $tld );
+			}
 
-			$response = wp_remote_get(
-				$open_id_config_url,
-				array(
-					'method'    => 'GET',
-					'sslverify' => $skip_ssl_verify,
-				)
+			return sprintf(
+				'https://login.microsoftonline%s/%s/v2.0/.well-known/openid-configuration?appid=%s',
+				$tld,
+				$directory_id,
+				$application_id
 			);
-
-			if ( is_wp_error( $response ) ) {
-				$warning = 'Error occured whilst getting JSON Web Key Sets URI: ' . $response->get_error_message();
-				Log_Service::write_log( 'ERROR', __METHOD__ . " -> $warning" );
-				return null;
-			}
-
-			$body           = wp_remote_retrieve_body( $response );
-			$open_id_config = json_decode( $body );
-
-			if ( \json_last_error() !== JSON_ERROR_NONE || ! isset( $open_id_config->jwks_uri ) ) {
-				Log_Service::write_log( 'ERROR', __METHOD__ . ' -> jwks_uri property not found [ ' . \json_last_error_msg() . ' ]' );
-				Log_Service::write_log( 'DEBUG', $response );
-				return null;
-			}
-
-			return $open_id_config->jwks_uri;
 		}
 	}
 }

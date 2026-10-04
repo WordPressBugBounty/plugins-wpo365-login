@@ -606,6 +606,22 @@ if ( ! class_exists( '\Wpo\Services\Options_Service' ) ) {
 		}
 
 		/**
+		 * Whether an option holds plugin-written state that is read from the database only. Such an
+		 * option is neither exported to nor applied from WPO_OVERRIDES_<blog id>.
+		 *
+		 * @since   45.0
+		 *
+		 * @param   string $key The option's name.
+		 *
+		 * @return  bool
+		 */
+		public static function is_db_only_option( $key ) {
+			// license_<store item id>, but not the legacy license_key.
+			return in_array( $key, array( 'insights_license_key', 'upgrade_actions' ), true )
+				|| preg_match( '/^license_\d+$/', (string) $key ) === 1;
+		}
+
+		/**
 		 * Simple helper to ensure that the AAD options were removed.
 		 *
 		 * @since   21.9

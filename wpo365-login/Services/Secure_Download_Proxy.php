@@ -4,6 +4,7 @@ namespace Wpo\Services;
 
 $plugins_directory = dirname( __DIR__, 2 );
 $candidates        = array(
+	'wpo365-customers',
 	'wpo365-essentials',
 	'wpo365-integrate',
 	'wpo365-intranet-5y',
@@ -11,6 +12,7 @@ $candidates        = array(
 	'wpo365-login-premium',
 	'wpo365-login-professional',
 	'wpo365-pro',
+	'wpo365-roles-access',
 	'wpo365-sync-5y',
 );
 
@@ -35,6 +37,11 @@ foreach ( $candidates as $candidate ) {
 					$file = urldecode( substr( $qs_pair, 5 ) );
 					break;
 				}
+			}
+
+			// Lets the page-level check that runs while WordPress loads recognise a request for a Media Folder item.
+			if ( ! defined( 'WPO365_SECURE_DOWNLOAD' ) ) {
+				define( 'WPO365_SECURE_DOWNLOAD', true );
 			}
 
 			$sec_download = new \Wpo\Services\Secure_Download_Service();

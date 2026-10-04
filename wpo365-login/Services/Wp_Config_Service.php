@@ -69,6 +69,11 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 			}
 
 			foreach ( $wpo_overrides as $key => $value ) {
+
+				if ( Options_Service::is_db_only_option( $key ) ) {
+					continue;
+				}
+
 				$options[ $key ] = $value;
 			}
 
@@ -486,7 +491,7 @@ if ( ! class_exists( '\Wpo\Services\Wp_Config_Service' ) ) {
 					$parseable_options = array_filter(
 						$GLOBALS['WPO_CONFIG']['options'],
 						function ( $value, $key ) use ( $keys_to_remove, $aad_option_keys, $mail_option_keys ) {
-							return ! in_array( $key, $keys_to_remove, true ) && ! in_array( $key, $aad_option_keys['strings'], true ) && ! in_array( $key, $aad_option_keys['bools'], true ) && ! in_array( $key, $mail_option_keys, true );
+							return ! in_array( $key, $keys_to_remove, true ) && ! in_array( $key, $aad_option_keys['strings'], true ) && ! in_array( $key, $aad_option_keys['bools'], true ) && ! in_array( $key, $mail_option_keys, true ) && ! Options_Service::is_db_only_option( $key );
 						},
 						ARRAY_FILTER_USE_BOTH
 					);

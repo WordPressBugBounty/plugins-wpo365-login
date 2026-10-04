@@ -139,7 +139,7 @@ if ( ! class_exists( '\Wpo\Core\Script_Helpers' ) ) {
 				'wpConfigMultiple'     => ! empty( Wp_Config_Service::get_multiple_idps() ),
 				'wpConfigOverrides'    => ! empty( Wp_Config_Service::get_options_overrides() ),
 				'wpmu'                 => is_multisite() ? ( Options_Service::mu_use_subsite_options() ? 'wpmuDedicated' : 'wpmuShared' ) : 'wpmuNone',
-				'wpoHealthMessages'    => wp_json_encode( $wpo365_errors ),
+				'wpoHealthMessages'    => wp_json_encode( WordPress_Helpers::sanitize_message_bodies( $wpo365_errors ) ),
 			);
 
 			wp_enqueue_script( 'wizardjs', Url_Helpers::get_asset_url_for_current_site( trailingslashit( $GLOBALS['WPO_CONFIG']['plugin_url'] ) . 'apps/dist/wizard.js' ), array(), $GLOBALS['WPO_CONFIG']['version'], true );

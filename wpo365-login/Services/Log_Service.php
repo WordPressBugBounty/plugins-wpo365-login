@@ -3,6 +3,7 @@
 namespace Wpo\Services;
 
 use Wpo\Core\Compatibility_Helpers;
+use Wpo\Core\WordPress_Helpers;
 use Wpo\Core\Wpmu_Helpers;
 use Wpo\Services\Options_Service;
 use Wpo\Services\Request_Service;
@@ -73,9 +74,17 @@ if ( ! class_exists( '\Wpo\Services\Log_Service' ) ) {
 			$request->set_item( 'request_log', $request_log );
 
 			if ( $level === 'ERROR' ) {
+				/**
+				 * A health message is rendered as HTML for an administrator and may repeat a value that
+				 * arrived with a request, so it is sanitized here. The copy kept in the request log is left
+				 * as it is, so that a support log still shows XML and JSON payloads verbatim.
+				 */
+				$health_item         = $log_item;
+				$health_item['body'] = wp_kses( $health_item['body'], WordPress_Helpers::get_allowed_message_html() );
+
 				$cached_errors = Wpmu_Helpers::mu_get_transient( 'wpo365_errors' );
 				$cached_errors = is_array( $cached_errors ) ? $cached_errors : array();
-				\array_unshift( $cached_errors, $log_item );
+				\array_unshift( $cached_errors, $health_item );
 				$cached_errors = array_slice( $cached_errors, 0, 10 );
 				Wpmu_Helpers::mu_set_transient( 'wpo365_errors', $cached_errors, 259200 );
 			}

@@ -64,15 +64,23 @@ if ( ! class_exists( '\Wpo\Tests\Self_Test' ) ) {
 				}
 			}
 
-			// In case of the Authorization Code Flow we need to exchange the code for an ID token
-			if ( ! $no_sso && ! $use_saml && $oidc_flow === 'code' ) {
+			// In case of the Authorization Code Flow we need to exchange the code for an ID token.
+			// In case of the Hybrid Flow the ID token already arrived directly with the initial
+			// response and only needs to be decoded -- mirrors what
+			// Router_Service::route_openidconnect_token() does for a real Hybrid Flow login, which
+			// likewise always uses the base Id_Token_Service regardless of B2C/CIAM.
+			if ( ! $no_sso && ! $use_saml ) {
+				if ( $oidc_flow === 'code' ) {
 
-				if ( $use_b2c && class_exists( '\Wpo\Services\Id_Token_Service_B2c' ) ) {
-					\Wpo\Services\Id_Token_Service_B2c::process_openidconnect_code();
-				} elseif ( $use_ciam && class_exists( '\Wpo\Services\Id_Token_Service_Ciam' ) ) {
-					\Wpo\Services\Id_Token_Service_Ciam::process_openidconnect_code();
+					if ( $use_b2c && class_exists( '\Wpo\Services\Id_Token_Service_B2c' ) ) {
+						\Wpo\Services\Id_Token_Service_B2c::process_openidconnect_code();
+					} elseif ( $use_ciam && class_exists( '\Wpo\Services\Id_Token_Service_Ciam' ) ) {
+						\Wpo\Services\Id_Token_Service_Ciam::process_openidconnect_code();
+					} else {
+						\Wpo\Services\Id_Token_Service::process_openidconnect_code();
+					}
 				} else {
-					\Wpo\Services\Id_Token_Service::process_openidconnect_code();
+					\Wpo\Services\Id_Token_Service::process_openidconnect_token( false );
 				}
 			}
 

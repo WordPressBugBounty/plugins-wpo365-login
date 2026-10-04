@@ -4,6 +4,7 @@ namespace Wpo\Services;
 
 use WP_Error;
 use Wpo\Core\Url_Helpers;
+use Wpo\Core\WordPress_Helpers;
 use Wpo\Core\Wpmu_Helpers;
 use Wpo\Services\Authentication_Service;
 use Wpo\Services\Error_Service;
@@ -150,7 +151,7 @@ if ( ! class_exists( '\Wpo\Services\Saml2_Service' ) ) {
 		public static function saml_settings( $validate = false ) {
 			$base_url      = Options_Service::get_aad_option( 'saml_base_url' );
 			$sp_entity_id  = Options_Service::get_aad_option( 'saml_sp_entity_id' );
-			$sp_sls_url    = Options_Service::get_aad_option( 'saml_sp_sls_url' );
+			$sp_sls_url    = self::repair_query_string( Options_Service::get_aad_option( 'saml_sp_sls_url' ) );
 			$idp_entity_id = Options_Service::get_aad_option( 'saml_idp_entity_id' );
 			$idp_ssos_url  = Options_Service::get_aad_option( 'saml_idp_ssos_url' );
 			$idp_sls_url   = Options_Service::get_aad_option( 'saml_idp_sls_url' );
@@ -433,7 +434,7 @@ if ( ! class_exists( '\Wpo\Services\Saml2_Service' ) ) {
 				Options_Service::add_update_option( 'saml_sp_entity_id', $sp_entity_id );
 			}
 
-			$sp_sls_url = Options_Service::get_aad_option( 'saml_sp_sls_url' );
+			$sp_sls_url = self::repair_query_string( Options_Service::get_aad_option( 'saml_sp_sls_url' ) );
 
 			if ( empty( $sp_sls_url ) ) {
 				$sp_sls_url = sprintf( '%swp-login.php?action=loggedout', $base_url );
@@ -447,26 +448,75 @@ if ( ! class_exists( '\Wpo\Services\Saml2_Service' ) ) {
 				Options_Service::add_update_option( 'saml_sp_acs_url', $sp_acs_url );
 			}
 
-			$sp_metadata_valid_until = gmdate( 'Y-m-d\TH:i:s\Z', strtotime( '+48 hours', time() ) );
+			// Long enough for the identity provider's admin to import the file days or weeks later.
+			$sp_metadata_valid_until = gmdate( 'Y-m-d\TH:i:s\Z', strtotime( '+1 month', time() ) );
+
+			/**
+			 * @since 45.0  The metadata now states what WPO365 actually does: it only signs its requests - and only
+			 *              then publishes the certificate to verify them - if WPO_SAML2_ADVANCED_SETTINGS configures it.
+			 */
+
+			$advanced_settings = defined( 'WPO_SAML2_ADVANCED_SETTINGS' ) && is_array( constant( 'WPO_SAML2_ADVANCED_SETTINGS' ) ) ? constant( 'WPO_SAML2_ADVANCED_SETTINGS' ) : array();
+			$sp_x509_cert      = ! empty( $advanced_settings['sp']['x509cert'] ) && is_string( $advanced_settings['sp']['x509cert'] )
+				? preg_replace( '/-----(BEGIN|END) CERTIFICATE-----|\s+/', '', $advanced_settings['sp']['x509cert'] )
+				: '';
+			$requests_signed   = ! empty( $advanced_settings['security']['authnRequestsSigned'] ) && ! empty( $sp_x509_cert );
+
+			// The format saml_settings() asks the identity provider for.
+			$name_id_format = ! empty( $advanced_settings['sp']['NameIDFormat'] ) && is_string( $advanced_settings['sp']['NameIDFormat'] )
+				? $advanced_settings['sp']['NameIDFormat']
+				: 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified';
 
 			$xml_chunks = array(
 				'<?xml version="1.0"?>',
 				'<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" validUntil="__##sp_metadata_valid_until##__" entityID="__##sp_entity_id##__">',
-				'  <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">',
-				'    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="__##sp_sls_url##__" />',
-				'    <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="__##sp_acs_url##__" index="1" />',
-				'  </md:SPSSODescriptor>',
-				'</md:EntityDescriptor>',
+				'  <md:SPSSODescriptor AuthnRequestsSigned="__##authn_requests_signed##__" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">',
 			);
+
+			if ( $requests_signed ) {
+				$xml_chunks[] = '    <md:KeyDescriptor use="signing">';
+				$xml_chunks[] = '      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:X509Data><ds:X509Certificate>__##sp_x509_cert##__</ds:X509Certificate></ds:X509Data></ds:KeyInfo>';
+				$xml_chunks[] = '    </md:KeyDescriptor>';
+			}
+
+			$xml_chunks[] = '    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="__##sp_sls_url##__" />';
+			$xml_chunks[] = '    <md:NameIDFormat>__##name_id_format##__</md:NameIDFormat>';
+			$xml_chunks[] = '    <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="__##sp_acs_url##__" index="1" isDefault="true" />';
+			$xml_chunks[] = '  </md:SPSSODescriptor>';
+			$xml_chunks[] = '</md:EntityDescriptor>';
 
 			$xml = implode( PHP_EOL, $xml_chunks );
 
 			$xml = str_replace( '__##sp_metadata_valid_until##__', $sp_metadata_valid_until, $xml );
-			$xml = str_replace( '__##sp_entity_id##__', $sp_entity_id, $xml );
-			$xml = str_replace( '__##sp_sls_url##__', $sp_sls_url, $xml );
-			$xml = str_replace( '__##sp_acs_url##__', $sp_acs_url, $xml );
+			$xml = str_replace( '__##authn_requests_signed##__', $requests_signed ? 'true' : 'false', $xml );
+			$xml = str_replace( '__##sp_x509_cert##__', $sp_x509_cert, $xml );
+			$xml = str_replace( '__##name_id_format##__', esc_xml( $name_id_format ), $xml );
+			$xml = str_replace( '__##sp_entity_id##__', esc_xml( $sp_entity_id ), $xml );
+			$xml = str_replace( '__##sp_sls_url##__', esc_xml( $sp_sls_url ), $xml );
+			$xml = str_replace( '__##sp_acs_url##__', esc_xml( $sp_acs_url ), $xml );
 
 			return $xml;
+		}
+
+		/**
+		 * Between version 25.0 and WI-304 the default SAML 2.0 Single Logout Service URL was saved as
+		 * ".../wp-login.php&action=loggedout". Repairs a URL whose query string starts with "&" instead of "?".
+		 *
+		 * @since   45.0
+		 *
+		 * @param   mixed $url
+		 *
+		 * @return  mixed The repaired URL, or $url unchanged.
+		 */
+		public static function repair_query_string( $url ) {
+
+			if ( ! is_string( $url ) || $url === '' || WordPress_Helpers::strpos( $url, '?' ) !== false ) {
+				return $url;
+			}
+
+			$pos = WordPress_Helpers::strpos( $url, '&' );
+
+			return $pos === false ? $url : substr_replace( $url, '?', $pos, 1 );
 		}
 
 		/**

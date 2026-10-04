@@ -130,6 +130,64 @@ if ( ! class_exists( '\Wpo\Core\WordPress_Helpers' ) ) {
 		 *
 		 * @return mixed
 		 */
+		/**
+		 * The HTML that a log entry or health message may contain. Deliberately separate from
+		 * get_allowed_html(), which renders the plugin's own markup and therefore allows script tags and
+		 * event handlers - a message can carry values that came in with a request and must be sanitized
+		 * against a list that allows formatting and nothing else.
+		 *
+		 * @since   45.0
+		 *
+		 * @return  array
+		 */
+		/**
+		 * Sanitizes the "body" of each of the log items provided, for rendering as a health message.
+		 *
+		 * @since   45.0
+		 *
+		 * @param   mixed $log_items  The cached log items, if any.
+		 *
+		 * @return  array
+		 */
+		public static function sanitize_message_bodies( $log_items ) {
+
+			// Returned as it is when there is nothing to sanitize: an empty array is not the same as no value.
+			if ( ! is_array( $log_items ) ) {
+				return $log_items;
+			}
+
+			return array_map(
+				function ( $log_item ) {
+
+					if ( is_array( $log_item ) && isset( $log_item['body'] ) ) {
+						$log_item['body'] = wp_kses( $log_item['body'], self::get_allowed_message_html() );
+					}
+
+					return $log_item;
+				},
+				$log_items
+			);
+		}
+
+		public static function get_allowed_message_html() {
+			return array(
+				'a'      => array(
+					'href'   => array(),
+					'rel'    => array(),
+					'target' => array(),
+					'title'  => array(),
+				),
+				'br'     => array(),
+				'code'   => array(),
+				'em'     => array(),
+				'li'     => array(),
+				'ol'     => array(),
+				'p'      => array(),
+				'strong' => array(),
+				'ul'     => array(),
+			);
+		}
+
 		public static function get_allowed_html() {
 			global $allowedposttags;
 

@@ -24,7 +24,6 @@ class ComposerStaticInitd3f62a8cbfe186ea137bc85c4c57a38e
             'Wpo\\Mail\\' => 9,
             'Wpo\\Insights\\' => 13,
             'Wpo\\Graph\\' => 10,
-            'Wpo\\Firebase\\' => 13,
             'Wpo\\Core\\' => 9,
             'Wpo\\Blocks\\' => 11,
             'Wpo\\Apps365\\Api\\' => 16,
@@ -69,10 +68,6 @@ class ComposerStaticInitd3f62a8cbfe186ea137bc85c4c57a38e
         'Wpo\\Graph\\' => 
         array (
             0 => __DIR__ . '/../..' . '/Graph',
-        ),
-        'Wpo\\Firebase\\' => 
-        array (
-            0 => __DIR__ . '/../..' . '/Firebase/JWT',
         ),
         'Wpo\\Core\\' => 
         array (

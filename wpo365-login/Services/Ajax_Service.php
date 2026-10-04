@@ -3,6 +3,7 @@
 namespace Wpo\Services;
 
 use Wpo\Core\Permissions_Helpers;
+use Wpo\Core\Url_Helpers;
 use Wpo\Core\WordPress_Helpers;
 use Wpo\Core\Wpmu_Helpers;
 use Wpo\Insights\Event_Service;
@@ -281,7 +282,9 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 			}
 
 			$wpo365_errors = Wpmu_Helpers::mu_get_transient( 'wpo365_errors' );
-			self::ajax_response( 'OK', '', '', wp_json_encode( $wpo365_errors ) );
+
+			// Also sanitized when stored, but an entry from before the update can still be cached for days.
+			self::ajax_response( 'OK', '', '', wp_json_encode( WordPress_Helpers::sanitize_message_bodies( $wpo365_errors ) ) );
 		}
 
 		/**
@@ -533,11 +536,11 @@ if ( ! class_exists( '\Wpo\Services\Ajax_Service' ) ) {
 
 			foreach ( $allowed_endpoints_and_permissions as $allowed_endpoint_config ) {
 
-				$allowed_endpoint = $allowed_endpoint_config['key'];
+				$allowed_endpoint = ! empty( $allowed_endpoint_config['key'] ) ? $allowed_endpoint_config['key'] : '';
 				$allowed_endpoint = str_replace( '/v1.0/', '/_/', $allowed_endpoint );
 				$allowed_endpoint = str_replace( '/beta/', '/_/', $allowed_endpoint );
 
-				if ( WordPress_Helpers::stripos( $url, $allowed_endpoint ) === 0 ) {
+				if ( Url_Helpers::endpoint_matches( $url, $allowed_endpoint ) ) {
 					$proxy_endpoint_valid = true;
 					break;
 				}

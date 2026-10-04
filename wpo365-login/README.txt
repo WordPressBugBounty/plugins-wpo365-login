@@ -3,7 +3,7 @@ Contributors: wpo365
 Tags: Microsoft, SSO, PowerBI, SharePoint, Email
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 44.1
+Stable tag: 45.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -236,11 +236,40 @@ Please check out [our online FAQs](https://docs.wpo365.com/category/26-support) 
 
 == Upgrade Notice ==
 
+= v45.0 =
+
+Security release: update premium plugins too and review WPO365 health messages. Graph endpoints may need allow-listing, app-only uploads are dropped, wp-config license keys move to the database, the Firebase\JWT option is gone (Hybrid Flow: run self-test) and Media Folder login is off on multisite.
+
 Please check the [online change log](https://www.wpo365.com/change-log/) for upgrade notices.
 
 == Changelog ==
 
 Also available [online](https://www.wpo365.com/change-log/).
+
+= v45.0 =
+
+* Security: Fixed a cross-site scripting (XSS) vulnerability. [LOGIN]
+* Security (breaking): Discontinued the option that let apps request any Microsoft Graph endpoint, because it could be misused to reach services it was never meant to; each endpoint must now be explicitly allow-listed. [LOGIN]
+* Security: Hardened how allow-listed Microsoft Graph endpoints are matched, so a look-alike web address can no longer slip past the check. [LOGIN]
+* Security: Apps can now only request the application-level Microsoft Graph permissions that an administrator has explicitly allowed. [LOGIN]
+* Security: Whether a request to Microsoft Graph uses application-level or the signed-in user's permissions is now decided by the app's saved configuration rather than by the request itself. [LOGIN]
+* Security (breaking): Uploading a file to SharePoint now always uses the signed-in user's own permissions, addressing a security concern with application-level uploads. [LOGIN]
+* Security: Detailed Microsoft 365 error responses are now shown only to administrators and no longer to other visitors. [LOGIN]
+* Security: Added a safeguard so that an access token with application-level permissions can never be handed to the browser. [LOGIN]
+* Security: Prevented apps from influencing an outgoing request in a way that could send the website's credentials to an unintended destination. [LOGIN]
+* Security: Hardened the "Licenses" page. License requests to wpo365.com now also verify the server's SSL certificate, unless "Skip SSL host verification" is checked on the plugin's "Miscellaneous" configuration page. [LOGIN]
+* Security: Fixed an authentication bypass affecting sites that enabled the deprecated option "Use Firebase\JWT instead of phpseclib". The option has been removed. [LOGIN]
+* Security: Fixed an issue that allowed users from tenants that were not allow-listed to sign in to multi-tenant websites. ID tokens are now always checked for the right issuer and audience, and the option "Skip ID token verification" has been removed. [LOGIN]
+* Improvement: When "Require login for the Media Folder" is enabled, visitors from one of the "IP addresses freed from authentication" can now also open files in the Media Library without signing in. Developers can use the new filter "wpo365/media/skip_authentication" to grant the same access based on their own rules, e.g. an IP range. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Improvement: The authentication scenarios "Internet (auth. only)" and "Intranet (auth. only)" and the option "Require login for the Media Folder" are now also available with WPO365 | ROLES + ACCESS (requires version 45.0 of that plugin). [ROLES + ACCESS]
+* Improvement: Power BI reports that use the optimized mobile layout now switch between the mobile and desktop layout when the browser window is resized. [APPS, INTEGRATE (INTRANET)]
+* Change (breaking): "Require login for the Media Folder" is no longer available on WordPress multisite networks due to reliability concerns. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS, ROLES + ACCESS]
+* Fix: License keys are now always saved in the database. Any license keys in your wp-config.php overrides (WPO_OVERRIDES) are copied to the database automatically after updating to version 45.0 and then ignored. [ANY PREMIUM]
+* Fix: On websites that use wp-config.php overrides (WPO_OVERRIDES), one-time upgrade tasks no longer run again on every page load. [ANY PREMIUM]
+* Fix: After signing in, files from the Media Folder were not always delivered with the configured "Secure Download Mode" (e.g. for LiteSpeed servers) for up to 24 hours. [ESSENTIALS, PROFESSIONAL, INTEGRATE, CUSTOMERS (LOGIN+, SYNC, INTRANET)]
+* Fix: "Require login for the Media Folder" now also works when WPO365 | CUSTOMERS is the only premium plugin installed. Until now, files from the Media Folder then failed to load. [CUSTOMERS]
+* Fix: Adding an app in the wizard right after adding one "For customers" no longer creates it with "Allow anonymous users to interact with this app" checked. [LOGIN]
+* Fix: The SAML 2.0 Service Provider metadata generated by WPO365 now has a valid logout URL (also repaired automatically on sites that saved the malformed default of earlier versions), no longer claims that sign-in requests are signed, and includes the NameID format. [LOGIN]
 
 = v44.1 =
 
